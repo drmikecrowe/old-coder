@@ -1,0 +1,227 @@
+# One-Time Setup: `.old-coder.toml`, Isolation, Artifacts
+
+This procedure configures the skill for a repo once, and can be re-run any time.
+It **detects and proposes, then confirms** — it does not interrogate the human
+with questions whose answers are already visible in the repo.
+
+Nothing here is a precondition. **Missing config is never a blocker**: run with
+the restrictive defaults below and mention in one line that setup exists. A
+skill that stops to be configured deadlocks every unattended run on a fresh
+repo, which is worse than running conservatively.
+
+## The config file
+
+Written at the repo root as `.old-coder.toml`:
+
+```toml
+isolation   = "auto"        # auto | worktree | branch | none
+install     = "propose"     # propose | allow
+commit      = "propose"     # propose | allow
+commit_args = []            # flags the repo mandates on every commit, e.g. ["-S"]
+tracker     = "propose"     # propose | allow — posting the roll-up to an issue
+artifacts   = ".old-coder"  # dir for per-task SPEC/EVIDENCE/logs; may be outside the tree
+
+[commands]
+test  = "..."   # detected from package.json scripts / Makefile / pyproject / CI config
+lint  = "..."
+types = "..."
+```
+
+| Key | Meaning | Default when absent |
+|---|---|---|
+| `isolation` | how work is kept out of the user's working tree | `auto` — run the detection chain below |
+| `install` | may the skill install packages/tools without in-task approval? | `propose` — put it in the SPEC's setup plan and wait |
+| `commit` | may the skill create checkpoint commits without in-task approval? | `propose` |
+| `commit_args` | flags the repo *mandates* on every commit — signing (`-S`), a trailer, a sign-off. Policy says **whether** you may commit; this says **how** the repo requires it done | `[]` — but detect: a repo rule or CI check requiring signed commits is a mandate the skill must honor, not a preference |
+| `tracker` | may the skill post the completion roll-up to the issue the SPEC names, without in-task approval? | `propose` — write the note into the artifact directory and let the human post it |
+| `artifacts` | root directory for per-task SPEC, EVIDENCE, and logs | `.old-coder` at the repo root |
+| `commands.test` / `.lint` / `.types` | the project's real commands | detect; if detection finds nothing, fall back to the ecosystem tables in `gauntlet.md` |
+
+Values are only ever these spellings. Use the same key names verbatim in SPEC
+and EVIDENCE when you cite them.
+
+## Procedure (idempotent)
+
+1. **Read the existing config** if there is one. Re-running setup is a normal
+   operation: show the current value of every key and let the human change one
+   without restating the rest.
+2. **Detect**, don't ask:
+   - commands: `package.json` scripts, `Makefile` targets, `pyproject.toml`
+     (`[tool.pytest]`, script entries), `justfile`, `.mise.toml` tasks, and the
+     CI workflow — CI is the most reliable source, because it is the invocation
+     the project actually gates merges on.
+   - isolation: whether this is a git repo, and whether the tree is dirty.
+   - artifacts: whether a directory already exists from a previous run.
+   - `commit_args`: repo rules and CI checks that mandate a commit style —
+     required signatures, required trailers.
+3. **Propose the whole file** as a diff-shaped block, each value annotated with
+   where it came from ("test: from package.json scripts.test").
+4. **Confirm once.** The human accepts, or corrects individual lines.
+   **Write nothing before this point — including `.old-coder.toml` itself.**
+   Setup proposes a config that grants the skill permissions; writing it and
+   then asking inverts the gate. If nobody is present to confirm, do not write
+   the file: run with the restrictive defaults and say so in EVIDENCE.
+5. **Write `.old-coder.toml` and add it to `.gitignore`**, together with
+   `<artifacts>/*/logs/` (see "Gitignored by default" and "Tracked or
+   ignored?"). Skip the second entry when `artifacts` points outside the repo —
+   there is nothing for git to track.
+6. **Report** what was written; do not re-propose on later tasks unless asked or
+   unless detection now disagrees with the recorded commands.
+
+## Gitignored by default
+
+Add `.old-coder.toml` to `.gitignore` when writing it. This is not tidiness: it
+makes every permission **grant** local by construction. A grant that lives in
+the repo is a grant to every agent run by everyone who clones it.
+
+If the human explicitly wants the file tracked — a team standardizing the
+commands — that is fine, subject to the next rule.
+
+## Restrict-only asymmetry
+
+Check whether it is tracked — do not assume:
+
+```sh
+git ls-files --error-unmatch .old-coder.toml   # exit 0 = tracked, non-zero = not
+```
+
+If `.old-coder.toml` is **tracked by git**, honor only the settings that
+*tighten* permissions, and ignore the ones that *loosen* them:
+
+| Setting | Tracked file may set it to | Ignored if tracked |
+|---|---|---|
+| `install` | `propose` | `allow` |
+| `commit` | `propose` | `allow` |
+| `tracker` | `propose` | `allow` |
+| `isolation` | `worktree`, `branch`, `auto` | `none` |
+| `artifacts`, `commit_args`, `[commands]` | any value — these grant nothing | — |
+
+Rationale: a committed grant silently authorizes agents run by anyone who
+clones the repo, including on an untrusted fork or a PR branch you did not
+write. Tightening carries no such risk, so tightening travels with the repo and
+loosening stays local. When you ignore a loosening setting, say so once in
+EVIDENCE (`install = allow ignored: config is tracked`) rather than silently.
+
+## The permission combining rule
+
+State it once, apply it everywhere:
+
+> An operation proceeds if **policy permits it AND (it is reversible OR an
+> approver is present)**. Policy can grant standing permission; it cannot
+> manufacture a human.
+
+- **Reversible work proceeds unattended**: writing test files, running the
+  suite, running the gauntlet, writing SPEC/EVIDENCE artifacts.
+- **Installs, commits, and tracker posts are not reversible in the same cheap
+  way**, so they need either standing policy permission (`install = "allow"` /
+  `commit = "allow"` / `tracker = "allow"`) or an in-task approver. With
+  `propose` and nobody there, do not do it — record the consequence in EVIDENCE
+  and continue.
+
+A tracker post is the one operation here that can reach beyond the repo: on a
+hosted tracker it notifies people and cannot be un-sent. That is why it is
+gated, and why `propose` means *write the note, do not post it*. The skill ends
+at EVIDENCE; `tracker = "allow"` is the human moving that boundary themselves,
+for one tracker, on one machine, in a file that is not committed.
+
+## Isolation detection chain
+
+The invariant, not the mechanism, is what matters:
+
+> **Never mutate the user's working tree to do your work, and verify in the
+> tree that will actually receive the merge.**
+
+With `isolation = "auto"`, choose by detection. Declare the chosen mechanism in
+the SPEC so the human can see and veto it.
+
+| Condition | Isolation |
+|---|---|
+| Not a git repo | `none` — propose `git init` in the SPEC's setup plan |
+| Git repo, parallel agents running or the user is actively working in the tree | `worktree` |
+| Git repo, exclusive access | `branch` is sufficient |
+| Worktree created but the gauntlet cannot run there | fall back to `branch`, and record why in EVIDENCE |
+
+That last row is the common one, and it is not obvious: **a fresh worktree
+contains no gitignored content.** No `node_modules`, no `.venv`, no build
+outputs, no local `.env`. In many projects the gauntlet simply cannot run in a
+new worktree until the dependency tree is rebuilt, which can cost minutes per
+task. Two acceptable outcomes, and no third:
+
+1. Rebuild the dependencies in the worktree and run the gauntlet there.
+2. Fall back to a branch in the main tree, and write in EVIDENCE:
+   `isolation: branch (worktree lacked <what> and could not run the gauntlet)`.
+
+**Never report green from a tree that never ran the suite.** "Isolation
+succeeded" is not a gauntlet result.
+
+Whenever the isolated tree and the integration tree differ by ignored or
+untracked content, the integration-tree verification layer applies — see
+`gauntlet.md`.
+
+## Artifacts layout
+
+One directory **per task**, not per session — a session runs several tasks and
+they would collide. Name it at SPEC time and keep using it for the whole task:
+
+```
+<artifacts>/<YYYYMMDD-HHMMSS>-<slug>/
+  SPEC.md
+  EVIDENCE.md
+  ROLLUP.md        # only when the SPEC names a tracker issue
+  logs/
+    tests.log
+    types.log
+    ...
+```
+
+- `logs/` is created at the start of the gauntlet run, before any redirect. A
+  redirect into a directory that does not exist runs the command not at all —
+  no log, no result, and an EVIDENCE row citing a path that was never written.
+- Timestamp is **UTC** (`date -u +%Y%m%d-%H%M%S`). Local time can produce two
+  identical directory names across a DST fall-back.
+- **No colons** anywhere in the name — illegal in Windows paths.
+- Slug is lowercased and reduced to `[a-z0-9-]`, capped at roughly 40
+  characters, so the full path stays inside path-length limits.
+
+Per-task **outputs** live in this directory. Reusable **scripts**
+(`tools/mutants.py`, `tools/gauntlet.sh`) stay at repo level, because EVIDENCE
+promises the human can rerun them later; a script inside a dated task directory
+is an output, not a tool.
+
+Both scripts are **files the SPEC's setup plan must name by path**. That is what
+turns "EVIDENCE promises the human can rerun them" into something that happens:
+an unnamed, unauthorized script gets replaced under time pressure by a throwaway
+edit in a scratch directory, and EVIDENCE ends up honestly reporting a gap
+instead of citing a command. If the repo already has them from a previous task,
+say so in the setup plan instead — reuse is the cheap case, silence is the
+failure case.
+
+### Tracked or ignored?
+
+**Track `SPEC.md` and `EVIDENCE.md`; ignore `logs/`.** That is the default, and
+the first half of it is not a preference.
+
+**Gitignoring the artifact directory silently disables the spec-drift
+mechanism.** The skill's enforcement for "the spec is append-only, never
+silently drift" is: commit `SPEC.md` at approval, so any later divergence is a
+`git diff`. A gitignored `SPEC.md` can never be committed, so there is nothing
+to diff against — the rule survives as an instruction the agent may follow, and
+loses the mechanism that made it checkable. Nothing warns you: the skill keeps
+running, EVIDENCE keeps claiming append-only, and the guarantee is gone.
+
+So the honest cost table:
+
+| Choice | Audit trail | "Reproducible from the repo alone" | Spec-drift detection |
+|---|---|---|---|
+| Track `SPEC.md` + `EVIDENCE.md`, ignore `logs/` | travels with the repo | true, except log paths are local | **intact** |
+| Track everything | travels with the repo | literally true | intact |
+| Ignore the whole directory | local only | false | **gone** |
+
+Ignoring the whole directory is defensible only where the evidence reaches
+reviewers by some other durable route (pasted into a review, attached to a
+ticket) *and* the owner accepts losing drift detection. If you choose it, say
+both things in EVIDENCE — "artifacts gitignored; spec-drift detection not
+available this run" — because a reader cannot infer it.
+
+Whichever is in effect, state it in EVIDENCE. When `logs/` is ignored, note that
+the log paths EVIDENCE cites are local only.

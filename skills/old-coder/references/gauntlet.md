@@ -1,7 +1,20 @@
 # Gauntlet Tooling by Ecosystem
 
-Prefer whatever the project already uses (check package.json / pyproject.toml /
-Makefile / CI config first). These are the defaults when nothing exists.
+## Configured commands beat guessed ones
+
+Command resolution has a strict order:
+
+1. **`[commands]` in `.old-coder.toml`** (see `setup.md`) — always wins.
+2. **Detection** — package.json scripts, Makefile targets, pyproject, justfile,
+   CI workflow.
+3. **The tables below** — fallbacks, used only when 1 and 2 find nothing.
+
+Treat the tables as last resort, not as prescription. A project's real test
+command usually encodes setup the raw tool call skips: virtualenv selection,
+per-branch environments, required flags, service fixtures. And many repos
+forbid the exact invocation a table suggests — a repo standardized on `pnpm`
+will reject `npx`. Guessing does not fail loudly; it produces confident, wrong
+evidence, which is the one failure mode this skill exists to prevent.
 
 ## Python
 
@@ -70,101 +83,334 @@ New dependencies are a SPEC matter first, a tool matter second: each one needs
 a one-line justification in the setup plan, and EVIDENCE records the final
 dependency diff so the human can see exactly what the agent pulled in.
 
+## Integration-tree verification
+
+> A green run in an isolated tree is not evidence about the tree the change
+> lands in, whenever the two differ by ignored or untracked content. Re-run the
+> suite there before claiming done.
+
+The failure this prevents is concrete: a change passes every layer in a
+worktree and breaks the main tree on merge, because the main tree contains
+ignored files the isolated one lacked — a local `.env`, a built asset, a
+stale generated module, a differently-resolved `node_modules`.
+
+Applies **whenever the two trees differ by ignored or untracked content**, which
+is nearly always for a worktree and never for a plain branch in the same tree.
+When it does not apply, say why in EVIDENCE (`n-a: branch isolation, same
+tree`); do not leave the row blank.
+
+**Do not merge, rebase, or commit into the integration tree.** That reading is
+the dangerous one: many repos forbid committing to the landing branch outright,
+and where a worktree already holds the branch, the main checkout cannot check it
+out at all. It also violates this skill's own invariant — *do not mutate the
+user's working tree to do your work*. Verifying in a tree is not the same as
+landing in it, and landing is the human's call, after EVIDENCE.
+
+The default technique applies the diff **uncommitted** and reverts:
+
+```sh
+cd <integration tree>
+git status --porcelain > /tmp/before.txt        # the tree must be clean first; if not, stop
+git diff <base>..<tip> | git apply -            # apply, do not merge
+<test command> > "$LOGS/integration.log" 2>&1
+git checkout -- .                               # revert tracked changes, always
+git clean -nd                                   # list what the diff added; remove those paths
+git status --porcelain                          # must match /tmp/before.txt
+```
+
+Three things that go wrong if you shorten it: `git checkout -- .` does not
+remove **new files** the diff added, so a diff that adds a module leaves it
+behind — hence the `git clean -nd` review step, listed before deleting rather
+than `-f` blind. A dirty starting tree makes the revert ambiguous, so check
+first and stop rather than guess. And `git apply` failing partway leaves the
+tree half-patched: treat a non-zero exit as "revert now and report", not as
+something to fix forward.
+
+Report both results — the isolated run and the integration run — as separate
+numbers, never merged into one, and state which technique produced the
+integration number.
+
+## Adversarial review by an independent agent
+
+Self-review has the same correlation problem the rest of this skill works to
+break: the author knows why the code is right and will find reasons it is.
+Tier 3 changes, and **any change to code the author did not write**, get a
+review from an agent that shares none of that reasoning.
+
+**Use a fresh general-purpose subagent with no inherited context.** Do **not**
+use a "fork"-style subagent that inherits the parent conversation — it inherits
+the author's justification for the design and will rubber-stamp it. Breaking
+that correlation is the entire point of this layer.
+
+Brief the reviewer to **falsify**, not to review:
+
+> Your job is to falsify the claim that this change is correct.
+
+Give it the diff, the SPEC, and this named list of failure classes to hunt:
+
+- behavior drift in anything presented as a pure move or rename
+- tests that assert a refactor happened rather than asserting behavior
+- tests that would still pass if the function under test returned a constant
+- test doubles that no longer bind to the executing call site
+- credential handling — construction, logging, storage, transport
+- state read before it is initialized
+- import cycles introduced by the change
+
+Require each finding to carry:
+
+- `file:line`
+- a concrete scenario: specific inputs → the specific wrong output or crash
+- a verdict of **CONFIRMED** or **PLAUSIBLE**
+
+**The author triages; the reviewer is not the authority.** Verify every claim
+against the code before acting on it. Reviewers do report things that are simply
+wrong, and saying so with evidence — quoting the code that refutes the finding —
+is part of doing this layer properly, not a way of dodging it.
+
+### Dismissing a finding costs more than fixing one
+
+This is the one place the trust model has no backstop: the author grades their
+own homework and the reviewer never gets a second look. Fixing a finding is
+self-evidencing — the diff and the rerun show it. Dismissing one produces
+nothing but prose written by the person the finding was about. So a dismissal
+carries a higher burden of proof than a fix:
+
+- **Cite the specific check that disproves it** — a command and its output, a
+  `file:line` that contradicts the claim, or the name of the test that already
+  covers the case. "I looked and it is fine" is not a dismissal, it is a
+  refusal. (A good one, from a real run: a finding claimed a helper was dead
+  code; the author named the test that calls it. That is checkable in seconds
+  by anyone.)
+- **A dismissal resting on "no better alternative exists" must argue it per
+  call site**, not for the class. "A behavioral test would have to execute a
+  path that ends in `exec`" can be true of one call site and false of its
+  neighbour — and if it is false anywhere, the dismissal is wrong there. Walk
+  each site; say which ones the argument actually covers.
+- **Downgrade, don't dismiss, when the argument only partly holds.** Accepting
+  a weaker test as a known limit is legitimate; recording it as a limit and as
+  a defensible-for-now choice is honest. Recording it as refuted, when the
+  reviewer was right and the fix was merely inconvenient, is the failure mode.
+- **An unfalsifiable dismissal is a CONFIRMED finding you did not fix.** If you
+  cannot state what observation would show the reviewer right, you have not
+  refuted anything — carry it into EVIDENCE's known limits with that status.
+
+**Re-run the gauntlet after resolving CONFIRMED findings.** A review fix is a
+code change like any other: every EVIDENCE number must come from a run that
+post-dates it. "2 CONFIRMED (all resolved)" above a test count from before the
+fixes is exactly the stale-number failure the final-fresh-run rule exists to
+prevent.
+
+**Two rounds maximum.** If a second round still finds CONFIRMED problems, the
+change is too entangled to be verified this way: abandon it and take a smaller
+cut. That is a legitimate outcome, not a failure of nerve. Report it in EVIDENCE
+as `Adversarial review | abandoned after round 2 | <findings that drove it>`,
+with every other layer marked `n-a: change abandoned` — an abandoned change has
+no green result to report, and must never be written up as one.
+
+### What this layer cannot prove
+
+Be honest about it in EVIDENCE, because it is the one layer with no independent
+artifact. Every other layer's log is written by a tool; `logs/review.log` is
+written by **you**, summarizing a reviewer the human never saw. A fork-based
+reviewer, or no reviewer at all, produces text indistinguishable from an honest
+run. So:
+
+- Record the reviewer's **model and agent type** in EVIDENCE, not just the word
+  "independent" — a claim specific enough to be wrong is worth more than one
+  that is not.
+- Say plainly in EVIDENCE that this layer rests on self-report, so a reader
+  weights it below the tool-generated layers and can ask for the reviewer's
+  full transcript when the findings matter.
+- Anti-gaming rule 5 applies with full force: an invented review is a fabricated
+  layer, and fabricating this one is easier than fabricating any other.
+
+### Fix what you wrote; file what you moved
+
+When review finds a latent bug in code the change only *relocated*, file it as
+follow-up work — do not fix it inside a change that claims to be
+behavior-preserving. Mixing the two costs the reviewer the one thing that makes
+a move cheap to review: the ability to treat a move as a move. State the split
+explicitly in EVIDENCE ("bug found in relocated code at `file:line`; filed, not
+fixed here") so it reads as a decision rather than an oversight.
+
+## Capturing command output
+
+Every gauntlet layer **redirects its output to its own log** under the task's
+`logs/` directory. Once `tools/gauntlet.sh` exists (see "Gauntlet entry point"
+below, which is where you write it), it enforces this by construction —
+mechanism, not discipline, in the same way it deletes stale artifacts at start.
+Until then, do it by hand on every command. Either way the log you read is the
+final fresh run's log.
+
+```sh
+LOGS="$ARTIFACT_DIR/logs"
+mkdir -p "$LOGS"          # redirect to a missing directory runs nothing at all
+<test command>  > "$LOGS/tests.log" 2>&1
+<types command> > "$LOGS/types.log" 2>&1
+```
+
+Why this belongs in *this* skill and not just in a general efficiency rule:
+EVIDENCE requires every number to come from one final fresh run. Re-running a
+suite to grep it a second way means the reported number and the grepped output
+came from two different events — and on a flaky or order-randomized suite they
+can genuinely disagree. The log file is the evidence substrate. **Cite the log
+path next to each number in EVIDENCE** so any claim is traceable to an observed
+run.
+
+- **Redirect, don't `tee`.** `tee` is the instinctive choice and the wrong one:
+  it dumps the whole run into the agent's context, which is the cost being
+  avoided. `cmd > log 2>&1` also leaves the exit code direct.
+- **Read a bounded slice** — `tail -30 "$LOGS/tests.log"`, or pull the summary
+  line out with `rg`. Reading the whole log just relocates the waste.
+- **Anti-pattern**: `pytest | tail -50` followed by `pytest | rg -i error`. That
+  is two runs of the same thing. One run, two queries against the file.
+- **Honest tradeoff**: a redirected run shows no live progress. For a long
+  suite, say that it is running before starting it, then read the tail — an
+  agent that goes silent for four minutes reads as hung.
+
 ## Manual mutation procedure (any language, no tool)
 
-Script this rather than hand-editing, and **persist the script in the repo**
-(e.g. `tools/mutants.py`): it holds the original source, applies each mutant by
-unique string replacement, runs the suite, and restores. Hand-editing N times
-invites restore mistakes, and the EVIDENCE rule (all numbers from one final
-fresh run) means you will run the mutants at least twice — a persisted script
-makes the rerun free, the mutant list auditable, and the reported score
-re-runnable by the human, which a scratch-directory script is not.
+**The mutants are a committed file, not a sequence of edits.** This is the step
+most likely to decay back into ad-hoc source edits in a scratch directory,
+because hand-editing feels faster for the first mutant and the cost only lands
+later. Write the script first; there is no "just this once" version of this
+layer.
+
+Where it goes: **repo level** — `tools/mutants.py` (or the ecosystem
+equivalent), beside `tools/gauntlet.sh`, never inside the dated artifact
+directory and never in a scratch dir. It is a tool the human reruns after the
+task is over, not an output of the task. It must be named in the SPEC's setup
+plan, so approving the spec authorizes creating it.
+
+Three things the script buys that hand edits cannot:
+
+- **A re-runnable score.** EVIDENCE claims "12/12 killed"; the human types one
+  command and gets 12/12. A list of edits to re-apply by hand is not
+  reproducibility, it is instructions for reproducing it yourself.
+- **A free rerun.** The EVIDENCE rule (all numbers from one final fresh run)
+  means the mutants run at least twice. The second run costs nothing.
+- **Debris control.** A mutation run that dies midway leaves the source
+  modified, or leaves stray files a mutant's code path wrote. The script
+  restores in a `finally` and then *verifies* with `git diff --exit-code` and a
+  check for new untracked files, so "restored clean" is a mechanism rather than
+  a claim.
+
+Shape — a table of mutants as data, plus a runner:
+
+```python
+# tools/mutants.py — each mutant is (path, old, new, label); `old` must be unique in the file.
+MUTANTS = [
+    ("src/pkg/rules.py", "if n <= limit:", "if n < limit:",  "off-by-one on the limit"),
+    ("src/pkg/rules.py", "return matches",  "return matches[:1]", "only the first match reported"),
+]
+# for each: read file → assert old occurs exactly once → write mutated → run the suite
+# → expect NON-ZERO exit (a zero exit is a SURVIVOR) → restore in `finally`.
+# after the loop: `git diff --exit-code` and `git status --porcelain` must both be clean.
+```
 
 1. Pick the new/changed implementation code.
-2. One at a time, introduce 3–5 plausible bugs, biased toward the logic that
-   matters most:
+2. Write 3–5 plausible bugs into the table, biased toward the logic that matters
+   most:
    - flip a comparison (`<` → `<=`, `==` → `!=`)
    - off-by-one a loop bound or slice index
    - delete one branch of a conditional / remove an early return
    - swap `and`/`or`; negate a boolean
    - replace a returned value with a constant (`0`, `null`, `""`)
-3. Run the test suite after each mutant. **Every mutant must make at least one
-   test fail.** A surviving mutant means a missing or vacuous assertion — add
-   the test that kills it, then continue.
-4. Restore the original code (verify with `git diff` that only intended changes
-   remain) and run the suite once more to confirm green.
-5. Report as: "manual mutation: N/N killed".
+3. Run the script. **Every mutant must make at least one test fail.** A
+   surviving mutant means a missing or vacuous assertion — add the test that
+   kills it, then rerun the whole script.
+4. The script's own restore check (`git diff --exit-code` clean, no new
+   untracked files) is the proof the tree came back; run the suite once more to
+   confirm green.
+5. Report as: `manual mutation | python tools/mutants.py | N/N killed` — the
+   command is part of the claim. A score with no command is an incomplete
+   EVIDENCE row.
+
+Include a **control mutant** when the set is small (1–2 real mutants): one
+deliberate, obviously-fatal break whose death proves the harness detects
+mutations at all. A "1/1 killed" from a harness that never actually ran the
+suite looks identical to a real result.
+
+### Callout: mutation testing on relocated code
+
+Not a separate layer — a reason to run the existing one after a move. When a
+symbol changes location, tests that patch it *by location* silently stop
+applying: they keep passing while asserting nothing. Python's
+`monkeypatch.setattr` binds per-module, so patching the old module no longer
+affects the new call site; `jest.mock` binds by path, with the same result.
+
+Mutation testing already catches this — a test that asserts nothing kills no
+mutants. Say so explicitly, because a passing suite immediately after a move is
+the case people most readily trust and the case most likely to be hollow.
 
 ## Gauntlet entry point
 
 Persist one command that runs every layer in sequence and fails on the first
 broken one (e.g. `tools/gauntlet.sh`: tests+coverage → types → lint → mutation
-→ real execution). Start the script by deleting stale artifacts from previous
-runs (old coverage data, report files) so no layer can accidentally read a
-prior run's output — freshness by mechanism, not discipline. (Keep tool
+→ real execution). It takes the task's artifact directory as an argument and
+writes each layer's output to `<artifact dir>/logs/<layer>.log`. Start the
+script by deleting stale artifacts from previous runs (old coverage data,
+report files, the previous logs) so no layer can accidentally read a prior
+run's output — freshness by mechanism, not discipline. (Keep tool
 databases that accumulate value, e.g. hypothesis's example store.) The "final
 fresh run" IS this command; EVIDENCE cites it, and the human can rerun the
-whole report with it. Pin dev-tool versions
+whole report with it. It runs whatever `[commands]` in `.old-coder.toml`
+specifies, so the script and the config never disagree. Pin dev-tool versions
 (requirements-dev.txt, package.json devDependencies with exact versions, etc.)
 so the rerun uses the same gauntlet.
 
-## Gherkin scenario template (for the SPEC step)
+Skeleton — adapt the commands, keep the structure. The three lines that carry
+the mechanism claims are the `set -e`, the stale-artifact delete, and the
+`mkdir -p`; drop any of them and "by construction" stops being true:
 
-```gherkin
-Feature: <capability in user language>
-  Scenario: <one concrete behavior>
-    Given <concrete starting state>
-    When  <concrete action with concrete input>
-    Then  <concrete observable outcome, exact values>
+```sh
+#!/usr/bin/env bash
+set -euo pipefail
+ARTIFACT_DIR="${1:?usage: gauntlet.sh <artifact dir>}"
 
-  Scenario: <the error case>
-    Given ...
-    When  <invalid/hostile input>
-    Then  <exact error type/message/status, and what state must NOT change>
+# Guard the delete below: refuse anything that is not a real task directory.
+[ -f "$ARTIFACT_DIR/SPEC.md" ] || { echo "not a task artifact dir: $ARTIFACT_DIR" >&2; exit 2; }
+LOGS="$ARTIFACT_DIR/logs"
+
+rm -rf "$LOGS" .coverage coverage.xml <other stale report files>
+mkdir -p "$LOGS"
+
+<test+coverage command>  > "$LOGS/tests.log"        2>&1
+<coverage report command> > "$LOGS/coverage.log"    2>&1
+<types command>          > "$LOGS/types.log"        2>&1
+<lint command>           > "$LOGS/lint.log"         2>&1
+<mutation command>       > "$LOGS/mutation.log"     2>&1   # the persisted script, e.g. python tools/mutants.py
+<property command>       > "$LOGS/property.log"     2>&1
+<dep audit + secret scan> > "$LOGS/supply-chain.log" 2>&1
+<randomized-order run>   > "$LOGS/suite-health.log" 2>&1
+<real-execution command> > "$LOGS/run.log"          2>&1
+echo "gauntlet: all layers passed; logs in $LOGS"
 ```
 
-Each scenario maps 1:1 to at least one automated test; name the test after the
-scenario so the evidence report's spec→test mapping is mechanical.
+The guard matters because this script is generated by an agent and run
+unattended. `${1:?}` catches an *empty* argument, not a dangerous one:
+`gauntlet.sh /` would make the delete `rm -rf //logs`. Requiring `SPEC.md` to
+exist in the directory means the only thing it will ever delete is a directory
+this skill created.
 
-## Evidence report template (for the EVIDENCE step)
+`set -e` is what makes "fails on the first broken layer" true; without it the
+script runs every layer and exits 0 on the last one, which reports green from a
+run that had failures in it. The consequence is one failure per run: you fix,
+rerun, and meet the next one. On a slow gauntlet that is worth knowing in
+advance, so a clean tail after a fix is not misread as "only one thing was
+wrong" — nothing after the first failure had a chance to run.
 
-```markdown
-## Evidence Report — <task name> (Tier <1|2|3>)
+**Every EVIDENCE row must cite a log this script actually writes.** Two rules
+keep that true:
 
-- Spec approval: <obtained from user | not obtained (autonomous run) —
-  confidence downgraded; spec is the artifact to review after the fact>
-- Source state: <commit SHA | no git: sha256 tree hash> — persist the
-  computation as a script (e.g. tools/source_state.sh); a hash recipe written
-  in prose is working-directory-sensitive and will fail to reproduce
-- Toolchain: <pinned versions file, e.g. requirements-dev.txt>
-- Entry point: <single command that reruns every layer>
+- Where one command covers several layers (a test run that also produces
+  coverage, or hypothesis properties that run inside the suite), cite the log
+  that *contains the number* — the same log may appear on several rows. Do not
+  invent a filename for a command you did not run separately.
+- Layers no script can run — adversarial review, integration-tree verification,
+  and complexity budget where it is a judgement rather than a tool — are marked
+  `manual` in the EVIDENCE Log column, never given a log path.
 
-### Spec → Test mapping
-Status is one of: **pass / fail / unverified / n-a**. A row mapped to
-"skipped: <reason>" must carry unverified or n-a — never pass.
+## Templates
 
-| Scenario | Test | Status |
-|---|---|---|
-| <scenario name> | <test file>::<test name> | pass |
-| Must NOT: <negative constraint> | <test / layer / skipped: reason> | pass \| unverified |
-
-### Gauntlet (final fresh run)
-| Layer | Command | Result |
-|---|---|---|
-| Tests | <cmd> | <N> passed, 0 failed |
-| Types | <cmd> | 0 errors |
-| Lint | <cmd> | 0 warnings |
-| Changed-line coverage | <cmd> | <covered>/<total> changed lines (list any misses) |
-| Mutation | <tool or "manual"> | <killed>/<total> killed |
-| Property-based | <cmd> | <N> properties, <examples/property> examples each |
-| Real execution | <cmd> | <observed output> |
-| Supply chain | <cmd> | 0 known vulns; new deps: none (or list, each ↔ SPEC justification) |
-| Suite health | <cmd> | randomized order (seed <n>), all passed |
-
-### Skipped layers
-- <layer>: <reason>  (or "none")
-
-### Honest notes
-- <failures hit during the task and how they were resolved; spec revisions; anything reducing confidence>
-```
-
+The `SPEC.md` and `EVIDENCE.md` templates live in `templates.md`.
