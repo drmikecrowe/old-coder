@@ -279,6 +279,7 @@ the answer in EVIDENCE's per-layer yield.
 | Mutation testing | tests that assert nothing | the project's mutation tool (mutmut, cosmic-ray, Stryker, PIT…), which generates mutants from the syntax tree. **No tool in the project? Ask for one and report the layer `UNAVAILABLE` until it arrives** — see "Tooling belongs to the project" below. Do not hand-roll a substitute: a script holding hand-written mutants matched against source text is a second copy of the code, and it breaks on every refactor of the thing it is meant to guard |
 | Property-based tests | edge cases you didn't imagine | for parsing, math, serialization, anything with invariants (round-trip, idempotence, ordering) — add hypothesis/fast-check properties |
 | Complexity budget | unmaintainable output | new functions small and single-purpose; if a function needs a paragraph to explain, split it |
+| Parity with the authority | a second implementation that drifts from the first | Whenever the change RE-IMPLEMENTS something that already exists in executable form — a shell pipeline rewritten in Python, a regex ported between languages, a schema restated in code, a rule the build already enforces — the test must **run both and compare outputs on the same inputs**. Never assert the equivalence in prose: a docstring saying "reads the file the way the Dockerfile does" is a claim, and claims are what this skill exists to replace. The comparison must read the authority **from its source at test time**, not from a copy pasted into the test — a copy agrees with your reading forever, including after the original changes. Cannot execute the authority from a test? That is `SUBSTITUTED`, and name what the substitute cannot see |
 | Real execution | "passes tests, doesn't run" | actually run the app/CLI/endpoint once on a realistic input, not only the test harness |
 | Supply chain & secrets | vulnerable/unnecessary deps, leaked credentials | when the dependency set changed: audit it (pip-audit / npm audit / govulncheck / cargo-audit) and check licenses; scan the diff for secrets; every new dependency must trace back to its SPEC justification. Also eyeball the capability diff: did the change start using network / subprocess / filesystem / env it didn't before? |
 | Suite health | flaky or order-dependent tests | run the suite in randomized order (pytest-randomly etc.); repeat suspected flakes. Every EVIDENCE number rests on the suite being deterministic — a flaky suite quietly invalidates the report |
@@ -294,10 +295,34 @@ satisfy. Then test the correction against that sentence, not against the words o
 symptom-shaped correction passes the new test. It leaves the invariant broken one line away. This is how a loop of six lines takes three review rounds instead of one. The rounds stop
 when someone writes "the deadline limits when a probe STARTS, not when a sleep ends".
 
+**Reuse carries the failure mode, not just the signature.** When you call an existing function from
+a new context, the types lining up is the easy half. Ask what it does when it FAILS, and whether
+that fits where you have just put it. A validator that refuses the whole input is right for a gate
+and wrong for a sweep — reuse it in the sweep and one bad record silently discards every good one,
+while the call site reads perfectly. Same question for dispatch: **the default branch must be the
+safe one, or there must be no default.** `else: <the destructive handler>` is safe only for as long
+as nobody adds a case, and it reads as deliberate long after it stopped being true. Prefer an
+allow-list that skips what it does not recognise.
+
 **Each finding is a class, not one instance.** When a layer or a reviewer finds a defect, search the
 diff for other instances of the same shape before you call it corrected. Also verify that you did
 not put back an instance that you corrected earlier. A defect corrected twice and shipped a third
 time was three instances of one class that nobody named.
+
+Both rules above are old and both keep getting read past, because a finding arrives wearing the
+clothes of one line of code. So they are steps, not sentiments — do all three before any finding is
+marked fixed:
+
+1. **Write the class in one sentence**, in the commit or the fix note. Not the symptom
+   ("CRLF broke the parser") but the generator ("Python's idea of a line is not the pipeline's").
+2. **Search for siblings and record the search.** If the class is "Python and this tool disagree
+   about separators", enumerate every separator the two treat differently and test the lot — do not
+   fix the one that was reported. An enumeration you can write down is a class you have closed; a
+   spot fix is an instance you have closed.
+3. **Brief the next review round with the CLASS, not the fix.** A reviewer told "CRLF was fixed"
+   re-checks CRLF. A reviewer told "the author has twice confused Python's line-splitting with
+   awk's — hunt that" finds the third instance. This is the single cheapest upgrade available to
+   the adversarial layer, and it costs one sentence in the prompt.
 
 Baseline note — on a repo with pre-existing failures, record the baseline
 first (which tests already fail, verbatim) and hold the line at zero NEW
@@ -319,6 +344,15 @@ be killed. Classify such survivors as "equivalent, because <reason>" in
 EVIDENCE rather than adding a meaningless test to kill them — that would
 violate anti-gaming rule 4. Hand-written mutants (the manual procedure) get no
 such excuse: you chose them, so choose real bugs.
+
+Unreachable-mutant note — **a mutant your harness cannot reach is a design smell, not a footnote.**
+When a survivor turns on ambient state the tests cannot vary — the locale, the clock, the platform,
+an unset env var — the honest classification is "not equivalent, unkillable here", and the honest
+next move is to **delete the degree of freedom rather than describe it**. An implicit dependence on
+the environment is almost always a choice: pin the encoding, inject the clock, pass the value. Then
+the mutant dies and the paragraph explaining it is unnecessary. Reach for the paragraph only when
+the dependence is genuinely inherent. "No test in this process can vary it" is a reason to remove
+the variable, not a licence to ship it documented.
 
 #### Tooling belongs to the project — you do not write it
 
@@ -398,6 +432,13 @@ End with a report the human can trust without opening a single source file
   (for example, a suite that never exercises the container runtime). Name it in
   every report, not once in a README: knowing which claims are unverifiable is
   what lets a reader judge how far to trust the rest.
+- **Every limitation, filtered first.** Before a known limit goes in the report, ask whether it is a
+  property of the world or a property of your own choice. A limit you could close by pinning a
+  value, injecting a dependency, or narrowing an interface is **an unfixed defect wearing a
+  limitation's clothes** — close it and delete the line. The "known limits" section is the easiest
+  place in this report to launder a defect into a disclosure, because writing it feels like rigour.
+  The test of whether you got this right comes later and is unambiguous: **when a reviewer files
+  something you had already documented, that is a defect you shipped, not a duplicate they missed.**
 - Anything that failed and how it was resolved, honestly. A gauntlet you passed
   on the first try and a gauntlet you fixed your way through are equally fine;
   a gauntlet you quietly weakened is the only failure.
@@ -440,6 +481,13 @@ The gauntlet only creates trust if it cannot be gamed. These are hard rules:
    can claim "fails safe", "refuses", "cannot leak", or "is limited". For each such claim, a test
    must supply the unsafe input and report the refusal. A claim attached to a mechanism is not
    evidence about the property. The label also propagates: it reaches EVIDENCE as verified.
+   Make it a pass, not a good intention: **before EVIDENCE, reread the prose you wrote in the diff**
+   — docstrings, comments, test names — and list every behavioural claim in it. Map each to the test
+   that holds it, or delete the claim. The dangerous ones read as description rather than promise
+   ("skipped rather than fatal", "never raises", "preserves comments", "reads it the way X does"),
+   and they are most often written at the moment you intended the behaviour rather than the moment
+   you built it. A docstring that outlives the behaviour it describes is worse than no docstring:
+   the next reader treats it as tested.
 7. **Failing gauntlet blocks done.** You are not finished while any layer fails.
    If you're genuinely blocked, report the failure verbatim as the outcome.
 
