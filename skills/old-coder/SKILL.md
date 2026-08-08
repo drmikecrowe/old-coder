@@ -1,9 +1,34 @@
 ---
 name: old-coder
-description: Evidence-first development — surround the implementation with an executable spec and a gauntlet of constraints (tests, types, coverage, mutation) so line-by-line review becomes optional. Use when the user explicitly asks for high-assurance or evidence-first work ("reliable", "TDD", "prove it works", "I won't read the code"), or when the change touches high-stakes domains (money, auth, data loss, concurrency, public API). Work happens in an isolated branch or worktree and ends at an evidence report — this skill never pushes, opens a PR, or publishes, except an optional tracker roll-up, and only where explicitly granted. For routine changes where the user just wants normal tests, write good tests directly instead of invoking this loop.
+description: Evidence-first development — surround the implementation with an executable spec and a gauntlet of constraints (tests, types, coverage, mutation) so line-by-line review becomes optional. Use when the user explicitly asks for high-assurance or evidence-first work ("reliable", "TDD", "prove it works", "I won't read the code"). Also load it when the user did NOT ask but the change touches a high-stakes domain (money, auth, data loss, concurrency, public API) — in that case the first and only act is to OFFER the loop in one sentence and stop, so a wrong guess costs a sentence and no files. Work happens in an isolated branch or worktree and ends at an evidence report — this skill never pushes, opens a PR, or publishes, except an optional tracker roll-up, and only where explicitly granted. For routine changes where the user just wants normal tests, write good tests directly instead of invoking this loop.
 ---
 
 # Old Coder: Reliable Coding Under Constraint and Test
+
+## First: did the human ask for this loop?
+
+This loop is expensive. It starts with a spec file, an approval, and a tools
+audit. That cost is correct when the human wants it. It is waste when they want
+a small fix.
+
+- **The human asked for it.** They used the skill name, or words like
+  "reliable", "TDD", "prove it works", or "I will not read the code". Start at
+  step 1 below.
+- **The human did not ask, and you loaded this because the change looks
+  high-stakes** — money, auth, data loss, concurrency, or a public API. Your
+  first act is an OFFER, and it is your only act. Write one or two sentences.
+  Name the domain you saw. Give two choices: the full loop, or a normal fix with
+  good tests. Then stop and wait.
+
+**Create nothing before the answer.** No artifact directory, no `SPEC.md`, no
+tools audit, no branch, no worktree. A wrong guess must cost one sentence, not a
+document the human did not want.
+
+**This offer is not spec approval.** A yes here authorizes the loop only. The
+spec still needs its own approval at step 2.
+
+If they choose the normal fix, leave this skill. Write good tests directly. Do
+not run a partial version of the loop.
 
 ## What you are doing — read this before anything else
 
@@ -124,7 +149,9 @@ implementation files:
   its own substitute. Do that audit at SPEC time and the temptation never
   arises.
 - Show the spec to the human in plain language and get approval **before writing
-  implementation**. Approval is one explicit act with one subject: the spec.
+  implementation**. **Name every file by its absolute path.** A relative path is
+  not clickable in the terminal. Print the full path from the root, so one click
+  opens the file. Approval is one explicit act with one subject: the spec.
   These are NOT approval: an answer to a question you asked, a "go ahead" about
   some other step, silence, and the request that started the task. If you cannot
   quote the words that approved THIS spec, you do not have approval.
@@ -376,7 +403,8 @@ End with a report the human can trust without opening a single source file
   a gauntlet you quietly weakened is the only failure.
 
 Write it to `EVIDENCE.md` in the task artifact directory beside `SPEC.md`, show
-it to the human, and stop — see "Where this skill stops".
+it to the human, and stop — see "Where this skill stops". Give the absolute path
+to `EVIDENCE.md`, the same as for `SPEC.md`.
 
 **Tracker roll-up**, only if the SPEC named an issue: a short note back to it —
 what was built, what was deliberately left undone, traps for the next task, the
