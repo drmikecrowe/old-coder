@@ -18,6 +18,13 @@ Five steps, in order. Do not skip one, reorder them, or run two at once.
    no implementation file until you have approval.** Tests are reversible
    evidence. The implementation is what the spec authorizes. Record in EVIDENCE
    that you did not get approval.
+
+   **An answer to a question is not an approval.** If you asked the human to
+   decide something, they answered that question and nothing else. Their answer
+   is an INPUT to the spec. It also CHANGES the spec, so any approval you had
+   before the question is now void. Revise the spec, show it again, and ask for
+   approval as a separate act. "They picked the options I recommended, so the
+   spec stands" is the failure this paragraph exists to stop.
 3. **IMPLEMENT THE SPEC, AND TEST INTENT — NOT CODE.** Every test asserts the
    behavior the spec promises, phrased in the spec's terms. A test that asserts
    *how* the code works is a defect: it passes on wrong behavior and cements the
@@ -117,7 +124,16 @@ implementation files:
   its own substitute. Do that audit at SPEC time and the temptation never
   arises.
 - Show the spec to the human in plain language and get approval **before writing
-  implementation**. In autonomous mode, state the spec in your response and
+  implementation**. Approval is one explicit act with one subject: the spec.
+  These are NOT approval: an answer to a question you asked, a "go ahead" about
+  some other step, silence, and the request that started the task. If you cannot
+  quote the words that approved THIS spec, you do not have approval.
+- **Questions and approval are two different exchanges, in that order.** A
+  decision you asked for is an input the spec did not have. Fold each answer in,
+  say what changed, show the revised spec, and ask for approval on the new text.
+  A spec the human approved BEFORE answering is approval of a document that no
+  longer exists.
+- In autonomous mode, state the spec in your response and
   proceed — but the correlation-breaking review never happened, so EVIDENCE
   must record `spec approval: not obtained (autonomous run)` and claim
   correspondingly lower confidence; the spec becomes the artifact the human
