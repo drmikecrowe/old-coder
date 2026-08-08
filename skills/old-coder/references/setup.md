@@ -19,7 +19,7 @@ install     = "propose"     # propose | allow
 commit      = "propose"     # propose | allow
 commit_args = []            # flags the repo mandates on every commit, e.g. ["-S"]
 tracker     = "propose"     # propose | allow — posting the roll-up to an issue
-artifacts   = ".old-coder"  # dir for per-task SPEC/EVIDENCE/logs; may be outside the tree
+artifacts   = ".old-coder"  # dir for per-task SPEC/EVIDENCE/logs; absolute when the config is local
 
 [commands]
 test  = "..."   # detected from package.json scripts / Makefile / pyproject / CI config
@@ -34,7 +34,7 @@ types = "..."
 | `commit` | may the skill create checkpoint commits without in-task approval? | `propose` |
 | `commit_args` | flags the repo *mandates* on every commit — signing (`-S`), a trailer, a sign-off. Policy says **whether** you may commit; this says **how** the repo requires it done | `[]` — but detect: a repo rule or CI check requiring signed commits is a mandate the skill must honor, not a preference |
 | `tracker` | may the skill post the completion roll-up to the issue the SPEC names, without in-task approval? | `propose` — write the note into the artifact directory and let the human post it |
-| `artifacts` | root directory for per-task SPEC, EVIDENCE, and logs | `.old-coder` at the repo root |
+| `artifacts` | root directory for per-task SPEC, EVIDENCE, and logs. Repo-relative, or **absolute** when the config is gitignored — see "Which tree each artifact is written in" | `.old-coder` at the repo root |
 | `commands.test` / `.lint` / `.types` | the project's real commands | detect; if detection finds nothing, fall back to the ecosystem tables in `gauntlet.md` |
 
 Values are only ever these spellings. Use the same key names verbatim in SPEC
@@ -94,7 +94,7 @@ If `.old-coder.toml` is **tracked by git**, honor only the settings that
 | `commit` | `propose` | `allow` |
 | `tracker` | `propose` | `allow` |
 | `isolation` | `worktree`, `branch`, `auto` | `none` |
-| `artifacts`, `commit_args`, `[commands]` | any value — these grant nothing | — |
+| `artifacts`, `commit_args`, `[commands]` | any value — these grant nothing | an **absolute** `artifacts` path: it names one machine's filesystem, so fall back to the default and say so in EVIDENCE |
 
 Rationale: a committed grant silently authorizes agents run by anyone who
 clones the repo, including on an untrusted fork or a PR branch you did not
@@ -225,3 +225,73 @@ available this run" — because a reader cannot infer it.
 
 Whichever is in effect, state it in EVIDENCE. When `logs/` is ignored, note that
 the log paths EVIDENCE cites are local only.
+
+### Which tree each artifact is written in
+
+Under `isolation = "worktree"` the tracked/ignored split above also decides
+*where* the file is written. A worktree is deleted when the task ends, and
+nothing gitignored inside it is committed, merged, or recoverable — it dies with
+the directory.
+
+| Artifact | Tracked? | Written in |
+|---|---|---|
+| `SPEC.md`, `EVIDENCE.md`, `ROLLUP.md` | yes | the **worktree** — they are committed with the change and reach the human through the merge |
+| `logs/`, and anything else the repo ignores | no | the **durable root** (below) — it outlives the task |
+| the whole task directory, when `artifacts` is gitignored | no | the **durable root** |
+
+Both errors are silent. A tracked file written outside the worktree becomes an
+uncommitted change in the human's working tree — the exact mutation isolation
+exists to prevent. An ignored file written into the worktree is deleted, unread,
+at cleanup, and EVIDENCE goes on citing its path.
+
+Resolve the durable root from the **shared git directory**, not from the CWD or
+the worktree's parent:
+
+```bash
+dirname "$(git rev-parse --path-format=absolute --git-common-dir)"
+git check-ignore -q <path>    # exit 0 = ignored → durable root, not the worktree
+```
+
+In an ordinary repo that is the main checkout (`.git`'s parent). In a bare +
+worktrees layout it is the container directory holding `.bare/` and the
+checkouts — not itself a working tree, which is harmless: only gitignored files
+go there, and durability is the whole requirement.
+
+Do **not** take `git worktree list`'s first entry as "the main checkout". In a
+bare layout the first entry is the bare repo, and the remaining entries are peer
+worktrees in registration order with no canonical one among them.
+
+Use the **same** `<YYYYMMDD-HHMMSS>-<slug>` directory name in both places, so the
+two halves are recognizable as one task.
+
+This applies to worktree isolation only. Under `branch` or `none` there is one
+tree and everything goes in it; when `artifacts` already points outside the repo
+the whole directory is durable and there is nothing to split.
+
+When the halves are split, say so in EVIDENCE and cite the moved paths
+**absolutely** (`/home/you/proj/main/.old-coder/<task>/logs/tests.log`) — a path
+relative to the worktree does not exist there and will not exist anywhere once
+the worktree is gone.
+
+### Or skip the split: an absolute `artifacts` path
+
+`.old-coder.toml` is gitignored by default, and a local config may hold a
+machine-local value. So set `artifacts` to an **absolute path** and the whole
+task directory is durable by construction — one location, resolved identically
+from every worktree, nothing to compute, nothing lost at cleanup. Prefer this
+when the repo already ignores the artifacts directory: it is the same outcome as
+the table above, minus the two-place bookkeeping.
+
+Two conditions, both hard:
+
+- **Only in a gitignored config.** An absolute path in a tracked `.old-coder.toml`
+  names one machine's filesystem and is wrong on every other clone — ignore it
+  per the restrict-only table.
+- **Only where you have already accepted losing spec-drift detection.** Nothing
+  outside the repo can be committed, so `SPEC.md` is never a commit and later
+  divergence is never a `git diff` ("Tracked or ignored?", row 3). Keeping that
+  mechanism means a repo-relative `artifacts` and the split.
+
+That is the real choice, and it is not about paths: **durable-and-unverifiable
+versus verifiable-and-split.** State which one is in effect in EVIDENCE — the
+reader cannot infer it from a path.

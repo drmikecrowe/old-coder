@@ -5,6 +5,36 @@ description: Evidence-first development — surround the implementation with an 
 
 # Old Coder: Reliable Coding Under Constraint and Test
 
+## What you are doing — read this before anything else
+
+Five steps, in order. Do not skip one, reorder them, or run two at once.
+
+1. **WRITE THE SPEC FIRST.** Turn the request into executable acceptance
+   criteria — concrete inputs, concrete outputs, and what must not change. Touch
+   no implementation file until it exists.
+2. **GET THE SPEC APPROVED.** The human approves the spec, never the code. That
+   approval authorizes everything after it. Autonomous mode does not skip this
+   step. In autonomous mode you can write the spec and the RED tests. **Change
+   no implementation file until you have approval.** Tests are reversible
+   evidence. The implementation is what the spec authorizes. Record in EVIDENCE
+   that you did not get approval.
+3. **IMPLEMENT THE SPEC, AND TEST INTENT — NOT CODE.** Every test asserts the
+   behavior the spec promises, phrased in the spec's terms. A test that asserts
+   *how* the code works is a defect: it passes on wrong behavior and cements the
+   implementation. **If a behavior-preserving refactor would break the test,
+   rewrite the test.**
+4. **RUN THE GAUNTLET, ADVERSARIAL REVIEW INCLUDED. FIX EVERY CONFIRMED
+   FINDING.** Then run the gauntlet again, before you push. Green means green on
+   the final code. A result from before the fixes does not count. A layer you
+   skipped on the last pass is a layer that did not run.
+5. **WRITE EVIDENCE LAST.** EVIDENCE proves **the finished product implements
+   the spec, and why** — every scenario mapped to the proof that it holds. It is
+   a report on the product, not on the review. Do not start it while a confirmed
+   finding is open, and cite only numbers produced by the final code.
+
+Everything below is the detail of these five. If detail ever seems to license
+skipping one, you have misread it.
+
 The human will NOT read your implementation. Their confidence comes entirely from
 two artifacts you produce: (1) an **executable specification** they approve before
 you write code, and (2) an **evidence report** proving the code ran the gauntlet.
@@ -51,21 +81,41 @@ implementation files:
 - Write behaviors as Gherkin-style scenarios or a named test list — concrete
   inputs, concrete expected outputs, edge cases, and error cases. "Handles bad
   input" is not a spec; `divide(1, 0) raises ZeroDivisionError with message X` is.
+- **Collect the invariants that the code states about itself.** Before you invent constraints, read
+  what the edit site declares: docstrings, threat-model IDs, existing limits, and nearby guards.
+  Carry each one into the spec as a negative constraint. The rule that you are about to break is
+  usually written within fifty lines of your change. A rule that the codebase states about itself
+  outranks a rule that you inferred.
 - Include what the change must NOT do (invariants that must survive: existing
   tests, public API signatures, performance budgets if stated). These negative
   constraints are contract clauses like any scenario: each must end up mapped
   in EVIDENCE to a test, a gauntlet layer, or an explicit skipped-with-reason
   line — never silently absent from the mapping.
-- The spec doubles as the authorization point: include the **setup plan** —
-  tools to install, git usage (init? checkpoint commit cadence?), **the files
-  the gauntlet will add, named individually** (the mutation script and the
-  gauntlet entry point are files: list them by path, because a script nobody
-  authorized is a script nobody writes), and **every new dependency with a
-  one-line justification**
+- The spec doubles as the authorization point: include the **setup plan** — git
+  usage (init? checkpoint commit cadence?), any files the change adds, named
+  individually by path, and **every new dependency with a one-line
+  justification**
   (prefer the standard library and deps already present; an unjustified
   package is a spec defect) — so approving the spec authorizes the environment
   changes in one step instead of N interruptions, and the human can veto a
   risky package before it is ever installed.
+- **Audit the gauntlet's tooling here, in the setup plan, before any code.** Walk
+  the layer table and ask of each: *what does this project declare that runs it?*
+  Read the manifests (`pyproject.toml`, `package.json`, `mise.toml`, lockfiles),
+  not your PATH. Then list, for the human to approve in the same breath as the
+  spec:
+  - what is already declared and will be run — a configured tool you skip is a
+    layer you skipped, not a layer that does not exist;
+  - what is missing, as **named tools with one line each on what they would
+    catch**, proposed as additions to the project's manifests, pinned;
+  - which layers stay `UNAVAILABLE` if the human declines.
+
+  Asking costs one round trip at the point where they are already reading and
+  approving. A tool added to the project this way serves every future task in
+  that repo and runs in CI; the alternative — discovering the gap mid-gauntlet,
+  when a green report is nearly written — is what tempts an agent into building
+  its own substitute. Do that audit at SPEC time and the temptation never
+  arises.
 - Show the spec to the human in plain language and get approval **before writing
   implementation**. In autonomous mode, state the spec in your response and
   proceed — but the correlation-breaking review never happened, so EVIDENCE
@@ -84,7 +134,12 @@ implementation files:
   promise. Gitignore the directory and that mechanism is gone, not merely
   weakened (`references/setup.md`).
 - Declare the **isolation mechanism** (worktree / branch / none, and why) in the
-  spec, so the human can see and veto it before work starts.
+  spec, so the human can see and veto it before work starts. Under worktree
+  isolation the artifact directory spans two locations — tracked files in the
+  worktree, gitignored ones (`logs/`) outside it, since nothing gitignored
+  survives the worktree's cleanup — unless `artifacts` is an absolute path, which
+  makes the whole directory durable at the cost of spec-drift detection
+  (`references/setup.md`).
 
 ### 2. RED — prove each test can fail
 
@@ -101,6 +156,16 @@ nothing. Details that matter in practice:
   behavior already exists. **Don't just assert which — prove it**: break the
   implementation with a one-off throwaway mutant, watch the test fail, restore.
   Then record it as pre-existing behavior kept as regression armor.
+- **Assert the property, not the mechanics you are about to build.** A test
+  written next to its own fix drifts toward describing the implementation —
+  *two reports were emitted*, *the list had three entries* — instead of the
+  thing a human would check: *the message told the truth about what actually
+  happened*. Both go green; only the second fails when the code is wrong. This
+  is how a test ends up pinning a defect in place, and it bites hardest on
+  tests written to close a review finding, where the mechanics are freshest in
+  your head and the property is whatever the reviewer was really worried about.
+  Write the assertion from the SPEC's wording, before the implementation exists
+  to describe.
 
 **A pure move has no RED.** Relocating code introduces no behavior, so there is
 no failing test to write, and inventing one produces a test that asserts the
@@ -151,24 +216,45 @@ After all spec behaviors are green, run every applicable layer. Scale to the tas
 one of the five statuses in the EVIDENCE section below, and three of them
 require stating what was *not* verified.
 
+**What this layer is for.** The gauntlet is the adversarial review mechanised:
+every independent analysis available, pointed at the change before anyone else
+sees it. Its target is concrete — **leave nothing for an external reviewer to
+find.** So when a review bot or a human reviewer does find something, the first
+question is not "was that finding right" but *which analysis would have caught
+it, and why did I not run it?* Usually the answer is a tool the project does not
+have yet, or has and you skipped. Both are fixable, and fixing them is how the
+gauntlet gets sharper per task instead of staying the same size forever. Record
+the answer in EVIDENCE's per-layer yield.
+
 | Layer | What it catches | How |
 |---|---|---|
+| Egress: new data paths | secrets and unlimited data that reach an output | For each field, log line, message, or artifact that the change ADDS, name four things: where the data comes from, whether the environment controls it, where it ends up (CI log, JSON, terminal, PR body), and whether it is limited in bytes AND redacted. Coverage and mutation cannot ask whether data *belongs* somewhere. They report only that the line ran. Scan the diff for secrets at rest also, but that is a different question |
 | Full test suite | regressions | project's test command, zero NEW failures (baseline note below) |
 | Static types | whole classes of bugs | tsc / mypy / etc., zero new errors |
 | Lint + format | latent bugs, drift | project's linter, zero new warnings |
 | Coverage on changed lines | untested code paths | every changed/added line executed by a test; branch coverage where the tool supports it. Global % is vanity — changed-line coverage is the constraint |
-| Mutation testing | tests that assert nothing | see `references/gauntlet.md`. No mutation tool? Do manual mutation **as a persisted script** (e.g. `tools/mutants.py`) holding 3–5 plausible bugs as data — flip a comparison, off-by-one a bound, drop a condition, return early — which applies each, runs the suite, restores, and verifies the restore with `git diff`. The suite must kill every one. Hand-editing the source N times is not this layer: it leaves no re-runnable command and no proof the tree came back clean |
+| Mutation testing | tests that assert nothing | the project's mutation tool (mutmut, cosmic-ray, Stryker, PIT…), which generates mutants from the syntax tree. **No tool in the project? Ask for one and report the layer `UNAVAILABLE` until it arrives** — see "Tooling belongs to the project" below. Do not hand-roll a substitute: a script holding hand-written mutants matched against source text is a second copy of the code, and it breaks on every refactor of the thing it is meant to guard |
 | Property-based tests | edge cases you didn't imagine | for parsing, math, serialization, anything with invariants (round-trip, idempotence, ordering) — add hypothesis/fast-check properties |
 | Complexity budget | unmaintainable output | new functions small and single-purpose; if a function needs a paragraph to explain, split it |
 | Real execution | "passes tests, doesn't run" | actually run the app/CLI/endpoint once on a realistic input, not only the test harness |
 | Supply chain & secrets | vulnerable/unnecessary deps, leaked credentials | when the dependency set changed: audit it (pip-audit / npm audit / govulncheck / cargo-audit) and check licenses; scan the diff for secrets; every new dependency must trace back to its SPEC justification. Also eyeball the capability diff: did the change start using network / subprocess / filesystem / env it didn't before? |
 | Suite health | flaky or order-dependent tests | run the suite in randomized order (pytest-randomly etc.); repeat suspected flakes. Every EVIDENCE number rests on the suite being deterministic — a flaky suite quietly invalidates the report |
 | Integration-tree verification | "green in isolation, broken on merge" | whenever the isolated tree and the tree the change lands in differ by ignored or untracked content, rerun the suite in the landing tree — by **applying the diff uncommitted and reverting**, never by merging, rebasing, or committing there (exact recipe in `references/gauntlet.md`). A green run in a tree that lacks the main tree's `.env`, build outputs, or installed deps is not evidence about the main tree |
-| Adversarial review | reasoning the author cannot audit | a **fresh general-purpose subagent with no inherited context**, briefed to falsify the claim that the change is correct. Procedure, failure-class list, and the two-round limit in `references/gauntlet.md` |
+| Adversarial review | reasoning that the author cannot audit. **If the change adds or widens an output surface, one reviewer must use a security lens.** An author who picks the lenses omits the category that the author does not fear | a **fresh general-purpose subagent with no inherited context**, briefed to falsify the claim that the change is correct. Reviews the whole `<base>...HEAD` diff and **binds to that SHA**: any later commit — including your fix for its own findings — drops this layer back to not-run. Procedure, failure-class list, and the two-round limit in `references/gauntlet.md` |
 
 Redirect every layer to its own log under the task's `logs/` dir and read a
 bounded slice — `cmd > log 2>&1`, never `tee` (`references/gauntlet.md`).
 EVIDENCE cites the log path beside each number, so every claim traces to a run.
+
+**Name the invariant before you correct the symptom.** Write the one sentence that the code must
+satisfy. Then test the correction against that sentence, not against the words of the finding. A
+symptom-shaped correction passes the new test. It leaves the invariant broken one line away. This is how a loop of six lines takes three review rounds instead of one. The rounds stop
+when someone writes "the deadline limits when a probe STARTS, not when a sleep ends".
+
+**Each finding is a class, not one instance.** When a layer or a reviewer finds a defect, search the
+diff for other instances of the same shape before you call it corrected. Also verify that you did
+not put back an instance that you corrected earlier. A defect corrected twice and shipped a third
+time was three instances of one class that nobody named.
 
 Baseline note — on a repo with pre-existing failures, record the baseline
 first (which tests already fail, verbatim) and hold the line at zero NEW
@@ -182,12 +268,49 @@ properties verify anything; survivors there mean the invariants have blind
 spots (a common one: a one-sided invariant like "never exceeds limit" cannot
 catch fail-closed bugs — pair it with the opposite bound).
 
-Equivalent-mutant note — with a mutation tool, a survivor is not automatically
+Equivalent-mutant note — a classification of "equivalent" is where you stop looking. Before you
+classify, name the real defect that can exist in that same expression, and search for it. Adjacent
+boundary defects live exactly there. With a mutation tool, a survivor is not automatically
 a failure: some mutants are semantically equivalent to the original and cannot
 be killed. Classify such survivors as "equivalent, because <reason>" in
 EVIDENCE rather than adding a meaningless test to kill them — that would
 violate anti-gaming rule 4. Hand-written mutants (the manual procedure) get no
 such excuse: you chose them, so choose real bugs.
+
+#### Tooling belongs to the project — you do not write it
+
+**Run the tools of the project. Ask the human for the tools that it does not have. Never write
+your own.** This is the most expensive mistake available in this skill.
+
+A tool that you write looks like diligence and operates like a liability. It is a second copy of the
+code, and it breaks each time the original moves. It is the least-verified code in the change. It is
+also the instrument that the human reads *instead of* the code. And it **fails open**: a parse that
+matches nothing returns an empty set, counts zero defects, and prints **PASS**. That output is
+identical to success, but the tool measured nothing.
+
+The rule includes the source of a tool. **A binary on your PATH is not the tool of the project.** The
+human, CI, and the next agent cannot reproduce evidence from such a binary. This is the same defect
+as a tool that you write, under a more respectable name. If a manifest does not declare it
+(`pyproject.toml`, `package.json`, `mise.toml`, lockfile), it is absent.
+
+If a layer has no tool, do these three steps:
+
+1. Name one specific tool, and what it can catch, in one line.
+2. Ask the human to add it to the project, pinned.
+3. Report the layer `UNAVAILABLE` until it arrives.
+
+An honest gap costs one line in EVIDENCE. A substitute costs a permanent artifact, the defects in
+that artifact, and the false confidence that it prints until someone removes it.
+
+A request compounds, because a tool added one time serves each future task in that repo. Before you
+report a layer as unavailable, read what the project already declares. "No configuration in
+`pyproject.toml`" is not "no linter". A configured tool that you did not run is a layer that you
+SKIPPED, not a layer that does not exist.
+
+**Prefer a layer that interrogates the real system to a layer that counts proxies.** One run of the
+actual binary, endpoint, or CLI has found real defects. A green suite, complete changed-line
+coverage, and a perfect mutation score all reported those defects as absent. Those three can ask
+only whether the code does what the tests say. The real system is where the assumptions live.
 
 ### 6. EVIDENCE — the only thing the human reads after code
 
@@ -198,19 +321,20 @@ End with a report the human can trust without opening a single source file
 - Each gauntlet layer: the command run, and its actual result (pasted numbers,
   not adjectives). "All 47 tests pass, changed-line coverage 100% (31/31 lines),
   5/5 manual mutants killed" — never "tests look good".
-- **Every layer resolves to exactly one status**, and the vocabulary is closed:
-  `PASSED` · `FAILED` · `N-A (<why this project has no such surface>)` ·
-  `UNAVAILABLE (<tool missing / not configured>)` · `SUBSTITUTED (<what was run
-  instead> — cannot detect <blind spot>)`. A substitute is never a pass: if the
-  instrument the layer specifies never ran, the layer did not find nothing, it
-  looked with a different instrument, and EVIDENCE must say what that instrument
-  is blind to. `N-A` and `UNAVAILABLE` are also distinct — a project with no
-  type checker is not a degraded run, a project whose type checker you skipped
-  is.
+- **Each layer resolves to exactly one status**, from this closed list: `PASSED` · `FAILED` ·
+  `N-A (<no such surface>)` · `UNAVAILABLE (<tool missing>)` · `SUBSTITUTED (<what ran instead>,
+  cannot detect <blind spot>)`. **A substitute is never a pass.** The layer did not find nothing. It
+  looked with a different instrument, so name what that instrument cannot see. `N-A` and
+  `UNAVAILABLE` are different. A project with no type checker is not a degraded run. A project with
+  a type checker that you skipped is a degraded run.
 - The mutation row must carry a **command**, not prose. A score with no
   runnable command beside it is an incomplete row, not a quiet footnote.
 - All numbers must come from one final fresh run executed after the last code
-  edit — results from mid-task runs are stale and must not be reported.
+  edit — results from mid-task runs are stale and must not be reported. The same
+  applies to the reviewer: name the SHA the adversarial review actually read, and
+  it must be that same final HEAD. Fresh numbers over a stale review is the
+  easier half of this rule to satisfy and the more misleading half to get wrong
+  (`references/gauntlet.md`).
 - The report must be reproducible from the repo alone: every command it cites
   (including the mutation script) must exist as a persisted file in the repo,
   not in a scratch directory or only in the conversation. Reproducible means:
@@ -221,11 +345,12 @@ End with a report the human can trust without opening a single source file
   statuses they carry (`N-A` / `UNAVAILABLE` / `SUBSTITUTED`), and why.
 - **Findings dismissed rather than fixed**, each with the check that disproves
   it (`references/gauntlet.md`).
-- **What the gauntlet cost** — wall-clock per layer at minimum. This skill adds
-  layers, and the tier map is meant to be tuned by evidence; a layer that costs
-  minutes and finds nothing across several tasks is a candidate for demotion,
-  but only if somebody wrote the number down. Unmeasured cost makes the tier map
-  unfalsifiable.
+- **What the gauntlet cost, and what each layer found.** Give the wall-clock time per layer. Add one
+  line per layer that names the defect it caught, or the word `nothing`. This data tunes the tier
+  map. A layer that costs minutes and finds nothing over several tasks is a candidate for demotion.
+  A cheap layer that repeatedly finds the worst defect has earned a promotion. Cost alone makes the
+  tier map unfalsifiable. Cost without yield makes it unimprovable. Even if the honest entry is
+  "found nothing", record the data.
 - **Your structural blind spot** — the layer this project cannot run at all
   (for example, a suite that never exercises the container runtime). Name it in
   every report, not once in a README: knowing which claims are unverifiable is
@@ -267,7 +392,11 @@ The gauntlet only creates trust if it cannot be gamed. These are hard rules:
    trust. The same row written as "stable — passed" is a fabricated layer even
    though every number in it is real, because it claims the specified
    instrument found nothing when the instrument never ran.
-6. **Failing gauntlet blocks done.** You are not finished while any layer fails.
+6. **Never label a property that you did not test.** A test name, a docstring, or an EVIDENCE line
+   can claim "fails safe", "refuses", "cannot leak", or "is limited". For each such claim, a test
+   must supply the unsafe input and report the refusal. A claim attached to a mechanism is not
+   evidence about the property. The label also propagates: it reaches EVIDENCE as verified.
+7. **Failing gauntlet blocks done.** You are not finished while any layer fails.
    If you're genuinely blocked, report the failure verbatim as the outcome.
 
 ## Calibration
@@ -334,14 +463,17 @@ trap: **a fresh worktree contains no gitignored content**, so the gauntlet often
 cannot run there until dependencies are rebuilt. Rebuild, or fall back to a
 branch and record why. Never report green from a tree that never ran the suite.
 
-If the project has no test runner, no linter, or no type checking, set up the
-minimal standard toolchain for the language **first** (see
+If the project has no test runner, no linter, or no type checking, **propose the
+standard toolchain for the language and let the human add it** (see
 `references/gauntlet.md`). A gauntlet can't run on bare ground. Setup changes
 the user's environment — packages, config files, lockfiles — so it belongs in
 the SPEC's setup plan, where spec approval authorizes it in one step; record
-every environment change actually made in the evidence report. If the user
-forbids adding tooling, fall back to manual layers (manual mutation, manual
-execution) and record the reduced confidence honestly.
+every environment change actually made in the evidence report.
+
+Add it to a manifest, pinned. Never add it only to your machine. **If the human
+declines, the layer is `UNAVAILABLE`. Full stop.** Do not substitute a tool that
+you write. *Tooling belongs to the project* above gives this same rule and its
+reasons.
 
 If the directory is not a git repository, propose `git init` in the SPEC's
 setup plan. Version control is itself a gauntlet layer: commit at SPEC and at

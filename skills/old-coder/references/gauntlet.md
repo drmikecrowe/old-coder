@@ -130,6 +130,33 @@ Report both results — the isolated run and the integration run — as separate
 numbers, never merged into one, and state which technique produced the
 integration number.
 
+## Egress: what the change lets data reach
+
+A layer the counting layers cannot cover. Coverage and mutation ask whether a line RAN and whether a
+test would notice it changing. Neither can ask whether the data on that line *belongs* where it now
+goes.
+
+Run it whenever the diff **adds or widens an output surface** — a report field, a log line, an error
+message, an API response, an artifact, a PR body. For each one:
+
+1. **Origin.** Where does the value come from? Constant, user input, environment, or another
+   process's output? Child-process output is the dangerous case: it is unbounded and you do not
+   control what it prints.
+2. **Control.** Can an attacker or the environment influence it? Credentials arriving via env are
+   the common path — a crashing child prints its own configuration.
+3. **Destination.** Where does it end up? A CI log and a PR body are PUBLIC. `--json` consumed by
+   CI means anything in that JSON is world-readable for repos that are.
+4. **Bounds and redaction.** Is it capped in BYTES (not just lines) and are secret shapes removed?
+   `tail -n 200` bounds neither a single 4 MB line nor a token.
+5. **Precedent.** Does the codebase already solve this for a sibling surface? A neighbouring
+   constant like `MAX_DETAIL = 120` with a comment about secrets is the codebase telling you the
+   rule; matching it beats inventing a second, weaker mechanism.
+
+**Removing the channel beats redacting it.** Best-effort redaction holds until it does not. If the
+value of the data is diagnostic, prefer a POINTER — name the file and how to read it — over a copy.
+Say plainly in EVIDENCE what diagnosability that costs; a stated cost is a decision, an unstated one
+is an oversight.
+
 ## Adversarial review by an independent agent
 
 Self-review has the same correlation problem the rest of this skill works to
@@ -142,7 +169,19 @@ use a "fork"-style subagent that inherits the parent conversation — it inherit
 the author's justification for the design and will rubber-stamp it. Breaking
 that correlation is the entire point of this layer.
 
-Brief the reviewer to **falsify**, not to review:
+**Assign lenses; do not let the author choose them freely.** A single reviewer briefed on
+"correctness" will hunt the category its author already worries about, and the whole class the
+author is *not* worried about goes unreviewed. Run reviewers with distinct, named lenses, and:
+
+- **Security/privacy is MANDATORY whenever the change adds or widens an output surface** (the egress
+  layer above tells you when that is). It is the category authors most reliably omit.
+- Add lenses matched to the change: concurrency, failure/rollback, performance budget, API
+  compatibility, does-it-reproduce.
+- A finding a reviewer confirms is a finding about a CLASS. Before calling it fixed, search the diff
+  for other instances of the same shape — including ones you fixed earlier in the same branch and
+  have since reintroduced.
+
+Brief each reviewer to **falsify**, not to review:
 
 > Your job is to falsify the claim that this change is correct.
 
@@ -199,6 +238,46 @@ code change like any other: every EVIDENCE number must come from a run that
 post-dates it. "2 CONFIRMED (all resolved)" above a test count from before the
 fixes is exactly the stale-number failure the final-fresh-run rule exists to
 prevent.
+
+### A review is a claim about a commit, not about a change
+
+Re-running the gauntlet keeps the *numbers* fresh. It does nothing for the
+*review*, which goes stale the moment you commit again — and the rule above is
+easy to satisfy while leaving the review stale, because measurements are cheap
+to repeat and a reviewer is not.
+
+So bind the review to a commit:
+
+- **Review the whole delivered diff** — `<base>...HEAD`, the range the pull
+  request will show — never a single commit, never a subset. Checkpoint commits
+  are encouraged elsewhere in this skill; they are not review units.
+- **Record the reviewed SHA in EVIDENCE**, beside the layer:
+  `Adversarial review | PASSED | reviewed <sha>`.
+- **The layer is `PASSED` only while that SHA is HEAD.** Commit afterwards — for
+  any reason, including fixing the review's own findings — and the layer drops
+  to not-run until a reviewer has seen the new head. If you stop there, say so:
+  `SUBSTITUTED (reviewed <sha>; <n> later commits unreviewed — <what they
+  changed>)`. An unreviewed head commit is not a bookkeeping detail; it is the
+  part of the change nobody has attacked.
+
+**Fixes for findings are the most dangerous code in the change.** They are
+written quickly, under the impression that this area has already been thought
+about, and they land last — after the layer that would have caught them has
+finished. A reviewer's diagnosis is evidence about the *bug*; it says nothing
+about your *fix*. So treat every finding-fix as new code: RED test first, then
+re-review.
+
+The re-review is usually cheap. Send the follow-up diff back to **the same
+reviewer** — it already holds the context and can answer the one question it is
+best placed to answer: does this fix actually address what I found? Use a
+*fresh* reviewer instead when the fix changed the design rather than patching
+it, because at that point the shipped design is not the one anybody attacked.
+
+Watch for the same staleness in the prose. When a fix or a SPEC revision
+supersedes a mechanism, the docstrings, comments, and helper names describing
+the old one do not update themselves, and they are the part of the diff a green
+suite says nothing about. Sweep the whole change for the superseded mechanism's
+name before calling it done.
 
 **Two rounds maximum.** If a second round still finds CONFIRMED problems, the
 change is too entangled to be verified this way: abandon it and take a smaller
@@ -348,7 +427,10 @@ the case people most readily trust and the case most likely to be hollow.
 Persist one command that runs every layer in sequence and fails on the first
 broken one (e.g. `tools/gauntlet.sh`: tests+coverage → types → lint → mutation
 → real execution). It takes the task's artifact directory as an argument and
-writes each layer's output to `<artifact dir>/logs/<layer>.log`. Start the
+writes each layer's output to `<artifact dir>/logs/<layer>.log`. Pass that
+directory in rather than deriving it from the CWD: under worktree isolation the
+logs live outside the worktree, not beside the code being tested
+(`setup.md` § Which tree each artifact is written in). Start the
 script by deleting stale artifacts from previous runs (old coverage data,
 report files, the previous logs) so no layer can accidentally read a prior
 run's output — freshness by mechanism, not discipline. (Keep tool
