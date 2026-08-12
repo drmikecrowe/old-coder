@@ -87,6 +87,10 @@ Written to `EVIDENCE.md` in the task's artifact directory, alongside the
   that was ignored>
 - Toolchain: <pinned versions file, e.g. requirements-dev.txt>
 - Entry point: <single command that reruns every layer>
+- Independent verification: <not performed | passed | failed | blocked>
+  **against the final source state** — a state no verifier saw is
+  `not performed` however many rounds preceded it (Tier 3 option; protocol in
+  `verifier.md`)
 - Gauntlet cost: <total wall-clock; per-layer in the table below>
 - Logs: <artifacts>/<task dir>/logs/
 - Tracker: <issue id — roll-up posted | roll-up written to ROLLUP.md, not posted
@@ -160,6 +164,19 @@ matter to your decision.
 If the change was **abandoned** after round 2, every other layer reads
 `n-a: change abandoned`. An abandoned change has no green result; report the
 findings that drove the decision and stop.
+
+### Independent verification (omit only when it was not run at all; see verifier.md)
+This is not a gauntlet layer and gets no row in the table above — it is prose a
+human graded. Keep it out of the layer table and record it here.
+- Verifier: <host / model family>; fresh context; which inputs it received;
+  what correlation that breaks and what it does not.
+- Rounds: <n> (cap <m>); verdict per round, each against the state it saw.
+- Grading: who classified each finding behavioural vs description, and who
+  approved stopping.
+- Attacked: <what was tried, not only what was found>.
+- Findings: behavioural (fixed, then re-verified in a new context) vs
+  description/mapping (fixed and disclosed, no new round).
+- Fixed after the last verified state, therefore unverified: <list | none>.
 
 ### Layers not run as specified
 Split by status, because they mean different things to a reader:

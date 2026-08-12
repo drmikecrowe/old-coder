@@ -5,25 +5,37 @@ description: Evidence-first development — surround the implementation with an 
 
 # Old Coder: Reliable Coding Under Constraint and Test
 
-## First: did the human ask for this loop?
+## First: was this loop asked for?
 
 This loop is expensive. It starts with a spec file, an approval, and a tools
-audit. That cost is correct when the human wants it. It is waste when they want
-a small fix.
+audit. That cost is correct when it was asked for. It is waste when what was
+wanted is a small fix.
 
-- **The human asked for it.** They used the skill name, or words like
-  "reliable", "TDD", "prove it works", or "I will not read the code". Start at
-  step 1 below.
-- **The human did not ask, and you loaded this because the change looks
+- **It was asked for.** The skill was named, or words like "reliable", "TDD",
+  "prove it works", or "I will not read the code" were used. **The asker does
+  not have to be a live human**: a scheduled wake, a cron job, a loop prompt, or
+  another agent's task description that names this skill is the ask, made in
+  advance by whoever configured it. Start at step 1 below and do not re-offer
+  what has already been requested.
+- **Nobody asked, and you loaded this because the change looks
   high-stakes** — money, auth, data loss, concurrency, a public API, or a
   hand-rolled parser or config-format reader. Your
   first act is an OFFER, and it is your only act. Write one or two sentences.
   Name the domain you saw. Give two choices: the full loop, or a normal fix with
   good tests. Then stop and wait.
 
+**An offer needs someone to answer it.** If this is an autonomous or looped run
+with no one to reply, do not stop with an offer into an empty room — that stalls
+the wake and delivers nothing. Record the domain you saw and run the loop, under
+the autonomous-mode rules that already govern it: spec and RED tests are yours
+to write, the step-2 approval gate still stands, and EVIDENCE says the spec was
+never independently reviewed. OFFER-and-stop is for when a reply is actually
+possible.
+
 **Create nothing before the answer.** No artifact directory, no `SPEC.md`, no
 tools audit, no branch, no worktree. A wrong guess must cost one sentence, not a
-document the human did not want.
+document nobody wanted. This applies to the offer path only — once the loop has
+been asked for, by a person or by a configured wake, step 1 starts immediately.
 
 **This offer is not spec approval.** A yes here authorizes the loop only. The
 spec still needs its own approval at step 2.
@@ -75,9 +87,11 @@ Your job is to make those two artifacts trustworthy enough that line-by-line
 review becomes optional within the spec's boundaries.
 
 This inverts the normal review model: **trust moves from inspection to
-constraints.** Be honest about what that buys: the gauntlet proves the code
-satisfies every constraint the spec expresses — it cannot prove the spec
-expresses everything that matters. That is exactly why the human approves the
+constraints.** Be honest about what that buys: the gauntlet turns the
+constraints the spec expresses into executable evidence — it cannot show the
+spec expresses everything that matters, and it is not self-authenticating,
+because a checker can be unsound and a mapping can claim more than it
+demonstrates. That is exactly why the human approves the
 SPEC (the one artifact that breaks the everything-authored-by-the-same-agent
 correlation), and why EVIDENCE reports layered, auditable confidence, never
 absolute proof. Every shortcut you take against the gauntlet destroys the only
@@ -301,8 +315,8 @@ the answer in EVIDENCE's per-layer yield.
 | Full test suite | regressions | project's test command, zero NEW failures (baseline note below) |
 | Static types | whole classes of bugs | tsc / mypy / etc., zero new errors |
 | Lint + format | latent bugs, drift | project's linter, zero new warnings |
-| Coverage on changed lines | untested code paths | every changed/added line executed by a test; branch coverage where the tool supports it. Global % is vanity — changed-line coverage is the constraint |
-| Mutation testing | tests that assert nothing | the project's mutation tool (mutmut, cosmic-ray, Stryker, PIT…), which generates mutants from the syntax tree. **No tool in the project? Ask for one and report the layer `UNAVAILABLE` until it arrives** — see "Tooling belongs to the project" below. Do not hand-roll a substitute: a script holding hand-written mutants matched against source text is a second copy of the code, and it breaks on every refactor of the thing it is meant to guard |
+| Coverage on changed lines | untested code paths | every changed/added line executed by a test; branch coverage where the tool supports it. Global % is vanity — changed-line coverage is the constraint. **This layer must exit nonzero when its threshold is missed** (`--cov-fail-under`, `diff-cover --fail-under`, equivalent): a layer that prints a percentage and exits 0 is a report, not a gauntlet layer, and it will sit there green while coverage falls |
+| Mutation testing | tests that assert nothing | the project's mutation tool (mutmut, cosmic-ray, Stryker, PIT…), which generates mutants from the syntax tree. **No tool in the project? Ask for one and report the layer `UNAVAILABLE` until it arrives** — see "Tooling belongs to the project" below. Do not hand-roll a substitute: a script holding hand-written mutants matched against source text is a second copy of the code, and it breaks on every refactor of the thing it is meant to guard. The failure this prevents is not hypothetical: a hand-rolled runner in this repo's own demo reported kills for mutants it never executed, and that defect can only ever inflate the score, so no red gauntlet can surface it |
 | Property-based tests | edge cases you didn't imagine | for parsing, math, serialization, anything with invariants (round-trip, idempotence, ordering) — add hypothesis/fast-check properties |
 | Complexity budget | unmaintainable output | new functions small and single-purpose; if a function needs a paragraph to explain, split it |
 | Parity with the authority | a second implementation that drifts from the first | Whenever the change RE-IMPLEMENTS something that already exists in executable form — a shell pipeline rewritten in Python, a regex ported between languages, a schema restated in code, a rule the build already enforces — the test must **run both and compare outputs on the same inputs**. Never assert the equivalence in prose: a docstring saying "reads the file the way the Dockerfile does" is a claim, and claims are what this skill exists to replace. The comparison must read the authority **from its source at test time**, not from a copy pasted into the test — a copy agrees with your reading forever, including after the original changes. Cannot execute the authority from a test? That is `SUBSTITUTED`, and name what the substitute cannot see |
@@ -361,6 +375,29 @@ rerun the mutants against the property suite alone before claiming the
 properties verify anything; survivors there mean the invariants have blind
 spots (a common one: a one-sided invariant like "never exceeds limit" cannot
 catch fail-closed bugs — pair it with the opposite bound).
+
+Checker note — the gauntlet is only as trustworthy as its checkers, and the
+dangerous checker failure is fail-open: nothing crashes, the layer prints pass.
+Off-the-shelf tools (pytest, mypy, tsc…) have earned their failure behavior;
+home-grown checks — grep gates, custom scripts, the manual mutation runner —
+have not, so two rules apply to them: (1) **fail closed** — a crash, an
+unreadable input, an unexpected exit code, or an item silently skipped inside
+gate code is a hard failure of the layer, never a pass; no `|| true`, no
+`2>/dev/null`, no bare fallthrough. (2) **Prove it can fail before trusting
+its pass**: run it once against a known-bad input (a negative control) and
+watch it fail — the RED principle applied to checkers, exactly like the
+throwaway mutant for an immediately-passing test. Record the control in
+EVIDENCE. Be precise about what that buys: **a negative control proves one
+known-bad case reaches the checker's failure path. It does not prove the
+checker recognizes every violation of the constraint it claims to enforce.**
+A grep gate can fail closed perfectly and still guard a spelling rather than
+a behavior. When the gate's coverage is narrower than the rule it serves, say
+so where the rule is written, rather than letting the rule imply more.
+
+Prove a negative control is itself non-vacuous the same way you prove a test:
+temporarily remove or break the defence it validates, and watch the control go
+red. A control that passes with the defence removed is measuring nothing —
+this is a one-time proof, not a permanent extra layer.
 
 Equivalent-mutant note — a classification of "equivalent" is where you stop looking. Before you
 classify, name the real defect that can exist in that same expression, and search for it. Adjacent
@@ -543,6 +580,69 @@ Scale effort to blast radius, and say which tier you chose:
   (tool-based if available) + a hostile-input pass against your own
   implementation + **adversarial review by an independent agent** (`adversary`). Failure modes
   deliberately not covered go in EVIDENCE as known limits.
+  The hostile-input pass is you attacking your own work and shares your blind
+  spots, which is why the `adversary` review is separate from it and not
+  optional at this tier. Where a spec gap would be expensive on top of that,
+  independent verification below is a further and much larger step.
+
+## Two independent reviews, and which one you want
+
+This skill carries two ways to put a fresh pair of eyes on the work, and they
+are not interchangeable. Run the first by default; reach for the second only
+when the stakes carry its cost.
+
+| | **Adversarial review** (`adversary`) | **Independent verification** (VERIFY) |
+|---|---|---|
+| What it attacks | the diff | the finished work: run, spec, tests, checkers, mapping |
+| When | inside the gauntlet, Tier 3 or any change to code you did not write | after the gauntlet, before EVIDENCE is signed, Tier 3 by choice |
+| Cost | one agent, 10 tool calls, one round | a protocol with a blind phase and a round cap; ~550k tokens in the one recorded case |
+| Is it a gauntlet layer? | yes — bounded, and its verdict binds to a SHA | **no** — prose a human must grade |
+| Protocol | `agents/adversary.md` | `references/verifier.md` |
+
+They share the rule that matters most, arrived at independently: **a verdict
+attaches to the source state that was reviewed, not to the project.** Any later
+commit — including the fix for the review's own findings — returns that review
+to not-run.
+
+## Independent verification (Tier 3 option, experimental)
+
+The gauntlet is evidence, not self-authentication: its checkers can be
+unsound, its mappings can overclaim, and the spec can be incomplete. Human
+spec approval mitigates only the last, by breaking author correlation, and
+only before code exists — it does not make a spec complete.
+
+Independent verification answers the rest where the stakes justify it: a
+fresh-context agent that attacks the finished work before EVIDENCE is signed.
+It reduces **task-context** correlation, not model correlation. **It is not a
+gauntlet layer** — a layer is an executable check with a machine-evaluable
+result; this is an agent returning prose a human must judge, spending the one
+resource this skill otherwise guards. Experimental: the evidence is one case study
+(`references/verifier-case-study.md` — for deciding whether to run this, not
+for the verifier to read), not a benchmark.
+
+**The protocol is `references/verifier.md`. Verification has not been performed
+until that file has been read in full and executed; missing or unreadable →
+`blocked`, never `passed`.** What cannot be traded away:
+
+- **Fresh context, blind first**, four inputs only — the task contract, the
+  approved SPEC, an exact source state, the entry point. Never your
+  conversation. The draft EVIDENCE comes after its own results, not before.
+- **It fixes nothing.** A SPEC gap goes to the human, never to the builder to
+  self-amend.
+- **The human grades the findings.** Behavioural findings are fixed and
+  re-verified in a new context; description and mapping findings are fixed and
+  disclosed without buying another round. Propose a grade if you like — the
+  human decides any disputed or material one, and approves stopping at the
+  cap. Self-grading is the obvious way to make this rule fail open.
+- **Cap at two rounds**, more only by explicit approval. The cap does not limit
+  the spending; it makes the spending someone's decision.
+- **Verification is source-state-specific.** A state no verifier saw is
+  `not performed`, whatever earlier rounds concluded. Fixing a behavioural
+  finding after the final permitted round therefore ships an unverified state:
+  record that as a declared downgrade and keep the earlier rounds as history.
+- **Four states**: `passed` finalizes; `failed` and `blocked` do not;
+  `not performed` finalizes only as a declared downgrade, like an unapproved
+  spec. On Tier 3 it needs no apology — say so and claim less.
 
 Where the newer layers attach:
 

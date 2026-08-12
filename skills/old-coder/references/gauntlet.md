@@ -23,7 +23,7 @@ evidence, which is the one failure mode this skill exists to prevent.
 | Tests | pytest | `pytest -q` |
 | Types | mypy | `mypy <pkg>` (or pyright) |
 | Lint + format | ruff | `ruff check . && ruff format --check .` |
-| Changed-line coverage | coverage.py | `pytest --cov=<pkg> --cov-branch --cov-report=term-missing` then verify the lines you touched appear covered; `diff-cover coverage.xml` automates changed-line % against git |
+| Changed-line coverage | coverage.py | `pytest --cov=<pkg> --cov-branch --cov-report=term-missing --cov-fail-under=<n>` — without the threshold flag the layer prints a number and exits 0, so it can never fail; `diff-cover coverage.xml --fail-under=100` gates changed lines specifically |
 | Mutation | mutmut (3+) | configure `[tool.mutmut] source_paths = ["src/"]` in pyproject.toml, then `mutmut run` (target one module with `mutmut run "my_module*"`); survivors = weak tests |
 | Property-based | hypothesis | `@given(...)` strategies for invariants |
 
@@ -59,6 +59,54 @@ evidence, which is the one failure mode this skill exists to prevent.
 | Coverage | llvm-cov | `cargo llvm-cov --branch` |
 | Mutation | cargo-mutants | `cargo mutants --file <changed file>` |
 | Property-based | proptest | `proptest!` macros |
+
+## Java
+
+| Layer | Tool | Command |
+|---|---|---|
+| Tests | JUnit 5 via Maven / Gradle | `./mvnw test` / `./gradlew test` |
+| Types | javac via Maven / Gradle | `./mvnw compile` / `./gradlew classes` |
+| Lint + format | Checkstyle + Spotless | `./mvnw checkstyle:check spotless:check` / `./gradlew check spotlessCheck` |
+| Changed-line coverage | JaCoCo | `./mvnw verify` / `./gradlew test jacocoTestReport`, then inspect the XML/HTML report for touched lines and branches |
+| Mutation | PIT | `./mvnw test-compile org.pitest:pitest-maven:mutationCoverage` / `./gradlew pitest`; scope changed packages or classes |
+| Property-based | jqwik | write `@Property` tests; the normal JUnit test command runs them |
+
+## Scala
+
+| Layer | Tool | Command |
+|---|---|---|
+| Tests | MUnit / ScalaTest via sbt | `sbt test` |
+| Types | Scala compiler | `sbt "compile" "Test / compile"` |
+| Lint + format | Scalafix + Scalafmt | `sbt scalafmtCheckAll "scalafixAll --check"` |
+| Changed-line coverage | scoverage | `sbt clean coverage test coverageReport`, then inspect the report for touched statements and branches |
+| Mutation | Stryker4s | `sbt stryker`; scope `mutate` to changed source files when the full project is slow |
+| Property-based | ScalaCheck | define `Properties` or framework-integrated properties; `sbt test` runs them |
+
+## SQL
+
+SQL has no portable test runner or type checker. Configure the actual dialect,
+use the project's migration/query framework, and validate against a disposable
+instance of the same database engine used in production.
+
+| Layer | Tool | Command |
+|---|---|---|
+| Tests | project/database-native tests | run the project's test command (`dbt test` for dbt), including migrations, constraints, and result-set assertions |
+| Parse + schema checks | SQLFluff + target database | `sqlfluff parse --dialect <dialect> <changed.sql>`, then prepare, explain, or execute each changed statement against the disposable database |
+| Lint + format | SQLFluff | `sqlfluff lint --dialect <dialect> .`; apply rule fixes with `sqlfluff fix` (`sqlfluff format` handles layout only) |
+| Changed-statement coverage | spec-to-test mapping | map every changed statement, predicate branch, constraint, and migration direction to an integration test; record any unexercised item |
+| Mutation | manual | use the manual procedure below to alter predicates, joins, aggregates, constraints, and migration steps; every mutant must fail a test |
+| Property-based | host-language generator + target database | generate rows and assert schema, query, and round-trip invariants through the project test runner |
+
+## Emacs Lisp
+
+| Layer | Tool | Command |
+|---|---|---|
+| Tests | ERT | `emacs -Q --batch -L . -l ert -l <test-file> -f ert-run-tests-batch-and-exit` |
+| Compile checks | byte compiler | `emacs -Q --batch -L . --eval '(setq byte-compile-error-on-warn t)' -f batch-byte-compile <files>` |
+| Lint | package-lint + checkdoc | run `package-lint-batch-and-exit` and `checkdoc` in batch mode over every changed `.el` file |
+| Changed-form coverage | testcover / undercover.el | instrument changed files in the batch ERT runner and verify every touched form is exercised |
+| Mutation | no mature default | use the manual mutation procedure below on changed defuns and run the ERT suite for each mutant |
+| Property-based | deterministic ERT generators | generate inputs in an `ert-deftest`, pin the random seed, and assert invariants |
 
 ## Extended layer menu (any ecosystem)
 
@@ -163,6 +211,14 @@ Self-review has the same correlation problem the rest of this skill works to
 break: the author knows why the code is right and will find reasons it is.
 Tier 3 changes, and **any change to code the author did not write**, get a
 review from an agent that shares none of that reasoning.
+
+This is the bounded, in-gauntlet review: it attacks **the diff**, costs one
+agent and ten tool calls, and returns a verdict bound to a SHA. It is not the
+same thing as independent verification (`verifier.md`), which attacks the
+finished work — run, spec, tests, checkers, and mapping — is deliberately not a
+gauntlet layer, and costs orders of magnitude more. Run this one by default;
+reach for that one when a spec gap would be expensive. SKILL.md § "Two
+independent reviews" has the comparison.
 
 **Use the `adversary` agent, spawned fresh with no inherited context.** It ships
 with this skill — `agents/adversary.md` in the source repo, installed to your
@@ -285,6 +341,24 @@ supersedes a mechanism, the docstrings, comments, and helper names describing
 the old one do not update themselves, and they are the part of the diff a green
 suite says nothing about. Sweep the whole change for the superseded mechanism's
 name before calling it done.
+
+**Grade each finding before it buys a round, and the human does the grading.**
+A finding is either **behavioural** — the code does the wrong thing, or a gate
+cannot fail — or **description/mapping**: the spec, a comment, or EVIDENCE says
+something untrue about code that is correct. Behavioural findings are fixed and
+re-reviewed. Description findings are fixed and disclosed, and buy no round.
+Propose a grade if you like; the human decides any disputed or material one.
+Left to self-grading this fails open in the obvious way — call a boundary defect
+a documentation defect and the round is avoided. It matters most when the
+finding touches the SPEC, where the real question is whether the document is
+wrong about correct code or has exposed a requirement nobody wrote down, and
+that is the human's call by the same rule that sends SPEC gaps to the human.
+
+Without the split, "fix every finding" times "re-review after any change" has no
+stopping condition short of a round that returns the empty set, and prose has no
+such fixpoint. Be clear about the trade: grading buys termination by giving up
+completeness, and a behavioural gap can live inside a round you chose not to
+run. Say in EVIDENCE which rounds were not run.
 
 **Two rounds maximum.** If a second round still finds CONFIRMED problems, the
 change is too entangled to be verified this way: abandon it and take a smaller
@@ -448,6 +522,16 @@ specifies, so the script and the config never disagree. Pin dev-tool versions
 (requirements-dev.txt, package.json devDependencies with exact versions, etc.)
 so the rerun uses the same gauntlet.
 
+Gate code itself must fail closed (see the checker note in SKILL.md): `set -e`
+at the top, no `|| true`, no `2>/dev/null`, and spell out the exit-code cases
+of any command whose codes are ambiguous. The classic trap is a
+must-find-nothing grep: rc 1 (no matches) is the only pass; rc 0 means the
+forbidden pattern exists, and rc ≥ 2 means the check itself broke (unreadable
+input, bad pattern) — both must fail the layer, or an unreadable file turns
+into a vacuous pass. Prove each home-grown check can fail with a one-off
+negative control (feed it a known-bad fixture; make its input unreadable) and
+record the control in EVIDENCE's honest notes.
+
 Skeleton — adapt the commands, keep the structure. The three lines that carry
 the mechanism claims are the `set -e`, the stale-artifact delete, and the
 `mkdir -p`; drop any of them and "by construction" stops being true:
@@ -496,9 +580,10 @@ keep that true:
   coverage, or hypothesis properties that run inside the suite), cite the log
   that *contains the number* — the same log may appear on several rows. Do not
   invent a filename for a command you did not run separately.
-- Layers no script can run — adversarial review, integration-tree verification,
-  and complexity budget where it is a judgement rather than a tool — are marked
-  `manual` in the EVIDENCE Log column, never given a log path.
+- Layers no script can run — adversarial review, independent verification,
+  integration-tree verification, and complexity budget where it is a judgement
+  rather than a tool — are marked `manual` in the EVIDENCE Log column, never
+  given a log path.
 
 ## Templates
 
