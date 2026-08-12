@@ -131,53 +131,6 @@ New dependencies are a SPEC matter first, a tool matter second: each one needs
 a one-line justification in the setup plan, and EVIDENCE records the final
 dependency diff so the human can see exactly what the agent pulled in.
 
-## Integration-tree verification
-
-> A green run in an isolated tree is not evidence about the tree the change
-> lands in, whenever the two differ by ignored or untracked content. Re-run the
-> suite there before claiming done.
-
-The failure this prevents is concrete: a change passes every layer in a
-worktree and breaks the main tree on merge, because the main tree contains
-ignored files the isolated one lacked — a local `.env`, a built asset, a
-stale generated module, a differently-resolved `node_modules`.
-
-Applies **whenever the two trees differ by ignored or untracked content**, which
-is nearly always for a worktree and never for a plain branch in the same tree.
-When it does not apply, say why in EVIDENCE (`n-a: branch isolation, same
-tree`); do not leave the row blank.
-
-**Do not merge, rebase, or commit into the integration tree.** That reading is
-the dangerous one: many repos forbid committing to the landing branch outright,
-and where a worktree already holds the branch, the main checkout cannot check it
-out at all. It also violates this skill's own invariant — *do not mutate the
-user's working tree to do your work*. Verifying in a tree is not the same as
-landing in it, and landing is the human's call, after EVIDENCE.
-
-The default technique applies the diff **uncommitted** and reverts:
-
-```sh
-cd <integration tree>
-git status --porcelain > /tmp/before.txt        # the tree must be clean first; if not, stop
-git diff <base>..<tip> | git apply -            # apply, do not merge
-<test command> > "$LOGS/integration.log" 2>&1
-git checkout -- .                               # revert tracked changes, always
-git clean -nd                                   # list what the diff added; remove those paths
-git status --porcelain                          # must match /tmp/before.txt
-```
-
-Three things that go wrong if you shorten it: `git checkout -- .` does not
-remove **new files** the diff added, so a diff that adds a module leaves it
-behind — hence the `git clean -nd` review step, listed before deleting rather
-than `-f` blind. A dirty starting tree makes the revert ambiguous, so check
-first and stop rather than guess. And `git apply` failing partway leaves the
-tree half-patched: treat a non-zero exit as "revert now and report", not as
-something to fix forward.
-
-Report both results — the isolated run and the integration run — as separate
-numbers, never merged into one, and state which technique produced the
-integration number.
-
 ## Egress: what the change lets data reach
 
 A layer the counting layers cannot cover. Coverage and mutation ask whether a line RAN and whether a
@@ -580,10 +533,9 @@ keep that true:
   coverage, or hypothesis properties that run inside the suite), cite the log
   that *contains the number* — the same log may appear on several rows. Do not
   invent a filename for a command you did not run separately.
-- Layers no script can run — adversarial review, independent verification,
-  integration-tree verification, and complexity budget where it is a judgement
-  rather than a tool — are marked `manual` in the EVIDENCE Log column, never
-  given a log path.
+- Layers no script can run — adversarial review, independent verification, and
+  complexity budget where it is a judgement rather than a tool — are marked
+  `manual` in the EVIDENCE Log column, never given a log path.
 
 ## Templates
 

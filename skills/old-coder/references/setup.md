@@ -154,9 +154,10 @@ task. Two acceptable outcomes, and no third:
 **Never report green from a tree that never ran the suite.** "Isolation
 succeeded" is not a gauntlet result.
 
-Whenever the isolated tree and the integration tree differ by ignored or
-untracked content, the integration-tree verification layer applies — see
-`gauntlet.md`.
+Whenever the isolated tree and the tree the change lands in differ by ignored or
+untracked content, say so in EVIDENCE. A suite that passed in a worktree lacking
+the main tree's `.env`, build outputs, or installed dependencies has not been run
+against the tree that will actually receive the change.
 
 ## Artifacts layout
 

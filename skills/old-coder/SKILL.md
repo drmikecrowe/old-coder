@@ -323,7 +323,6 @@ the answer in EVIDENCE's per-layer yield.
 | Real execution | "passes tests, doesn't run" | actually run the app/CLI/endpoint once on a realistic input, not only the test harness |
 | Supply chain & secrets | vulnerable/unnecessary deps, leaked credentials | when the dependency set changed: audit it (pip-audit / npm audit / govulncheck / cargo-audit) and check licenses; scan the diff for secrets; every new dependency must trace back to its SPEC justification. Also eyeball the capability diff: did the change start using network / subprocess / filesystem / env it didn't before? |
 | Suite health | flaky or order-dependent tests | run the suite in randomized order (pytest-randomly etc.); repeat suspected flakes. Every EVIDENCE number rests on the suite being deterministic — a flaky suite quietly invalidates the report |
-| Integration-tree verification | "green in isolation, broken on merge" | whenever the isolated tree and the tree the change lands in differ by ignored or untracked content, rerun the suite in the landing tree — by **applying the diff uncommitted and reverting**, never by merging, rebasing, or committing there (exact recipe in `references/gauntlet.md`). A green run in a tree that lacks the main tree's `.env`, build outputs, or installed deps is not evidence about the main tree |
 | Adversarial review | reasoning that the author cannot audit. **If the change adds or widens an output surface, one reviewer must use a security lens.** An author who picks the lenses omits the category that the author does not fear | the **`adversary` agent, spawned fresh with no inherited context** (bundled with this skill in `agents/`; see "The bundled agents"), briefed to falsify the claim that the change is correct. Where agent definitions are unavailable, a general-purpose subagent carrying that file's body as its brief. Reviews the whole `<base>...HEAD` diff and **binds to that SHA**: any later commit — including your fix for its own findings — drops this layer back to not-run. Procedure, failure-class list, and the two-round limit in `references/gauntlet.md` |
 
 Redirect every layer to its own log under the task's `logs/` dir and read a
@@ -650,7 +649,6 @@ Where the newer layers attach:
 |---|---|
 | Isolation (branch or worktree) | Tier 2 up |
 | Intent review of the SPEC (`spec-intent`) | Tier 2 up |
-| Integration-tree verification | whenever the isolated and landing trees differ by ignored/untracked content |
 | Adversarial review by an independent agent (`adversary`) | Tier 3, **or any change to code you did not write** |
 
 ## The bundled agents
@@ -709,13 +707,16 @@ consequence in EVIDENCE, and continue** — never block on a human who is not
 there. A run that halts on configuration produces neither code nor evidence.
 
 **Isolation.** The invariant, not the mechanism: *do not mutate the user's
-working tree to do your work, and verify in the tree that will actually receive
-the merge.* Default from Tier 2 up; Tier 1 edits in place, which is why Tier 1
-is capped at changes whose blast radius is a typo. Branch or worktree — pick
-with the detection chain in `references/setup.md`, declare it in the SPEC. The
-trap: **a fresh worktree contains no gitignored content**, so the gauntlet often
-cannot run there until dependencies are rebuilt. Rebuild, or fall back to a
-branch and record why. Never report green from a tree that never ran the suite.
+working tree to do your work.* Default from Tier 2 up; Tier 1 edits in place,
+which is why Tier 1 is capped at changes whose blast radius is a typo. Branch or
+worktree — pick with the detection chain in `references/setup.md`, declare it in
+the SPEC. The trap: **a fresh worktree contains no gitignored content**, so the
+gauntlet often cannot run there until dependencies are rebuilt. Rebuild, or fall
+back to a branch and record why. Never report green from a tree that never ran
+the suite — and where the isolated tree and the tree the change lands in differ
+by ignored or untracked content, say so in EVIDENCE, because a green run in a
+tree missing the main tree's `.env` or build outputs is not evidence about the
+main tree.
 
 If the project has no test runner, no linter, or no type checking, **propose the
 standard toolchain for the language and let the human add it** (see
