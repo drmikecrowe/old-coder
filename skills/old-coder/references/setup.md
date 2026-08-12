@@ -30,10 +30,10 @@ types = "..."
 | Key | Meaning | Default when absent |
 |---|---|---|
 | `isolation` | how work is kept out of the user's working tree | `auto` — run the detection chain below |
-| `install` | may the skill install packages/tools without in-task approval? | `propose` — put it in the SPEC's setup plan and wait |
-| `commit` | may the skill create checkpoint commits without in-task approval? | `propose` |
-| `commit_args` | flags the repo *mandates* on every commit — signing (`-S`), a trailer, a sign-off. Policy says **whether** you may commit; this says **how** the repo requires it done | `[]` — but detect: a repo rule or CI check requiring signed commits is a mandate the skill must honor, not a preference |
-| `tracker` | may the skill post the completion roll-up to the issue the SPEC names, without in-task approval? | `propose` — write the note into the artifact directory and let the human post it |
+| `install` | is the skill permitted to install packages/tools without in-task approval? | `propose` — put it in the SPEC's setup plan and wait |
+| `commit` | is the skill permitted to create checkpoint commits without in-task approval? | `propose` |
+| `commit_args` | flags the repo *mandates* on every commit — signing (`-S`), a trailer, a sign-off. Policy says **whether** you are permitted to commit; this says **how** the repo requires it done | `[]` — but detect: a repo rule or CI check requiring signed commits is a mandate the skill must honor, not a preference |
+| `tracker` | is the skill permitted to post the completion roll-up to the issue the SPEC names, without in-task approval? | `propose` — write the note into the artifact directory and let the human post it |
 | `artifacts` | root directory for per-task SPEC, EVIDENCE, and logs. Repo-relative, or **absolute** when the config is gitignored — see "Which tree each artifact is written in" | `.old-coder` at the repo root |
 | `commands.test` / `.lint` / `.types` | the project's real commands | detect; if detection finds nothing, fall back to the ecosystem tables in `gauntlet.md` |
 
@@ -88,7 +88,7 @@ git ls-files --error-unmatch .old-coder.toml   # exit 0 = tracked, non-zero = no
 If `.old-coder.toml` is **tracked by git**, honor only the settings that
 *tighten* permissions, and ignore the ones that *loosen* them:
 
-| Setting | Tracked file may set it to | Ignored if tracked |
+| Setting | Tracked file is permitted to set it to | Ignored if tracked |
 |---|---|---|
 | `install` | `propose` | `allow` |
 | `commit` | `propose` | `allow` |
