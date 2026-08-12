@@ -18,13 +18,21 @@ It's plain markdown, so it works with any coding agent that follows instructions
 npx skills add https://github.com/amazingang/old-coder
 ```
 
-Or manually:
+That installs the skill only. The two review agents live outside the skill folder, so copy them in as well — from a clone of this repo:
 
-- **Claude Code** — copy the skill into a skills folder, then invoke `/old-coder` or let it trigger on "prove it works"-style requests:
+```sh
+cp agents/*.md ~/.claude/agents/    # or <project>/.claude/agents/
+```
+
+Or manually, both parts:
+
+- **Claude Code** — copy the skill into a skills folder and the two review agents into an agents folder, then invoke `/old-coder` or let it trigger on "prove it works"-style requests:
   ```sh
   cp -r skills/old-coder ~/.claude/skills/    # or <project>/.claude/skills/
+  cp agents/*.md ~/.claude/agents/            # or <project>/.claude/agents/
   ```
-- **Other agents** — add `skills/old-coder/SKILL.md` to your `AGENTS.md`, rules file, or system prompt, and keep `references/gauntlet.md` alongside it.
+  The agents are `spec-intent` and `adversary`, the two review layers of the loop. Without them the skill still runs — it falls back to a general-purpose subagent briefed from the agent file — so keep those files where you can read them.
+- **Other agents** — add `skills/old-coder/SKILL.md` to your `AGENTS.md`, rules file, or system prompt, and keep `references/gauntlet.md` alongside it. If your agent can't spawn subagents from a definition file, use `agents/spec-intent.md` and `agents/adversary.md` as the briefs for the two review passes.
 
 ## The idea
 
@@ -80,6 +88,7 @@ And one limit stated plainly: the gauntlet proves the code meets the spec — it
 
 ```
 skills/old-coder/         the skill (SKILL.md + references/gauntlet.md)
+agents/                   the two review subagents (spec-intent, adversary)
 demo-rate-limiter/        a rate limiter built end-to-end under the skill
 ```
 

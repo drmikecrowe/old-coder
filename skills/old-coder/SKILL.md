@@ -1,6 +1,6 @@
 ---
 name: old-coder
-description: Evidence-first development — surround the implementation with an executable spec and a gauntlet of constraints (tests, types, coverage, mutation) so line-by-line review becomes optional. Use when the user explicitly asks for high-assurance or evidence-first work ("reliable", "TDD", "prove it works", "I won't read the code"). Also load it when the user did NOT ask but the change touches a high-stakes domain (money, auth, data loss, concurrency, public API) — in that case the first and only act is to OFFER the loop in one sentence and stop, so a wrong guess costs a sentence and no files. Work happens in an isolated branch or worktree and ends at an evidence report — this skill never pushes, opens a PR, or publishes, except an optional tracker roll-up, and only where explicitly granted. For routine changes where the user just wants normal tests, write good tests directly instead of invoking this loop.
+description: Evidence-first development — surround the implementation with an executable spec and a gauntlet of constraints (tests, types, coverage, mutation) so line-by-line review becomes optional. Use when the user explicitly asks for high-assurance or evidence-first work ("reliable", "TDD", "prove it works", "I won't read the code"). Also load it when the user did NOT ask but the change touches a high-stakes domain (money, auth, data loss, concurrency, public API, or a hand-rolled parser / config-format reader) — in that case the first and only act is to OFFER the loop in one sentence and stop, so a wrong guess costs a sentence and no files. Work happens in an isolated branch or worktree and ends at an evidence report — this skill never pushes, opens a PR, or publishes, except an optional tracker roll-up, and only where explicitly granted. For routine changes where the user just wants normal tests, write good tests directly instead of invoking this loop.
 ---
 
 # Old Coder: Reliable Coding Under Constraint and Test
@@ -15,7 +15,8 @@ a small fix.
   "reliable", "TDD", "prove it works", or "I will not read the code". Start at
   step 1 below.
 - **The human did not ask, and you loaded this because the change looks
-  high-stakes** — money, auth, data loss, concurrency, or a public API. Your
+  high-stakes** — money, auth, data loss, concurrency, a public API, or a
+  hand-rolled parser or config-format reader. Your
   first act is an OFFER, and it is your only act. Write one or two sentences.
   Name the domain you saw. Give two choices: the full loop, or a normal fix with
   good tests. Then stop and wait.
@@ -184,6 +185,31 @@ implementation files:
   makes the whole directory durable at the cost of spec-drift detection
   (`references/setup.md`).
 
+**Intent review — one pass, before the human sees the spec.** Tier 2 up; a Tier 1
+change has no spec to misaim. Send `SPEC.md` and the
+request *verbatim* to a **fresh subagent with no inherited context** (`spec-intent`, see
+"The bundled agents" below), and ask one question: *if every scenario here passes, does the
+human have what they actually asked for?* Three prompts, nothing more:
+
+1. What did the request want that the spec does not cover?
+2. What does the spec do that the request never asked for?
+3. Where would a reasonable implementer read this spec and build the wrong thing?
+
+**This layer is deliberately light, and keeping it light is the point.** It is not the
+gauntlet's adversarial review and must not imitate it: no failure-class hunt, no severity
+labels, no line-editing, no reading the implementation — there isn't one yet. Give the
+reviewer the request and the spec, not the codebase. One round, no second pass. Prose, a
+handful of points at most; a reviewer that returns twenty is doing the wrong job, so say
+so in the brief.
+
+Findings are **advisory**. Fold in what is right, revise the spec visibly, and say in one
+line what you disagreed with and why. It does not block — the human's approval still
+governs — but it runs **first**, so the spec they read is the improved one. Record it in
+EVIDENCE as one line: reviewer ran, what it changed. It costs one round trip at the
+cheapest moment in the loop, when the only artifact is a document. A spec that is solid
+but aimed at the wrong target produces a flawless gauntlet around the wrong feature, and
+no later layer catches that — every one of them takes the spec as given.
+
 ### 2. RED — prove each test can fail
 
 Write the test for one behavior. **Run it and watch it fail** before writing the
@@ -284,7 +310,7 @@ the answer in EVIDENCE's per-layer yield.
 | Supply chain & secrets | vulnerable/unnecessary deps, leaked credentials | when the dependency set changed: audit it (pip-audit / npm audit / govulncheck / cargo-audit) and check licenses; scan the diff for secrets; every new dependency must trace back to its SPEC justification. Also eyeball the capability diff: did the change start using network / subprocess / filesystem / env it didn't before? |
 | Suite health | flaky or order-dependent tests | run the suite in randomized order (pytest-randomly etc.); repeat suspected flakes. Every EVIDENCE number rests on the suite being deterministic — a flaky suite quietly invalidates the report |
 | Integration-tree verification | "green in isolation, broken on merge" | whenever the isolated tree and the tree the change lands in differ by ignored or untracked content, rerun the suite in the landing tree — by **applying the diff uncommitted and reverting**, never by merging, rebasing, or committing there (exact recipe in `references/gauntlet.md`). A green run in a tree that lacks the main tree's `.env`, build outputs, or installed deps is not evidence about the main tree |
-| Adversarial review | reasoning that the author cannot audit. **If the change adds or widens an output surface, one reviewer must use a security lens.** An author who picks the lenses omits the category that the author does not fear | a **fresh general-purpose subagent with no inherited context**, briefed to falsify the claim that the change is correct. Reviews the whole `<base>...HEAD` diff and **binds to that SHA**: any later commit — including your fix for its own findings — drops this layer back to not-run. Procedure, failure-class list, and the two-round limit in `references/gauntlet.md` |
+| Adversarial review | reasoning that the author cannot audit. **If the change adds or widens an output surface, one reviewer must use a security lens.** An author who picks the lenses omits the category that the author does not fear | the **`adversary` agent, spawned fresh with no inherited context** (bundled with this skill in `agents/`; see "The bundled agents"), briefed to falsify the claim that the change is correct. Where agent definitions are unavailable, a general-purpose subagent carrying that file's body as its brief. Reviews the whole `<base>...HEAD` diff and **binds to that SHA**: any later commit — including your fix for its own findings — drops this layer back to not-run. Procedure, failure-class list, and the two-round limit in `references/gauntlet.md` |
 
 Redirect every layer to its own log under the task's `logs/` dir and read a
 bounded slice — `cmd > log 2>&1`, never `tee` (`references/gauntlet.md`).
@@ -500,7 +526,10 @@ Scale effort to blast radius, and say which tier you chose:
 - **Tier 2 — normal** (bug fix, small feature): full loop. Bug fixes MUST start
   with a RED test reproducing the bug — the fix is not done until yesterday's
   bug is tomorrow's regression test.
-- **Tier 3 — high stakes** (money, auth, data loss, concurrency, public API):
+- **Tier 3 — high stakes** (money, auth, data loss, concurrency, public API, or
+  a hand-rolled parser / config-format reader — YAML, TOML, shell, INI, or any
+  hand-written scan of a text format, where the failure mode is input the parser
+  accepts but the tests never feed it):
   start with a short **failure model**: list the ways this specific change can
   hurt (race condition, partial write, hostile input, overflow, unbounded
   growth, failed rollback…), and for each mode add a layer that can actually
@@ -512,7 +541,7 @@ Scale effort to blast radius, and say which tier you chose:
   coverage cannot substitute for these; the generic gauntlet is the floor, not
   the ceiling. Then: full loop + property-based tests + mutation testing
   (tool-based if available) + a hostile-input pass against your own
-  implementation + **adversarial review by an independent agent**. Failure modes
+  implementation + **adversarial review by an independent agent** (`adversary`). Failure modes
   deliberately not covered go in EVIDENCE as known limits.
 
 Where the newer layers attach:
@@ -520,8 +549,41 @@ Where the newer layers attach:
 | Layer | From |
 |---|---|
 | Isolation (branch or worktree) | Tier 2 up |
+| Intent review of the SPEC (`spec-intent`) | Tier 2 up |
 | Integration-tree verification | whenever the isolated and landing trees differ by ignored/untracked content |
-| Adversarial review by an independent agent | Tier 3, **or any change to code you did not write** |
+| Adversarial review by an independent agent (`adversary`) | Tier 3, **or any change to code you did not write** |
+
+## The bundled agents
+
+Two review layers in this loop run as subagents, and they ship with the skill as agent
+definitions — `agents/` beside `skills/` in the source repo, installed to your agents
+directory (`~/.claude/agents/` or `<project>/.claude/agents/`) alongside the skill:
+
+| Agent | Layer | Tools | Budget |
+|---|---|---|---|
+| `spec-intent` | Intent review, end of SPEC | `Read` only | ~0 tool calls, one round |
+| `adversary` | Adversarial review, in the gauntlet | `Read`, `Bash`, `Grep`, `Glob` | 10 tool calls, one round |
+
+**They are two agents on purpose.** The spec reviewer must not reach the codebase — there is
+no implementation yet, and a spec compared against the source instead of the intent always
+passes. The code reviewer must reach it and nothing else matters. Merging them produces one
+agent that does the heavy review at both stages, which is the failure this split prevents.
+
+**Why the tool lists are short.** A subagent re-reads its entire context every turn, so its
+cost is `baseline x turns`, and tool schemas sit in the baseline. Measured on a real
+adversarial review: a 26K baseline over 38 turns was 46% of the total bill, for 18 actual
+tool calls — roughly twenty turns of deliberation, each paying full freight. Restricting
+tools shrinks the baseline; the explicit call budget shrinks the multiplier. Both terms
+matter, and the budget is the cheaper win.
+
+**Do not reach for output-shrinking tooling here.** Context-compressing MCP servers, output
+filters, and the like target *tool result size* — measured at 3% of the same bill — while
+adding schemas to the baseline that get re-read every turn. For a bounded reviewer they cost
+more than they save. Give the agent few tools and a hard turn budget instead.
+
+If the host does not support agent definitions, spawn a plain general-purpose subagent and
+paste the body of the relevant file in as the brief. The layer is the contract; the agent
+file is a convenience.
 
 ## Setup and configuration
 

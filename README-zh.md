@@ -18,13 +18,21 @@ skill 就是纯 markdown，任何能遵循指令的 coding agent 都能用：Cla
 npx skills add https://github.com/amazingang/old-coder
 ```
 
-也可以手动安装：
+这条命令只装 skill 本体。两个评审 agent 在 skill 目录之外，需要另外拷一份——从本仓库的 clone 里：
 
-- **Claude Code**——把 skill 拷进 skills 文件夹，然后用 `/old-coder` 调用，或在"证明它能用"这类请求时让它自动触发：
+```sh
+cp agents/*.md ~/.claude/agents/    # 或 <project>/.claude/agents/
+```
+
+也可以两部分都手动安装：
+
+- **Claude Code**——把 skill 拷进 skills 文件夹，把两个评审 agent 拷进 agents 文件夹，然后用 `/old-coder` 调用，或在"证明它能用"这类请求时让它自动触发：
   ```sh
   cp -r skills/old-coder ~/.claude/skills/    # 或 <project>/.claude/skills/
+  cp agents/*.md ~/.claude/agents/            # 或 <project>/.claude/agents/
   ```
-- **其他 agent**——把 `skills/old-coder/SKILL.md` 加进你的 `AGENTS.md`、规则文件或 system prompt，并把 `references/gauntlet.md` 放在旁边备查。
+  这两个 agent 是 `spec-intent` 和 `adversary`，对应流程里的两道评审。不装也能跑——skill 会退回到用 agent 文件正文作为 brief 的通用 subagent——所以这两个文件请留在手边。
+- **其他 agent**——把 `skills/old-coder/SKILL.md` 加进你的 `AGENTS.md`、规则文件或 system prompt，并把 `references/gauntlet.md` 放在旁边备查。如果你的 agent 不支持用定义文件拉起 subagent，就把 `agents/spec-intent.md` 和 `agents/adversary.md` 的正文当作这两道评审的 brief。
 
 
 
@@ -85,6 +93,7 @@ agent 是在给自己的作业打分，所以规则很严：不许为通过而�
 
 ```
 skills/old-coder/         skill 本体（SKILL.md + references/gauntlet.md）
+agents/                   两个评审 subagent（spec-intent、adversary）
 demo-rate-limiter/        按此 skill 端到端做出来的限流器示例
 ```
 

@@ -164,7 +164,14 @@ break: the author knows why the code is right and will find reasons it is.
 Tier 3 changes, and **any change to code the author did not write**, get a
 review from an agent that shares none of that reasoning.
 
-**Use a fresh general-purpose subagent with no inherited context.** Do **not**
+**Use the `adversary` agent, spawned fresh with no inherited context.** It ships
+with this skill — `agents/adversary.md` in the source repo, installed to your
+agents directory — and already carries the hunting order,
+the tool restrictions, and the call budget — do not re-brief it from scratch, and
+do not hand it a wider toolset than it declares. Add only what is task-specific:
+the base SHA, the lens, and the failure **class** from the previous round. If the
+host does not support agent definitions, use a general-purpose subagent with that
+file's body as its brief. Do **not**
 use a "fork"-style subagent that inherits the parent conversation — it inherits
 the author's justification for the design and will rubber-stamp it. Breaking
 that correlation is the entire point of this layer.

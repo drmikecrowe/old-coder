@@ -76,6 +76,8 @@ Written to `EVIDENCE.md` in the task's artifact directory, alongside the
 - Spec: <artifacts>/<task dir>/SPEC.md (<committed as SHA | uncommitted>)
 - Spec approval: <obtained from user | not obtained (autonomous run) —
   confidence downgraded; spec is the artifact to review after the fact>
+- Spec intent review: <`spec-intent` ran — <N> points, <what changed in the spec>,
+  <what you disagreed with and why> | not run — reason>
 - Source state: <commit SHA | uncommitted work, tree hash <sha256>> — persist
   the computation as a script (e.g. tools/source_state.sh); a hash recipe
   written in prose is working-directory-sensitive and will fail to reproduce
@@ -138,7 +140,7 @@ leaving a reader to count empty rows.
 | Supply chain & secrets | <cmd> | PASSED — 0 known vulns; new deps: none (or list, each ↔ SPEC justification) | <mm:ss> | logs/supply-chain.log |
 | Suite health | <cmd> | PASSED — randomized order (seed <n>), all passed (or `SUBSTITUTED: <what ran> — cannot detect <blind spot>`) | <mm:ss> | logs/suite-health.log |
 | Integration-tree verification | <cmd, run in the integration tree, diff applied uncommitted then reverted> | PASSED — <N> passed, 0 failed; tree reverted clean (`git status` empty) (or `N-A: branch isolation, same tree`) | <mm:ss> | logs/integration.log (redirected by hand — outside the script, which runs in one tree) |
-| Adversarial review | <model + agent type, e.g. "fresh general-purpose subagent, no inherited context, model X"> | PASSED — <N> findings: <N> CONFIRMED (resolved, numbers above are from a run post-dating the fixes), <N> dismissed (each with the check that disproves it), round <1|2> (or `N-A: Tier <1|2>, author wrote the code` / "abandoned after round 2") | <mm:ss> | logs/review.log † |
+| Adversarial review | <agent + model, e.g. "`adversary`, fresh, no inherited context, model X"; note any deviation from its declared tools/budget> | PASSED — <N> findings: <N> CONFIRMED (resolved, numbers above are from a run post-dating the fixes), <N> dismissed (each with the check that disproves it), round <1|2> (or `N-A: Tier <1|2>, author wrote the code` / "abandoned after round 2") | <mm:ss> | logs/review.log † |
 
 The **mutation row has no prose form.** "12/12 killed, mutants listed below for
 manual re-application" is an incomplete row, not a passing one — the command is
