@@ -107,7 +107,7 @@ are not gated, they are absent.
 Two things can be published, both off by default, both writing into a place the
 human already made:
 
-- the **tracker roll-up**, posting to an issue when `tracker = "allow"`;
+- the **tracker roll-up**, posting to an issue when a user-scope rule grants it;
 - a **projection** of SPEC or EVIDENCE, when the SPEC declares a destination and
   a user-scope rule grants that surface. A PR projection fills the body of a PR
   the human already opened — draft only, unless a rule says otherwise.
@@ -118,9 +118,9 @@ nothing.
 So with the default config, nothing this skill does is outward-facing and an
 unattended run cannot cause external harm. The confidence downgrade for
 autonomous mode is therefore about **evidence quality** — the spec was never
-reviewed by an independent party — not about blast radius. `tracker = "allow"`
-and `pr = "allow"` are the settings that trade that property away, which is why
-neither can be granted by a committed config file.
+reviewed by an independent party — not about blast radius. A tracker grant and a
+PR-body grant are what trade that property away, which is why neither is honored
+from a committed file — only from your own user-scope rules.
 
 ## The Loop
 
@@ -229,7 +229,7 @@ implementation files:
 
 **Intent review — one pass, before the human sees the spec.** Tier 2 up; a Tier 1
 change has no spec to misaim. Send `SPEC.md` and the
-request *verbatim* to a **fresh subagent with no inherited context** (`spec-intent`, see
+request *verbatim* to a **fresh subagent with no inherited context** (`old-coder-spec-intent`, see
 "The bundled agents" below), and ask one question: *if every scenario here passes, does the
 human have what they actually asked for?* Three prompts, nothing more:
 
@@ -351,7 +351,7 @@ the answer in EVIDENCE's per-layer yield.
 | Real execution | "passes tests, doesn't run" | actually run the app/CLI/endpoint once on a realistic input, not only the test harness |
 | Supply chain & secrets | vulnerable/unnecessary deps, leaked credentials | when the dependency set changed: audit it (pip-audit / npm audit / govulncheck / cargo-audit) and check licenses; scan the diff for secrets; every new dependency must trace back to its SPEC justification. Also eyeball the capability diff: did the change start using network / subprocess / filesystem / env it didn't before? |
 | Suite health | flaky or order-dependent tests | run the suite in randomized order (pytest-randomly etc.); repeat suspected flakes. Every EVIDENCE number rests on the suite being deterministic — a flaky suite quietly invalidates the report |
-| Adversarial review | reasoning that the author cannot audit. **If the change adds or widens an output surface, one reviewer must use a security lens.** An author who picks the lenses omits the category that the author does not fear | the **`adversary` agent, spawned fresh with no inherited context** (brief bundled inside the skill at `agents/adversary.md`; see "The bundled agents"), briefed to falsify the claim that the change is correct — run as a registered agent where the host supports it, otherwise a general-purpose subagent carrying that file's body. Reviews the whole `<base>...HEAD` diff and **binds to that SHA**: any later commit — including your fix for its own findings — drops this layer back to not-run. Procedure, failure-class list, and the two-round limit in `references/gauntlet.md` |
+| Adversarial review | reasoning that the author cannot audit. **If the change adds or widens an output surface, one reviewer must use a security lens.** An author who picks the lenses omits the category that the author does not fear | the **`old-coder-adversary` agent, spawned fresh with no inherited context** (brief bundled inside the skill at `agents/old-coder-adversary.md`; see "The bundled agents"), briefed to falsify the claim that the change is correct — run as a registered agent where the host supports it, otherwise a general-purpose subagent carrying that file's body. Reviews the whole `<base>...HEAD` diff and **binds to that SHA**: any later commit — including your fix for its own findings — drops this layer back to not-run. Procedure, failure-class list, and the two-round limit in `references/gauntlet.md` |
 
 Redirect every layer to its own log under the task's `logs/` dir and read a
 bounded slice — `cmd > log 2>&1`, never `tee` (`references/gauntlet.md`).
@@ -620,10 +620,10 @@ Scale effort to blast radius, and say which tier you chose:
   coverage cannot substitute for these; the generic gauntlet is the floor, not
   the ceiling. Then: full loop + property-based tests + mutation testing
   (tool-based if available) + a hostile-input pass against your own
-  implementation + **adversarial review by an independent agent** (`adversary`). Failure modes
+  implementation + **adversarial review by an independent agent** (`old-coder-adversary`). Failure modes
   deliberately not covered go in EVIDENCE as known limits.
   The hostile-input pass is you attacking your own work and shares your blind
-  spots, which is why the `adversary` review is separate from it and not
+  spots, which is why the `old-coder-adversary` review is separate from it and not
   optional at this tier. Where a spec gap would be expensive on top of that,
   independent verification below is a further and much larger step.
 
@@ -633,13 +633,13 @@ This skill carries two ways to put a fresh pair of eyes on the work, and they
 are not interchangeable. Run the first by default; reach for the second only
 when the stakes carry its cost.
 
-| | **Adversarial review** (`adversary`) | **Independent verification** (VERIFY) |
+| | **Adversarial review** (`old-coder-adversary`) | **Independent verification** (VERIFY) |
 |---|---|---|
 | What it attacks | the diff | the finished work: run, spec, tests, checkers, mapping |
 | When | inside the gauntlet, Tier 3 or any change to code you did not write | after the gauntlet, before EVIDENCE is signed, Tier 3 by choice |
 | Cost | one agent, 10 tool calls, one round | a protocol with a blind phase and a round cap; ~550k tokens in the one recorded case |
 | Is it a gauntlet layer? | yes — bounded, and its verdict binds to a SHA | **no** — prose a human must grade |
-| Protocol | `agents/adversary.md` (in the skill) | `references/verifier.md` |
+| Protocol | `agents/old-coder-adversary.md` (in the skill) | `references/verifier.md` |
 
 They share the rule that matters most, arrived at independently: **a verdict
 attaches to the source state that was reviewed, not to the project.** Any later
@@ -691,8 +691,8 @@ Where the newer layers attach:
 | Layer | From |
 |---|---|
 | Isolation (branch or worktree) | Tier 2 up |
-| Intent review of the SPEC (`spec-intent`) | Tier 2 up |
-| Adversarial review by an independent agent (`adversary`) | Tier 3, **or any change to code you did not write** |
+| Intent review of the SPEC (`old-coder-spec-intent`) | Tier 2 up |
+| Adversarial review by an independent agent (`old-coder-adversary`) | Tier 3, **or any change to code you did not write** |
 
 ## The bundled agents
 
@@ -701,8 +701,8 @@ Two review layers in this loop run as subagents. Both briefs ship **inside** the
 
 | Agent | Layer | Tools | Budget |
 |---|---|---|---|
-| `spec-intent` | Intent review, end of SPEC | `Read` only | ~0 tool calls, one round |
-| `adversary` | Adversarial review, in the gauntlet | `Read`, `Bash`, `Grep`, `Glob` | 10 tool calls, one round |
+| `old-coder-spec-intent` | Intent review, end of SPEC | `Read` only | ~0 tool calls, one round |
+| `old-coder-adversary` | Adversarial review, in the gauntlet | `Read`, `Bash`, `Grep`, `Glob` | 10 tool calls, one round |
 
 **They are two agents on purpose.** The spec reviewer must not reach the codebase — there is
 no implementation yet, and a spec compared against the source instead of the intent always
@@ -801,7 +801,7 @@ and the final diff shows exactly what changed. Checkpoint commits happen only
 under that spec-approved authorization (or an explicit user request) — never
 impose a commit cadence on a repo whose owner hasn't agreed to it (the commit grant
 governs this — see above). Where the repo *mandates* a commit style — signing,
-a required trailer — that is `commit_args`, and it is not optional: a commit the
+a required trailer — that mandate is not optional: a commit the
 repo's own rules reject is worse than no commit. Detect it at setup and name it
 in the SPEC's setup plan (`references/setup.md`).
 

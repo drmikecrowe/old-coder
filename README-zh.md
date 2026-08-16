@@ -35,7 +35,7 @@ npx skills add https://github.com/amazingang/old-coder
   ```sh
   cp skills/old-coder/agents/*.md ~/.claude/agents/
   ```
-- **其他 agent**——把 `skills/old-coder/SKILL.md` 加进你的 `AGENTS.md`、规则文件或 system prompt，并把 `references/gauntlet.md` 放在旁边备查。两道评审以 subagent 方式拉起，brief 取自 `skills/old-coder/agents/spec-intent.md` 和 `adversary.md`，不需要 agent 定义支持。
+- **其他 agent**——把 `skills/old-coder/SKILL.md` 加进你的 `AGENTS.md`、规则文件或 system prompt，并把 `references/gauntlet.md` 放在旁边备查。两道评审以 subagent 方式拉起，brief 取自 `skills/old-coder/agents/old-coder-spec-intent.md` 和 `adversary.md`，不需要 agent 定义支持。
 
 
 
@@ -114,6 +114,6 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt -e .
 MIT —— `Copyright (c) 2026 amazingang`，本 fork 的修改另行署名。
 见 [`LICENSE`](LICENSE) 与 [`ATTRIBUTION.md`](ATTRIBUTION.md)。
 
-`references/gauntlet.md` 和 skill 内 `agents/adversary.md` 中有一类失败模式改编自
+`references/gauntlet.md` 和 skill 内 `agents/old-coder-adversary.md` 中有一类失败模式改编自
 `adversarial-agent-review` skill v1.0.1（Apache-2.0），出处见
 [`ATTRIBUTION.md`](ATTRIBUTION.md)。

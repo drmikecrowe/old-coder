@@ -108,7 +108,7 @@ Nine commits, oldest first. Everything else is upstream's.
 <https://lobehub.com/skills/sharp-skills-skills-adversarial-agent-review?activeTab=skill>
 
 One failure class was adapted from that skill's "hallucination audit" vector into
-`references/gauntlet.md` and the `adversary` brief: names a change invokes that
+`references/gauntlet.md` and the `old-coder-adversary` brief: names a change invokes that
 may not exist — methods, flags, config keys, version constraints. **The adapted
 text was rewritten and rescoped**, narrowed to the cases a type checker and test
 suite cannot see. Its remaining six vectors were already covered by existing

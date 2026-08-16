@@ -35,7 +35,7 @@ Or manually:
   ```sh
   cp skills/old-coder/agents/*.md ~/.claude/agents/
   ```
-- **Other agents** — add `skills/old-coder/SKILL.md` to your `AGENTS.md`, rules file, or system prompt, and keep `references/gauntlet.md` alongside it. The two review passes are spawned as subagents briefed from `skills/old-coder/agents/spec-intent.md` and `adversary.md`; no agent-definition support is required.
+- **Other agents** — add `skills/old-coder/SKILL.md` to your `AGENTS.md`, rules file, or system prompt, and keep `references/gauntlet.md` alongside it. The two review passes are spawned as subagents briefed from `skills/old-coder/agents/old-coder-spec-intent.md` and `adversary.md`; no agent-definition support is required.
 
 ## The idea
 
@@ -138,6 +138,6 @@ commands, locking it down harder, unattended runs.
 MIT — `Copyright (c) 2026 amazingang`, with modifications in this fork.
 See [`LICENSE`](LICENSE) and [`ATTRIBUTION.md`](ATTRIBUTION.md).
 
-Portions of `references/gauntlet.md` and `agents/adversary.md` (inside the skill) adapt one failure
+Portions of `references/gauntlet.md` and `agents/old-coder-adversary.md` (inside the skill) adapt one failure
 class from the `adversarial-agent-review` skill v1.0.1 (Apache-2.0), cited in
 [`ATTRIBUTION.md`](ATTRIBUTION.md).

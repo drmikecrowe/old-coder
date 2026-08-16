@@ -1,5 +1,5 @@
 ---
-name: adversary
+name: old-coder-adversary
 description: Falsify the claim that a diff is correct. Reviews code it did not write, for the old-coder gauntlet. Spawn fresh, with no inherited context, bound to a base...HEAD SHA — a reviewer that inherits the author's reasoning will rubber-stamp it.
 tools: Read, Bash, Grep, Glob
 ---

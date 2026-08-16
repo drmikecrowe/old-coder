@@ -173,8 +173,8 @@ gauntlet layer, and costs orders of magnitude more. Run this one by default;
 reach for that one when a spec gap would be expensive. SKILL.md § "Two
 independent reviews" has the comparison.
 
-**Use the `adversary` brief, in a subagent spawned fresh with no inherited
-context.** It ships inside this skill at `agents/adversary.md` and already carries
+**Use the `old-coder-adversary` brief, in a subagent spawned fresh with no inherited
+context.** It ships inside this skill at `agents/old-coder-adversary.md` and already carries
 the hunting order, the tool restrictions, and the call budget — do not re-brief it
 from scratch, and do not hand it a wider toolset than it declares. Add only what
 is task-specific: the base SHA, the lens, and the failure **class** from the

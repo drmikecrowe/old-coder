@@ -11,7 +11,7 @@ not self-authenticating: the spec may be incomplete, a checker may be unsound,
 a mapping may overclaim, and EVIDENCE may not describe the state that shipped.
 The attack order below goes after all four.
 
-Not to be confused with the gauntlet's **adversarial review** (`adversary`,
+Not to be confused with the gauntlet's **adversarial review** (`old-coder-adversary`,
 `gauntlet.md`), which is the cheap default: one agent, ten tool calls, attacking
 the diff. This protocol attacks the finished work and costs orders of magnitude
 more. Running the bounded review is not a reason to skip this one, and running

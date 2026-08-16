@@ -34,7 +34,7 @@ closely, never a substitute for reading them:
   goes, if anywhere; the file is always written>
 - Setup plan:
   - Tools to install: <or "none">
-  - Git: <init? checkpoint commit cadence? commit_args the repo mandates>
+  - Git: <init? checkpoint commit cadence? commit flags the repo mandates>
   - Files the gauntlet will add, **by path**: `tools/mutants.py` (mutation
     layer), `tools/gauntlet.sh` (entry point) — mark either "already exists,
     reused" — plus any fixture or harness file
@@ -118,7 +118,7 @@ section's headline rather than its title:
 - Spec: <artifacts>/<task dir>/SPEC.md (<committed as SHA | uncommitted>)
 - Spec approval: <obtained from user | not obtained (autonomous run) —
   confidence downgraded; spec is the artifact to review after the fact>
-- Spec intent review: <`spec-intent` ran — <N> points, <what changed in the spec>,
+- Spec intent review: <`old-coder-spec-intent` ran — <N> points, <what changed in the spec>,
   <what you disagreed with and why> | not run — reason>
 - Source state: <commit SHA | uncommitted work, tree hash <sha256>> — persist
   the computation as a script (e.g. tools/source_state.sh); a hash recipe
@@ -136,7 +136,7 @@ section's headline rather than its title:
 - Gauntlet cost: <total wall-clock; per-layer in the table below>
 - Logs: <artifacts>/<task dir>/logs/
 - Tracker: <issue id — roll-up posted | roll-up written to ROLLUP.md, not posted
-  (tracker = propose, no approver) | none: SPEC named no issue>
+  (no standing grant, no approver present) | none: SPEC named no issue>
 
 ### Spec → Test mapping
 Status is one of: **pass / fail / unverified / n-a**. A row mapped to
@@ -185,7 +185,7 @@ leaving a reader to count empty rows.
 | Real execution | <cmd> | PASSED — <observed output> | <mm:ss> | logs/run.log |
 | Supply chain & secrets | <cmd> | PASSED — 0 known vulns; new deps: none (or list, each ↔ SPEC justification) | <mm:ss> | logs/supply-chain.log |
 | Suite health | <cmd> | PASSED — randomized order (seed <n>), all passed (or `SUBSTITUTED: <what ran> — cannot detect <blind spot>`) | <mm:ss> | logs/suite-health.log |
-| Adversarial review | <agent + model, e.g. "`adversary`, fresh, no inherited context, model X"; note any deviation from its declared tools/budget> | PASSED — <N> findings: <N> CONFIRMED (resolved, numbers above are from a run post-dating the fixes), <N> dismissed (each with the check that disproves it), round <1|2> (or `N-A: Tier <1|2>, author wrote the code` / "abandoned after round 2") | <mm:ss> | logs/review.log † |
+| Adversarial review | <agent + model, e.g. "`old-coder-adversary`, fresh, no inherited context, model X"; note any deviation from its declared tools/budget> | PASSED — <N> findings: <N> CONFIRMED (resolved, numbers above are from a run post-dating the fixes), <N> dismissed (each with the check that disproves it), round <1|2> (or `N-A: Tier <1|2>, author wrote the code` / "abandoned after round 2") | <mm:ss> | logs/review.log † |
 
 The **mutation row has no prose form.** "12/12 killed, mutants listed below for
 manual re-application" is an incomplete row, not a passing one — the command is
@@ -292,8 +292,8 @@ No hard dependency on any particular tracker — if the SPEC's `Issue` field say
 `none`, this step does not exist.
 
 Write it to `ROLLUP.md` in the task's artifact directory. Post it to the issue
-only if `tracker = "allow"` or an approver says so in-task; with `propose` and
-nobody present, leave it in the directory and say so in EVIDENCE. A hosted
+only if a user-scope rule grants it or an approver says so in-task; with neither,
+leave it in the directory and say so in EVIDENCE. A hosted
 tracker notifies people and cannot be un-sent, so it gets the same gate as a
 commit.
 

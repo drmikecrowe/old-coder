@@ -1,5 +1,5 @@
 ---
-name: spec-intent
+name: old-coder-spec-intent
 description: Check that a SPEC.md, if fully satisfied, delivers what was actually asked — before the human reads it. Advisory only, one round, no codebase access. Reviews intent, never code.
 tools: Read
 ---
