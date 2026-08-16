@@ -8,8 +8,9 @@ a time. Written for the agent executing it. Companion to `UPSTREAM-AUDIT.md`
 ## Standing rules — read before every proposal
 
 1. **One proposal at a time, smallest first.** The maintainer reviews carefully
-   and has accepted every well-scoped change so far. Trust is banked by small
-   pure wins and spent by omnibus PRs — #9 was split on exactly this.
+   and has accepted every well-scoped change so far. A small, self-contained
+   change is quick to read and easy to say yes to; an omnibus PR is neither —
+   #9 was split on exactly this.
 2. **Frame every mechanism with the maintainer's own test:** *what does it do
    when it is broken?* They have stated it twice ("a mechanism that reports
    success while doing nothing… if the answer is 'reports success', it is not
@@ -201,8 +202,9 @@ from the rule files every agent already loads.
 - Include the **F1 attribution rule** up front: a grant is honored only when
   its provenance can be positively established as outside the repo (host
   label, path outside the tree, or `git ls-files --error-unmatch` failing);
-  unattributable = absent. This pre-answers the supply-chain hole they would
-  find first — do not let them find it.
+  unattributable = absent. Disclose this rather than leaving it to surface in
+  review — it is the first question the model invites, and the proposal is
+  stronger for answering it itself.
 - PR only after they signal. If they decline, the model stays fork-local and
   CUSTOMIZATION.md remains the fork's own doc; nothing else in this roadmap
   depends on it.
@@ -271,8 +273,8 @@ references fork-only files.
 
 ## Phase 4 — the adversarial layer and the bundled agents (the big one)
 
-Propose **last among the mechanism PRs**, after Phases 1 and 3 have banked
-trust: it is the largest addition (+~200 lines of gauntlet.md, two agent
+Propose **last among the mechanism PRs**, once Phases 1 and 3 have landed the
+smaller pieces: it is the largest addition (+~200 lines of gauntlet.md, two agent
 files, SKILL.md wiring) and changes upstream's Tier 3 definition (upstream has
 a self-attack "adversarial pass"; this replaces its ceiling with an
 independent reviewer).
@@ -300,12 +302,13 @@ Carry-alongs that must travel with PR 1:
   exist") **with its Apache-2.0 provenance note intact** — the adapted-from
   comment in gauntlet.md and the ATTRIBUTION paragraph. Do not ship the class
   without the attribution.
-- The pre-emptive answer to their inevitable question: `review.log` is written
+- The answer to the obvious question, stated without waiting to be asked:
+  `review.log` is written
   by the author, so the layer rests on self-report — the "what this layer
   cannot prove" section IS the answer to "what does it do when broken," and
   the PR body should say so in those words.
 
-If they balk at the size: the fallback split is failure-class list + dismissal
+If the size is a concern: the fallback split is failure-class list + dismissal
 burden first (pure review discipline, no agents), SHA binding + grading
 second, agents third.
 
@@ -314,7 +317,8 @@ second, agents third.
 ## Phase 5 — Orientation (last, with its defense attached)
 
 The renamed summary sections (fork commit `3e8407b`) walk straight into the
-maintainer's field-bar caution from #10, so this goes last and arrives armed:
+maintainer's field-bar caution from #10, so this goes last and arrives with its
+defense already stated:
 
 - The **"reader summarizes anyway" defense** (templates.md): the alternative
   to your summary is the reader's own skim-formed one, worse than one written
