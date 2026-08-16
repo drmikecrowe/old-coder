@@ -351,7 +351,7 @@ the answer in EVIDENCE's per-layer yield.
 | Real execution | "passes tests, doesn't run" | actually run the app/CLI/endpoint once on a realistic input, not only the test harness |
 | Supply chain & secrets | vulnerable/unnecessary deps, leaked credentials | when the dependency set changed: audit it (pip-audit / npm audit / govulncheck / cargo-audit) and check licenses; scan the diff for secrets; every new dependency must trace back to its SPEC justification. Also eyeball the capability diff: did the change start using network / subprocess / filesystem / env it didn't before? |
 | Suite health | flaky or order-dependent tests | run the suite in randomized order (pytest-randomly etc.); repeat suspected flakes. Every EVIDENCE number rests on the suite being deterministic — a flaky suite quietly invalidates the report |
-| Adversarial review | reasoning that the author cannot audit. **If the change adds or widens an output surface, one reviewer must use a security lens.** An author who picks the lenses omits the category that the author does not fear | the **`adversary` agent, spawned fresh with no inherited context** (bundled with this skill in `agents/`; see "The bundled agents"), briefed to falsify the claim that the change is correct. Where agent definitions are unavailable, a general-purpose subagent carrying that file's body as its brief. Reviews the whole `<base>...HEAD` diff and **binds to that SHA**: any later commit — including your fix for its own findings — drops this layer back to not-run. Procedure, failure-class list, and the two-round limit in `references/gauntlet.md` |
+| Adversarial review | reasoning that the author cannot audit. **If the change adds or widens an output surface, one reviewer must use a security lens.** An author who picks the lenses omits the category that the author does not fear | the **`adversary` agent, spawned fresh with no inherited context** (brief bundled inside the skill at `agents/adversary.md`; see "The bundled agents"), briefed to falsify the claim that the change is correct — run as a registered agent where the host supports it, otherwise a general-purpose subagent carrying that file's body. Reviews the whole `<base>...HEAD` diff and **binds to that SHA**: any later commit — including your fix for its own findings — drops this layer back to not-run. Procedure, failure-class list, and the two-round limit in `references/gauntlet.md` |
 
 Redirect every layer to its own log under the task's `logs/` dir and read a
 bounded slice — `cmd > log 2>&1`, never `tee` (`references/gauntlet.md`).
@@ -639,7 +639,7 @@ when the stakes carry its cost.
 | When | inside the gauntlet, Tier 3 or any change to code you did not write | after the gauntlet, before EVIDENCE is signed, Tier 3 by choice |
 | Cost | one agent, 10 tool calls, one round | a protocol with a blind phase and a round cap; ~550k tokens in the one recorded case |
 | Is it a gauntlet layer? | yes — bounded, and its verdict binds to a SHA | **no** — prose a human must grade |
-| Protocol | `agents/adversary.md` | `references/verifier.md` |
+| Protocol | `agents/adversary.md` (in the skill) | `references/verifier.md` |
 
 They share the rule that matters most, arrived at independently: **a verdict
 attaches to the source state that was reviewed, not to the project.** Any later
@@ -696,9 +696,8 @@ Where the newer layers attach:
 
 ## The bundled agents
 
-Two review layers in this loop run as subagents, and they ship with the skill as agent
-definitions — `agents/` beside `skills/` in the source repo, installed to your agents
-directory (`~/.claude/agents/` or `<project>/.claude/agents/`) alongside the skill:
+Two review layers in this loop run as subagents. Both briefs ship **inside** the skill, at
+`agents/` beside `references/`, so they are always present wherever the skill is:
 
 | Agent | Layer | Tools | Budget |
 |---|---|---|---|
@@ -722,9 +721,24 @@ filters, and the like target *tool result size* — measured at 3% of the same b
 adding schemas to the baseline that get re-read every turn. For a bounded reviewer they cost
 more than they save. Give the agent few tools and a hard turn budget instead.
 
-If the host does not support agent definitions, spawn a plain general-purpose subagent and
-paste the body of the relevant file in as the brief. The layer is the contract; the agent
-file is a convenience.
+**One file, two ways to run it.** The brief is the same either way; what differs is whether
+the tool list is enforced or merely honored:
+
+- **As a bundled brief** — spawn a general-purpose subagent and give it the body of
+  `agents/<name>.md`. Always available, needs no agent-definition support, works on any host.
+  The `tools:` line is an instruction *you* must honor: grant only what it declares.
+- **As a registered agent** — copy the file to your agents directory
+  (`~/.claude/agents/` or `<project>/.claude/agents/`) and the host enforces the tool list as
+  a real constraint, not a promise.
+
+Prefer the registered path where it exists, because a constraint the host applies cannot be
+forgotten under pressure. Say in EVIDENCE which path ran — "adversary, registered agent" and
+"adversary, brief in a general-purpose subagent" are different strengths of the same claim.
+
+What must not change either way: **the subagent is spawned fresh, with no inherited
+context.** A fork-style subagent inherits the author's reasoning and rubber-stamps the work,
+which makes the layer a mechanism that reports success while doing nothing. The layer is the
+contract; where the file lives is a convenience.
 
 ## Setup and configuration
 

@@ -61,7 +61,7 @@ the project, and it is upstream's.
 
 - `skills/old-coder/references/setup.md` — `.old-coder.toml`, isolation, artifact layout
 - `skills/old-coder/references/templates.md` — the SPEC and EVIDENCE templates
-- `agents/adversary.md`, `agents/spec-intent.md` — the two reviews as agent definitions
+- `skills/old-coder/agents/` — the two reviews as bundled subagent briefs, usable as registered agent definitions
 
 ### Upstream contributors
 
@@ -108,7 +108,7 @@ Nine commits, oldest first. Everything else is upstream's.
 <https://lobehub.com/skills/sharp-skills-skills-adversarial-agent-review?activeTab=skill>
 
 One failure class was adapted from that skill's "hallucination audit" vector into
-`references/gauntlet.md` and `agents/adversary.md`: names a change invokes that
+`references/gauntlet.md` and the `adversary` brief: names a change invokes that
 may not exist — methods, flags, config keys, version constraints. **The adapted
 text was rewritten and rescoped**, narrowed to the cases a type checker and test
 suite cannot see. Its remaining six vectors were already covered by existing

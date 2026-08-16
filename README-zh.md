@@ -23,21 +23,19 @@ skill 就是纯 markdown，任何能遵循指令的 coding agent 都能用：Cla
 npx skills add https://github.com/amazingang/old-coder
 ```
 
-这条命令只装 skill 本体。两个评审 agent 在 skill 目录之外，需要另外拷一份——从本仓库的 clone 里：
+这条命令会装上全部内容，包括两个评审 agent——它们就在 skill 目录内的 `skills/old-coder/agents/`，不需要第二次拷贝。
 
-```sh
-cp agents/*.md ~/.claude/agents/    # 或 <project>/.claude/agents/
-```
+也可以手动安装：
 
-也可以两部分都手动安装：
-
-- **Claude Code**——把 skill 拷进 skills 文件夹，把两个评审 agent 拷进 agents 文件夹，然后用 `/old-coder` 调用，或在"证明它能用"这类请求时让它自动触发：
+- **Claude Code**——把 skill 拷进 skills 文件夹，然后用 `/old-coder` 调用，或在"证明它能用"这类请求时让它自动触发：
   ```sh
   cp -r skills/old-coder ~/.claude/skills/    # 或 <project>/.claude/skills/
-  cp agents/*.md ~/.claude/agents/            # 或 <project>/.claude/agents/
   ```
-  这两个 agent 是 `spec-intent` 和 `adversary`，对应流程里的两道评审。不装也能跑——skill 会退回到用 agent 文件正文作为 brief 的通用 subagent——所以这两个文件请留在手边。
-- **其他 agent**——把 `skills/old-coder/SKILL.md` 加进你的 `AGENTS.md`、规则文件或 system prompt，并把 `references/gauntlet.md` 放在旁边备查。如果你的 agent 不支持用定义文件拉起 subagent，就把 `agents/spec-intent.md` 和 `agents/adversary.md` 的正文当作这两道评审的 brief。
+  也可以把两道评审注册成真正的 agent 类型，这样它们的工具限制是被强制执行的，而不只是建议：
+  ```sh
+  cp skills/old-coder/agents/*.md ~/.claude/agents/
+  ```
+- **其他 agent**——把 `skills/old-coder/SKILL.md` 加进你的 `AGENTS.md`、规则文件或 system prompt，并把 `references/gauntlet.md` 放在旁边备查。两道评审以 subagent 方式拉起，brief 取自 `skills/old-coder/agents/spec-intent.md` 和 `adversary.md`，不需要 agent 定义支持。
 
 
 
@@ -98,7 +96,6 @@ agent 是在给自己的作业打分，所以规则很严：不许为通过而�
 
 ```
 skills/old-coder/         skill 本体（SKILL.md + references/gauntlet.md）
-agents/                   两个评审 subagent（spec-intent、adversary）
 demo-rate-limiter/        按此 skill 端到端做出来的限流器示例
 ```
 
@@ -117,6 +114,6 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt -e .
 MIT —— `Copyright (c) 2026 amazingang`，本 fork 的修改另行署名。
 见 [`LICENSE`](LICENSE) 与 [`ATTRIBUTION.md`](ATTRIBUTION.md)。
 
-`references/gauntlet.md` 和 `agents/adversary.md` 中有一类失败模式改编自
+`references/gauntlet.md` 和 skill 内 `agents/adversary.md` 中有一类失败模式改编自
 `adversarial-agent-review` skill v1.0.1（Apache-2.0），出处见
 [`ATTRIBUTION.md`](ATTRIBUTION.md)。

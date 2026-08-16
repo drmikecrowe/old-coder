@@ -173,14 +173,21 @@ gauntlet layer, and costs orders of magnitude more. Run this one by default;
 reach for that one when a spec gap would be expensive. SKILL.md § "Two
 independent reviews" has the comparison.
 
-**Use the `adversary` agent, spawned fresh with no inherited context.** It ships
-with this skill — `agents/adversary.md` in the source repo, installed to your
-agents directory — and already carries the hunting order,
-the tool restrictions, and the call budget — do not re-brief it from scratch, and
-do not hand it a wider toolset than it declares. Add only what is task-specific:
-the base SHA, the lens, and the failure **class** from the previous round. If the
-host does not support agent definitions, use a general-purpose subagent with that
-file's body as its brief. Do **not**
+**Use the `adversary` brief, in a subagent spawned fresh with no inherited
+context.** It ships inside this skill at `agents/adversary.md` and already carries
+the hunting order, the tool restrictions, and the call budget — do not re-brief it
+from scratch, and do not hand it a wider toolset than it declares. Add only what
+is task-specific: the base SHA, the lens, and the failure **class** from the
+previous round.
+
+Two ways to run it, and EVIDENCE should say which:
+
+- **As a registered agent** — the file copied to your agents directory, where the
+  host enforces `tools:` as a real constraint.
+- **As a bundled brief** — spawn a general-purpose subagent and give it that
+  file's body. Always available, since the file ships with the skill. Here the
+  tool restriction is an instruction you honor rather than a constraint the host
+  applies, so grant only the tools it declares. Do **not**
 use a "fork"-style subagent that inherits the parent conversation — it inherits
 the author's justification for the design and will rubber-stamp it. Breaking
 that correlation is the entire point of this layer.

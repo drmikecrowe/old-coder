@@ -23,21 +23,19 @@ It's plain markdown, so it works with any coding agent that follows instructions
 npx skills add https://github.com/amazingang/old-coder
 ```
 
-That installs the skill only. The two review agents live outside the skill folder, so copy them in as well — from a clone of this repo:
+That installs everything, including the two review agents — they live inside the skill at `skills/old-coder/agents/`, so there is no second copy step.
 
-```sh
-cp agents/*.md ~/.claude/agents/    # or <project>/.claude/agents/
-```
+Or manually:
 
-Or manually, both parts:
-
-- **Claude Code** — copy the skill into a skills folder and the two review agents into an agents folder, then invoke `/old-coder` or let it trigger on "prove it works"-style requests:
+- **Claude Code** — copy the skill into a skills folder, then invoke `/old-coder` or let it trigger on "prove it works"-style requests:
   ```sh
   cp -r skills/old-coder ~/.claude/skills/    # or <project>/.claude/skills/
-  cp agents/*.md ~/.claude/agents/            # or <project>/.claude/agents/
   ```
-  The agents are `spec-intent` and `adversary`, the two review layers of the loop. Without them the skill still runs — it falls back to a general-purpose subagent briefed from the agent file — so keep those files where you can read them.
-- **Other agents** — add `skills/old-coder/SKILL.md` to your `AGENTS.md`, rules file, or system prompt, and keep `references/gauntlet.md` alongside it. If your agent can't spawn subagents from a definition file, use `agents/spec-intent.md` and `agents/adversary.md` as the briefs for the two review passes.
+  Optionally register the two reviews as real agent types, which makes their tool restrictions enforced rather than advisory:
+  ```sh
+  cp skills/old-coder/agents/*.md ~/.claude/agents/
+  ```
+- **Other agents** — add `skills/old-coder/SKILL.md` to your `AGENTS.md`, rules file, or system prompt, and keep `references/gauntlet.md` alongside it. The two review passes are spawned as subagents briefed from `skills/old-coder/agents/spec-intent.md` and `adversary.md`; no agent-definition support is required.
 
 ## The idea
 
@@ -92,12 +90,12 @@ And one limit stated plainly: the gauntlet turns the constraints expressed in th
 ## What's in the repo
 
 ```
-skills/old-coder/         the skill (SKILL.md + references/)
+skills/old-coder/         the skill (SKILL.md + references/ + agents/)
   references/gauntlet.md    the layer catalogue and risk model
   references/setup.md       how rules are read, isolation, artifact layout
   references/templates.md   the SPEC and EVIDENCE templates
   references/verifier.md    independent verification (separate from the gauntlet)
-agents/                   the two review subagents (spec-intent, adversary)
+  agents/                   the two review subagents (spec-intent, adversary)
 demo-rate-limiter/        a rate limiter built end-to-end under the skill
 CUSTOMIZATION.md          how to configure the skill with rules
 ATTRIBUTION.md            provenance, upstream credits, what this fork changed
@@ -140,6 +138,6 @@ commands, locking it down harder, unattended runs.
 MIT — `Copyright (c) 2026 amazingang`, with modifications in this fork.
 See [`LICENSE`](LICENSE) and [`ATTRIBUTION.md`](ATTRIBUTION.md).
 
-Portions of `references/gauntlet.md` and `agents/adversary.md` adapt one failure
+Portions of `references/gauntlet.md` and `agents/adversary.md` (inside the skill) adapt one failure
 class from the `adversarial-agent-review` skill v1.0.1 (Apache-2.0), cited in
 [`ATTRIBUTION.md`](ATTRIBUTION.md).
