@@ -210,6 +210,20 @@ Give it the diff, the SPEC, and this named list of failure classes to hunt:
 - credential handling — construction, logging, storage, transport
 - state read before it is initialized
 - import cycles introduced by the change
+- names the change invokes that may not exist — a method, flag, config key, or version
+  constraint remembered rather than checked. Worth a lens only where the type checker and
+  the suite are blind: dynamic dispatch, string-keyed config, CLI flags in shell scripts,
+  and APIs that exist only above the pinned version.
+
+<!--
+  The class above is adapted from the "hallucination audit" vector of the
+  `adversarial-agent-review` skill v1.0.1 (Apache-2.0):
+  https://lobehub.com/skills/sharp-skills-skills-adversarial-agent-review?activeTab=skill
+  Its other six vectors are already covered by the lenses and failure classes here.
+  Its framing ("failure = saying looks good") was deliberately not adopted: it rewards
+  fabricated findings, which anti-gaming rule 5 forbids.
+-->
+
 
 Require each finding to carry:
 

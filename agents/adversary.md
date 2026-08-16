@@ -1,6 +1,6 @@
 ---
 name: adversary
-description: Independent adversarial reviewer for the old-coder gauntlet. Reviews a diff it did not write, briefed to falsify the claim that the change is correct. Spawn fresh with no inherited context, bound to a base...HEAD SHA.
+description: Falsify the claim that a diff is correct. Reviews code it did not write, for the old-coder gauntlet. Spawn fresh, with no inherited context, bound to a base...HEAD SHA — a reviewer that inherits the author's reasoning will rubber-stamp it.
 tools: Read, Bash, Grep, Glob
 ---
 
@@ -33,11 +33,16 @@ Read the whole diff first, once. Then hunt in this order, stopping when the budg
    quoting and escaping, CRLF, empty and one-element cases, duplicate keys.
 3. **Error paths that no test reaches.** What does this raise, and who catches it? An
    exception a new call site does not handle is a finding even when the happy path is
-   perfect. Check *every* call site, not the one in the diff.
+   perfect. Check *every* call site, not the one in the diff. A handler that swallows the
+   error counts too — a failure nobody can observe is worse than one that crashes.
 4. **Invariants the surrounding code states about itself** — docstrings, guards, threat-model
    IDs within fifty lines of the change. A rule the codebase states outranks one you infer.
 5. **The default branch.** `else:` on a destructive handler is safe only until someone adds
    a case. Prefer an allow-list that skips what it does not recognise.
+6. **Things the diff names that may not exist.** A method, flag, config key, or version
+   constraint the author remembered rather than checked. Skip what the type checker and
+   the suite already prove; hunt where they are blind — dynamic dispatch, string-keyed
+   config, CLI flags in shell, and methods that exist only above the pinned version.
 
 If the change adds or widens an output surface, one pass must use a **security lens**.
 

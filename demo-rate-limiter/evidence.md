@@ -1,5 +1,48 @@
 # Evidence Report — Sliding-Window Rate Limiter (Tier 3)
 
+## TL;DR
+- **Verdict:** **PASSED WITH LIMITS.** Every gauntlet layer is green at source
+  state `8b88bda`, but independent verification is `not performed` against that
+  state. This report is finalized as a **declared downgrade**, not on a passing
+  verdict.
+- **Delivered:** an in-process `RateLimiter(limit, window_seconds, clock)` with
+  `allow(key) -> bool` — sliding window per key, thread-safe, with a throttled
+  sweep that bounds the key map temporally.
+- **Proven:** 28/28 mapped scenarios pass; 41 tests, 100% changed-line coverage
+  (49/49 statements, 20/20 branches, gated), 22/22 mutants killed. The mutation
+  score is carried **entirely by the scenario suite** — the properties alone
+  kill 3/22.
+- **Not proven:** the shipped state was never independently verified; shell lint
+  never ran on the four scripts that implement half the gates; tool-based
+  mutation was substituted; two 2026-07 spec revisions remain unapproved;
+  evidence is generated on Python 3.14 while CI gates on 3.12.
+- **Read first:** *Independent verification* — it is where the downgrade lives.
+
+The writeup below, in brief:
+
+- **Spec → test mapping:** 28 rows, all `pass`, no `unverified` or `n-a`. Both
+  Must NOT constraints are mapped — one to a test, one to the must-not scan.
+- **Gauntlet:** 13 layers. Two exist to prove the harness can fail — a checker
+  self-test (3/3) and a mutation negative control (C1 killed, C2 survived).
+  One layer is `n-a` (license check: zero runtime dependencies); the rest pass.
+- **Verification:** six rounds, each a fresh context at a different commit. Round
+  6 returned **`failed`** with one behavioural gap. Rounds 1–3 found what no
+  green layer could reach: a one-shot-key memory leak usable as a remote DoS
+  against the component meant to prevent one, `limit=NaN` producing a limiter
+  that always allows, 2× over-allow under threads, and a mutation runner
+  reporting kills for mutants it never executed. Four fixes made after round 6
+  are disclosed as unverified.
+- **Known limits:** the memory bound is temporal, not cardinal — unbounded
+  distinct keys *within* one window is accepted residual risk; forward clock
+  skew, NaN readings and reentrant clocks are caller obligations, undefended in
+  code; no `Retry-After` accessor.
+- **Honest notes:** the A/B experiment this started as **failed** — the "clean"
+  control arm independently invented the planted defect, so no false-positive
+  rate could be measured. All six verifier rounds ran on the builder's model, so
+  the correlation broken is context, not model. **Three defects were introduced
+  by fixes**, and verification did not converge just because round 4 came back
+  clean.
+
 - Spec approval: **obtained** for REVISION 4 (2026-08-09) — the human approved
   each contract change item by item before implementation. Earlier revisions
   (2026-07-25, 2026-07-27) were autonomous and are still unapproved; treat

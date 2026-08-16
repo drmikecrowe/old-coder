@@ -19,7 +19,12 @@ install     = "propose"     # propose | allow
 commit      = "propose"     # propose | allow
 commit_args = []            # flags the repo mandates on every commit, e.g. ["-S"]
 tracker     = "propose"     # propose | allow — posting the roll-up to an issue
+pr          = "propose"     # propose | allow — writing into a pull request body
+pr_mode     = "draft"       # draft | ready — which kind of PR may be filled
 artifacts   = ".old-coder"  # dir for per-task SPEC/EVIDENCE/logs; absolute when the config is local
+
+spec_to     = "file"        # file | file+tracker
+evidence_to = "file"        # file | file+tracker | file+pr
 
 [commands]
 test  = "..."   # detected from package.json scripts / Makefile / pyproject / CI config
@@ -34,11 +39,68 @@ types = "..."
 | `commit` | is the skill permitted to create checkpoint commits without in-task approval? | `propose` |
 | `commit_args` | flags the repo *mandates* on every commit — signing (`-S`), a trailer, a sign-off. Policy says **whether** you are permitted to commit; this says **how** the repo requires it done | `[]` — but detect: a repo rule or CI check requiring signed commits is a mandate the skill must honor, not a preference |
 | `tracker` | is the skill permitted to post the completion roll-up to the issue the SPEC names, without in-task approval? | `propose` — write the note into the artifact directory and let the human post it |
+| `pr` | is the skill permitted to write a projection into a pull request body without in-task approval? **Never grants PR *creation*** — see "Filling a PR is not opening one" | `propose` |
+| `pr_mode` | which PRs may be filled: `draft` only, or `ready` ones too | `draft` — a ready PR requests review from people, a draft does not |
 | `artifacts` | root directory for per-task SPEC, EVIDENCE, and logs. Repo-relative, or **absolute** when the config is gitignored — see "Which tree each artifact is written in" | `.old-coder` at the repo root |
+| `spec_to` / `evidence_to` | where each artifact is **published**, on top of the file that is always written — see "Destinations" | `file` — local only |
 | `commands.test` / `.lint` / `.types` | the project's real commands | detect; if detection finds nothing, fall back to the ecosystem tables in `gauntlet.md` |
 
 Values are only ever these spellings. Use the same key names verbatim in SPEC
 and EVIDENCE when you cite them.
+
+## Destinations
+
+`spec_to` and `evidence_to` say where an artifact is **published**. They never
+say where it lives. Every value begins with `file` because the local artifact is
+written in every configuration, and that is not a formality:
+
+- **Drift detection is a `git diff`.** An approved `SPEC.md` committed at
+  approval makes later drift mechanically visible (`templates.md`). A tracker
+  **issue body is mutable in place**, and its edit history is not something any
+  reviewer will diff. Publishing to a tracker *comment* keeps the append-only
+  property; publishing to the issue description does not. Prefer a comment.
+- **Citations must resolve.** EVIDENCE cites `logs/tests.log`. Nothing published
+  into a PR body or an issue can carry those logs, so a published-only report is
+  one whose every citation dangles.
+- **Tampering has a backstop.** A PR body is editable after review, by the author
+  and by others, and binds to no SHA. The committed file is what makes
+  anti-gaming rule 5 checkable at all.
+- **The loop must terminate offline.** Tracker down, credentials absent, no
+  network: the run still has to end at an artifact.
+
+So publishing is a **projection**: re-derived from the file, idempotent, and
+regenerated whenever the source state moves. A projection that is rebuilt cannot
+go stale; a hand-maintained PR body is the worst case for freshness precisely
+because it always looks current.
+
+A projection is **short** — it is the roll-up mechanism (`templates.md`) pointed
+at a new surface, not a copy of EVIDENCE. Full Tier 3 EVIDENCE is hundreds of
+lines and the wrong thing to paste into a body with a character cap. Publish the
+TL;DR, the verdict, the gauntlet headline, and a path to the full artifact.
+
+**Hybrid needs no setting.** `spec_to` and `evidence_to` are independent, so
+"SPEC in the tracker, EVIDENCE in the PR" is just two values that differ. There
+is no mode to select and no combination to enumerate.
+
+**Destination and permission stay orthogonal.** `spec_to`/`evidence_to` choose a
+surface; `tracker`/`pr` decide whether this run may write to it unattended.
+`evidence_to = "file+pr"` with `pr = "propose"` is coherent and common: build the
+projection, write it to the artifact directory, and let the human paste it.
+
+### Filling a PR is not opening one
+
+`pr = "allow"` permits writing into the body of a pull request **that already
+exists**. It never permits creating one. This skill does not open pull requests
+in any configuration — the human opens the PR, the skill fills it.
+
+The distinction is the whole safety argument. Filling a body the human already
+published changes text on a surface they chose. Opening a PR requests review from
+people and cannot be un-sent, which is the boundary this skill declines to cross
+in its own description. If no PR exists, write the projection to the artifact
+directory and say so; that is the `propose` outcome, not a failure.
+
+`pr_mode = "draft"` restricts filling to draft PRs. A draft notifies far fewer
+people, which makes it the honest default for a surface whose gate is "propose".
 
 ## Procedure (idempotent)
 

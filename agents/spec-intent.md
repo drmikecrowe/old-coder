@@ -1,6 +1,6 @@
 ---
 name: spec-intent
-description: Light intent review of a SPEC.md before the human reads it. Checks that the spec, if fully satisfied, actually delivers what was asked. Advisory only, one round, no codebase access.
+description: Check that a SPEC.md, if fully satisfied, delivers what was actually asked — before the human reads it. Advisory only, one round, no codebase access. Reviews intent, never code.
 tools: Read
 ---
 

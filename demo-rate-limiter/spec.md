@@ -1,5 +1,41 @@
 # Spec: Sliding-Window Rate Limiter (Tier 3)
 
+## TL;DR
+- **Change:** a new in-process library class `RateLimiter(limit, window_seconds,
+  clock)` answering `allow(key) -> bool` — at most `limit` requests per key in
+  any sliding `window_seconds` interval.
+- **Why:** bound request frequency in front of a public HTTP API, where callers
+  are untrusted and the key space is attacker-controlled.
+- **Touches:** new library module only — no runtime dependencies (stdlib
+  `deque`, `math`, `threading.Lock`). Adds gauntlet tooling under `tools/` and a
+  CI workflow; changes no existing code.
+- **Decide:** three accepted risks, each argued below rather than overlooked —
+  the memory bound is **temporal, not cardinal** (an attacker can still inflate
+  the key map within a single window); the clock is a **caller obligation** on
+  three axes, so forward skew and non-finite readings are uncovered by design;
+  and `allow()` returns a bare bool, so an HTTP frontend cannot populate
+  `Retry-After`.
+
+The contract below, in brief:
+
+- **Covers:** the sliding window itself (hits expire individually, the exact
+  boundary is still limited, denials consume no quota); per-key isolation with
+  exact string comparison, no normalisation; constructor and `allow()` input
+  validation, including NaN/inf/bool/float for `limit` and `window_seconds`;
+  thread safety, with the clock read inside the critical section so commits
+  cannot invert; and memory reclamation — a throttled sweep, its boundary, its
+  behaviour under backward clock jumps, and what happens while traffic is silent.
+- **Must NOT:** no real clock in tests (enforced by a regex gate over `tests/`,
+  with two declared exceptions and their spurious-failure directions); no
+  unbounded memory growth, bounded by the distinct keys seen in the **two**
+  windows preceding the most recent request.
+- **Out of scope:** no `Retry-After` or remaining-quota accessor, so an HTTP 429
+  cannot be populated as RFC 9110 expects; no distributed or multi-process
+  limiting — in-process state only.
+
+The Gherkin scenarios below are the contract — this summary only says which of
+them to read closely.
+
 A library class `RateLimiter(limit, window_seconds, clock)` answering
 `allow(key) -> bool`: at most `limit` allowed requests per `key` within any
 sliding `window_seconds` interval. `clock` is an injected callable returning

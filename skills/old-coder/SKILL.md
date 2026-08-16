@@ -1,6 +1,6 @@
 ---
 name: old-coder
-description: Evidence-first development — surround the implementation with an executable spec and a gauntlet of constraints (tests, types, coverage, mutation) so line-by-line review becomes optional. Use when the user explicitly asks for high-assurance or evidence-first work ("reliable", "TDD", "prove it works", "I won't read the code"). Also load it when the user did NOT ask but the change touches a high-stakes domain (money, auth, data loss, concurrency, public API, or a hand-rolled parser / config-format reader) — in that case the first and only act is to OFFER the loop in one sentence and stop, so a wrong guess costs a sentence and no files. Work happens in an isolated branch or worktree and ends at an evidence report — this skill never pushes, opens a PR, or publishes, except an optional tracker roll-up, and only where explicitly granted. For routine changes where the user just wants normal tests, write good tests directly instead of invoking this loop.
+description: Surround an implementation with an executable spec and a gauntlet of constraints (tests, types, coverage, mutation) so line-by-line review becomes optional. Load when the user asks for high-assurance work — "reliable", "TDD", "prove it works", "I won't read the code". Load unasked when a change touches money, auth, data loss, concurrency, a public API, or a hand-rolled parser or config-format reader; then offer the loop in one sentence and stop, so a wrong guess costs a sentence and no files. Skip it when the user wants ordinary tests — write those directly. Runs in an isolated branch or worktree, ends at an evidence report, and never pushes or opens a PR.
 ---
 
 # Old Coder: Reliable Coding Under Constraint and Test
@@ -99,18 +99,28 @@ basis of trust.
 
 ## Where this skill stops
 
-**It ends at EVIDENCE.** It does not push, open a pull request, or publish. It
-writes code, verifies it, and hands the human a report; they decide what happens
-next. One exception, and only one: the tracker roll-up posts to an issue when
-the human has set `tracker = "allow"` on that machine. Default is `propose` —
-write the note, post nothing.
+**It ends at EVIDENCE.** It writes code, verifies it, and hands the human a
+report; they decide what happens next. **It never pushes, and it never opens a
+pull request** — not in any configuration, with or without a grant. Those two
+are not gated, they are absent.
+
+Two things can be published, both off by default, both writing into a place the
+human already made:
+
+- the **tracker roll-up**, posting to an issue when `tracker = "allow"`;
+- a **projection** of SPEC or EVIDENCE, when `spec_to`/`evidence_to` name a
+  surface and `tracker`/`pr` grant it. A PR projection fills the body of a PR
+  the human already opened — draft only, unless `pr_mode = "ready"`.
+
+Both default to `propose`: build the text, write it to the artifact directory,
+post nothing.
 
 So with the default config, nothing this skill does is outward-facing and an
 unattended run cannot cause external harm. The confidence downgrade for
 autonomous mode is therefore about **evidence quality** — the spec was never
-reviewed by an independent party — not about blast radius. Granting
-`tracker = "allow"` is the one setting that trades that property away, which is
-why it cannot be granted by a committed config file.
+reviewed by an independent party — not about blast radius. `tracker = "allow"`
+and `pr = "allow"` are the settings that trade that property away, which is why
+neither can be granted by a committed config file.
 
 ## The Loop
 
@@ -179,9 +189,16 @@ implementation files:
   proceed — but the correlation-breaking review never happened, so EVIDENCE
   must record `spec approval: not obtained (autonomous run)` and claim
   correspondingly lower confidence; the spec becomes the artifact the human
-  reviews after the fact.
+  reviews after the fact. **Approval recorded in a tracker is the exception** —
+  a comment or label from a named human is durable and checkable by someone who
+  was not present, so it clears the downgrade where chat approval cannot. Cite
+  it (`references/templates.md`).
 - The spec is append-only during the task. If implementation reveals the spec was
   wrong, say so explicitly and revise it visibly — never silently drift.
+- Open it with a **TL;DR**: the change, why, what it touches, and the calls you
+  want the human to rule on. It tells them which scenarios to read closely — it
+  does not replace them. Approval is of the scenarios; if the two disagree, the
+  scenarios win (`references/templates.md`).
 - **The spec is a file, not a message.** Create the task's artifact directory
   now — `<artifacts>/<YYYYMMDD-HHMMSS>-<slug>/`, UTC, one per *task* — and write
   `SPEC.md` there, with a tracker issue ID in the header if one exists (layout:
@@ -191,6 +208,14 @@ implementation files:
   literally a `git diff`, which makes "append-only" a mechanism rather than a
   promise. Gitignore the directory and that mechanism is gone, not merely
   weakened (`references/setup.md`).
+- **Publishing is a projection; the file is the artifact.** `spec_to` and
+  `evidence_to` may also send a short rendering to a tracker or a PR body, but
+  both files are written in every configuration — a published copy carries no
+  `logs/`, binds to no SHA, and stays editable after review. Project to a
+  tracker **comment**, never an issue description, which is edited in place and
+  reproduces the silent drift the commit-at-approval rule exists to prevent.
+  This skill never opens a PR in any configuration; it fills one the human
+  already opened (`references/setup.md`, `references/templates.md`).
 - Declare the **isolation mechanism** (worktree / branch / none, and why) in the
   spec, so the human can see and veto it before work starts. Under worktree
   isolation the artifact directory spans two locations — tracked files in the
@@ -456,6 +481,10 @@ only whether the code does what the tests say. The real system is where the assu
 End with a report the human can trust without opening a single source file
 (template in `references/templates.md`):
 
+- A **TL;DR at the top**: verdict, what was delivered, what is proven, and what
+  is *not* proven. Write it last, read off the tables below it — it is the part
+  most readers finish, so it is the part where overstating the result pays. The
+  tables are authoritative; a summary that disagrees with them is a defect.
 - The approved spec, with each behavior mapped to the test that verifies it.
 - Each gauntlet layer: the command run, and its actual result (pasted numbers,
   not adjectives). "All 47 tests pass, changed-line coverage 100% (31/31 lines),
@@ -508,6 +537,16 @@ End with a report the human can trust without opening a single source file
 Write it to `EVIDENCE.md` in the task artifact directory beside `SPEC.md`, show
 it to the human, and stop — see "Where this skill stops". Give the absolute path
 to `EVIDENCE.md`, the same as for `SPEC.md`.
+
+**Projections**, when `evidence_to` names a surface beyond `file`: publish a
+short rendering — the TL;DR, the source state, and the artifact path — never the
+report itself. Derive it from `EVIDENCE.md` and rebuild it whenever the source
+state moves; a PR body describing an earlier commit is worse than an absent one,
+because nothing tells the reader which commit it describes. Into a PR only if one
+is already open, draft unless `pr_mode = "ready"`, and gated by `pr`; **this skill
+opens no pull requests in any configuration.** With `propose`, or with no PR open,
+write the block to the artifact directory and say so — that is the expected
+outcome, not a failure (`references/templates.md`).
 
 **Tracker roll-up**, only if the SPEC named an issue: a short note back to it —
 what was built, what was deliberately left undone, traps for the next task, the
