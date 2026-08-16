@@ -4,7 +4,7 @@
 
 Command resolution has a strict order:
 
-1. **`[commands]` in `.old-coder.toml`** (see `setup.md`) — always wins.
+1. **Commands named in the project's rules** (see `setup.md`) — always win.
 2. **Detection** — package.json scripts, Makefile targets, pyproject, justfile,
    CI workflow.
 3. **The tables below** — fallbacks, used only when 1 and 2 find nothing.
@@ -501,7 +501,7 @@ report files, the previous logs) so no layer can accidentally read a prior
 run's output — freshness by mechanism, not discipline. (Keep tool
 databases that accumulate value, e.g. hypothesis's example store.) The "final
 fresh run" IS this command; EVIDENCE cites it, and the human can rerun the
-whole report with it. It runs whatever `[commands]` in `.old-coder.toml`
+whole report with it. It runs whatever commands the project's rules name
 specifies, so the script and the config never disagree. Pin dev-tool versions
 (requirements-dev.txt, package.json devDependencies with exact versions, etc.)
 so the rerun uses the same gauntlet.

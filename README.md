@@ -94,11 +94,12 @@ And one limit stated plainly: the gauntlet turns the constraints expressed in th
 ```
 skills/old-coder/         the skill (SKILL.md + references/)
   references/gauntlet.md    the layer catalogue and risk model
-  references/setup.md       .old-coder.toml, isolation, artifact layout
+  references/setup.md       how rules are read, isolation, artifact layout
   references/templates.md   the SPEC and EVIDENCE templates
   references/verifier.md    independent verification (separate from the gauntlet)
 agents/                   the two review subagents (spec-intent, adversary)
 demo-rate-limiter/        a rate limiter built end-to-end under the skill
+CUSTOMIZATION.md          how to configure the skill with rules
 ATTRIBUTION.md            provenance, upstream credits, what this fork changed
 ```
 
@@ -112,32 +113,27 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt -e .
 
 ## Configuration
 
-Optional. Missing config is never a blocker — the skill runs with restrictive
-defaults and mentions that setup exists. Written to `.old-coder.toml` at the repo
-root and gitignored, so every permission grant stays local to your machine.
+**There is no config file.** The skill reads its settings from the rule files your
+agent already loads — `CLAUDE.md`, `AGENTS.md`, a rules directory. Adding a format
+would be one more thing every agent has to know about, and the point of this skill
+is that it is plain markdown any agent can follow.
 
-| Key | Default | What it decides |
-|---|---|---|
-| `isolation` | `auto` | worktree, branch, or neither |
-| `install` | `propose` | may the skill install tools unattended |
-| `commit` | `propose` | may the skill make checkpoint commits |
-| `commit_args` | `[]` | flags the repo mandates, e.g. `["-S"]` for signing |
-| `tracker` | `propose` | may the completion roll-up be posted to an issue |
-| `pr` | `propose` | may a projection be written into an existing PR body |
-| `pr_mode` | `draft` | which PRs may be filled — draft only, or ready too |
-| `artifacts` | `.old-coder` | where per-task SPEC, EVIDENCE, and logs go |
-| `spec_to` / `evidence_to` | `file` | where each artifact is *published*, on top of the file always written |
-| `commands.*` | detected | the project's real test / lint / types commands |
+Scope carries the permission model:
 
-Two properties worth knowing:
+- **User rules** (not in the repo) hold **grants** — may commit, may install, may
+  post to a tracker, may fill a PR body.
+- **Project rules** (committed) hold **facts and restrictions** — the real test and
+  lint commands, required signing, isolation.
 
-- **`propose` is the default everywhere it matters.** With no config, nothing the
-  skill does is outward-facing, and an unattended run cannot cause external harm.
-- **The skill never pushes and never opens a pull request**, in any configuration.
-  `pr = "allow"` lets it fill the body of a PR *you* opened; it cannot create one.
+A grant found in a committed file is not honored: it would authorize every agent
+run by everyone who clones the repo. Absent any rule, the skill asks first.
 
-Full reference, including why publishing is a projection rather than a move:
-`skills/old-coder/references/setup.md`.
+Two things no rule can turn on: it **never pushes** and **never opens a pull
+request**.
+
+→ **[CUSTOMIZATION.md](CUSTOMIZATION.md)** has copy-pasteable rules per scenario —
+committing as it goes, putting EVIDENCE in a PR body, pinning the project's real
+commands, locking it down harder, unattended runs.
 
 ## License
 

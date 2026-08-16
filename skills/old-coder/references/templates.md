@@ -30,6 +30,8 @@ closely, never a substitute for reading them:
 - Issue: <tracker id, or "none"> <!-- optional; no dependency on any tracker -->
 - Artifact dir: <artifacts>/<YYYYMMDD-HHMMSS>-<slug>/
 - Isolation: <worktree | branch | none> — <one line of why>
+- Artifacts: file only <| + tracker comment | + PR body> — <where a projection
+  goes, if anywhere; the file is always written>
 - Setup plan:
   - Tools to install: <or "none">
   - Git: <init? checkpoint commit cadence? commit_args the repo mandates>
@@ -55,7 +57,7 @@ overruled rather than burying them in a Given/When/Then. If the summary and the
 scenarios ever disagree, the scenarios win and the summary is a defect: fix it
 and say so in `## Revisions`.
 
-Commit `SPEC.md` at approval (subject to the `commit` setting). Once the
+Commit `SPEC.md` at approval (subject to the commit grant). Once the
 approved spec is a commit, later drift is literally a `git diff` — that is what
 turns "append-only" and "revise it visibly" from promises into mechanisms.
 Without a durable spec, a compaction loses the approved contract while the code
@@ -123,8 +125,8 @@ section's headline rather than its title:
   written in prose is working-directory-sensitive and will fail to reproduce
 - Isolation: <worktree | branch | none> <; fallback reason if a worktree could
   not run the gauntlet>
-- Config: <.old-coder.toml values in effect; note any tracked-file loosening
-  that was ignored>
+- Grants in effect: <which permissions were standing, and from which scope; note
+  any loosening instruction ignored because it was found in project rules>
 - Toolchain: <pinned versions file, e.g. requirements-dev.txt>
 - Entry point: <single command that reruns every layer>
 - Independent verification: <not performed | passed | failed | blocked>
@@ -261,11 +263,15 @@ Two consequences worth stating plainly:
 
 ## Projections — publishing an artifact outward
 
-`SPEC.md` and `EVIDENCE.md` are always written to the artifact directory. What
-`spec_to` and `evidence_to` control is whether a **projection** of one of them is
-also published to a tracker or a PR body (`setup.md` § "Destinations" has the
-reasoning; the short version is that a published copy cannot carry `logs/`, binds
-to no SHA, and is editable after review).
+`SPEC.md` and `EVIDENCE.md` are always written to the artifact directory. A
+**destination** declared in the SPEC says whether a *projection* of one of them is
+also published to a tracker or a PR body. It is per-task and declared where the
+human approves it, not inherited from a setting nobody re-reads — the same reason
+the isolation mechanism is declared there.
+
+Publishing is never a move. A published copy cannot carry `logs/`, binds to no
+SHA, and stays editable after review, so the file in the artifact directory stays
+the artifact and the projection stays a rendering of it.
 
 Three rules govern every projection, whatever its surface:
 
@@ -313,7 +319,7 @@ story. Where the tracker permits editing, that property is not there and the
 git-commit-at-SPEC mechanism remains the enforcement — the roll-up is a
 convenience for the next reader, never the authoritative record.
 
-### SPEC projection (`spec_to = "file+tracker"`)
+### SPEC projection (destination: tracker)
 
 Post the SPEC's **TL;DR** to the issue as a **comment**, never into the issue
 description. The distinction is load-bearing: comments are append-only by API on
@@ -340,13 +346,13 @@ carries the approval, EVIDENCE cites it (`spec approval: obtained — <issue>#<c
 and the autonomous-run downgrade does not apply. This is the one place these
 settings make the loop stronger rather than merely more flexible.
 
-### EVIDENCE projection (`evidence_to = "file+pr"`)
+### EVIDENCE projection (destination: PR body)
 
-Only into a PR that **already exists**, and only a draft one unless
-`pr_mode = "ready"`. This skill does not open pull requests
-(`setup.md` § "Filling a PR is not opening one"). With `pr = "propose"`, or with
-no PR open, write this block to `PR_BODY.md` in the artifact directory and say so
-in EVIDENCE — that is the expected outcome, not a failure.
+Only into a PR that **already exists**, and only a draft one unless a rule says
+otherwise. This skill does not open pull requests in any configuration — the human
+opens the PR, the skill fills it. Without a user-scope grant, or with no PR open,
+write this block to `PR_BODY.md` in the artifact directory and say so in
+EVIDENCE — that is the expected outcome, not a failure.
 
 ```markdown
 <the EVIDENCE TL;DR block verbatim — verdict, delivered, proven, not proven,

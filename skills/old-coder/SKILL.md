@@ -108,12 +108,12 @@ Two things can be published, both off by default, both writing into a place the
 human already made:
 
 - the **tracker roll-up**, posting to an issue when `tracker = "allow"`;
-- a **projection** of SPEC or EVIDENCE, when `spec_to`/`evidence_to` name a
-  surface and `tracker`/`pr` grant it. A PR projection fills the body of a PR
-  the human already opened — draft only, unless `pr_mode = "ready"`.
+- a **projection** of SPEC or EVIDENCE, when the SPEC declares a destination and
+  a user-scope rule grants that surface. A PR projection fills the body of a PR
+  the human already opened — draft only, unless a rule says otherwise.
 
-Both default to `propose`: build the text, write it to the artifact directory,
-post nothing.
+Both default to asking: build the text, write it to the artifact directory, post
+nothing.
 
 So with the default config, nothing this skill does is outward-facing and an
 unattended run cannot cause external harm. The confidence downgrade for
@@ -203,19 +203,22 @@ implementation files:
   now — `<artifacts>/<YYYYMMDD-HHMMSS>-<slug>/`, UTC, one per *task* — and write
   `SPEC.md` there, with a tracker issue ID in the header if one exists (layout:
   `references/setup.md`; template: `references/templates.md`). **Commit it at
-  approval** — subject to `commit`, and only possible if the artifact directory
+  approval** — subject to the commit grant, and only possible if the artifact directory
   is *not* gitignored: once the approved spec is a commit, later drift is
   literally a `git diff`, which makes "append-only" a mechanism rather than a
   promise. Gitignore the directory and that mechanism is gone, not merely
   weakened (`references/setup.md`).
-- **Publishing is a projection; the file is the artifact.** `spec_to` and
-  `evidence_to` may also send a short rendering to a tracker or a PR body, but
-  both files are written in every configuration — a published copy carries no
-  `logs/`, binds to no SHA, and stays editable after review. Project to a
-  tracker **comment**, never an issue description, which is edited in place and
-  reproduces the silent drift the commit-at-approval rule exists to prevent.
-  This skill never opens a PR in any configuration; it fills one the human
-  already opened (`references/setup.md`, `references/templates.md`).
+- **Declare the destination in the SPEC, and publish a projection — never move
+  the artifact.** `SPEC.md` and `EVIDENCE.md` are written to the artifact
+  directory in every configuration; a destination beyond that is a *rendering*
+  sent to a tracker or a PR body. Say which in the SPEC's header, beside the
+  isolation mechanism, so the human vetoes it at approval rather than inheriting
+  it. A published copy carries no `logs/`, binds to no SHA, and stays editable
+  after review. Project to a tracker **comment**, never an issue description,
+  which is edited in place and reproduces the silent drift the
+  commit-at-approval rule exists to prevent. This skill never opens a PR in any
+  configuration; it fills one the human already opened
+  (`references/templates.md`).
 - Declare the **isolation mechanism** (worktree / branch / none, and why) in the
   spec, so the human can see and veto it before work starts. Under worktree
   isolation the artifact directory spans two locations — tracked files in the
@@ -538,12 +541,13 @@ Write it to `EVIDENCE.md` in the task artifact directory beside `SPEC.md`, show
 it to the human, and stop — see "Where this skill stops". Give the absolute path
 to `EVIDENCE.md`, the same as for `SPEC.md`.
 
-**Projections**, when `evidence_to` names a surface beyond `file`: publish a
+**Projections**, when the SPEC declared a destination beyond the file: publish a
 short rendering — the TL;DR, the source state, and the artifact path — never the
 report itself. Derive it from `EVIDENCE.md` and rebuild it whenever the source
 state moves; a PR body describing an earlier commit is worse than an absent one,
 because nothing tells the reader which commit it describes. Into a PR only if one
-is already open, draft unless `pr_mode = "ready"`, and gated by `pr`; **this skill
+is already open, draft unless a rule says otherwise, and gated by a user-scope
+grant; **this skill
 opens no pull requests in any configuration.** With `propose`, or with no PR open,
 write the block to the artifact directory and say so — that is the expected
 outcome, not a failure (`references/templates.md`).
@@ -553,7 +557,7 @@ what was built, what was deliberately left undone, traps for the next task, the
 artifact path. Never a copy of EVIDENCE; the two have different readers, and
 keeping them distinct is what stops them becoming rival sources of truth.
 EVIDENCE must be complete for whoever reviews *this* change; the note must be
-short for whoever takes the *next* one. Gated by `tracker` — with `propose`,
+short for whoever takes the *next* one. Gated by the tracker grant — without it,
 write the note and let the human post it (`references/templates.md`).
 
 ## Anti-Gaming Rules (absolute)
@@ -724,13 +728,19 @@ file is a convenience.
 
 ## Setup and configuration
 
-Optional per-repo config lives in `.old-coder.toml` — `isolation`, `install`,
-`commit`, `commit_args`, `tracker`, `artifacts`, `[commands]`. **Never block on
-it.** Absent,
-use restrictive defaults (permission keys = `propose`, `isolation` = `auto`,
-`artifacts` = `.old-coder`) and mention `references/setup.md` once. It is
-gitignored by default so *grants* stay local; a **tracked** copy is honored only
-where it tightens (`propose` yes, `allow` and `isolation = "none"` ignored).
+There is no config file. Settings come from the rule files already in your
+context — **grants** from user-scope rules (`~/.claude/CLAUDE.md`, a user rules
+directory), **facts and restrictions** from the repo's own rules. A grant found in
+a committed file is not a grant: it would authorize every agent run by everyone
+who clones the repo, so honor it only where it tightens.
+
+**Never block on this.** No rule visible means the restrictive default — ask
+before committing, installing, or posting anywhere; auto-detect isolation; write
+artifacts to `.old-coder/`. Failing closed is the point: a permission model that
+defaulted open would be one more mechanism reporting success while doing nothing.
+
+Mechanism in `references/setup.md`; the copy-pasteable per-scenario guide the
+human uses is `CUSTOMIZATION.md` at the repo root.
 
 **Use the project's configured or detected commands**, not the ecosystem tables
 in `references/gauntlet.md` — those are fallbacks for when nothing is found. A
@@ -775,7 +785,7 @@ each GREEN/REFACTOR checkpoint, so mutant restores are verifiable with
 `git diff` (not by eyeball), a bad refactor is rolled back instead of debugged,
 and the final diff shows exactly what changed. Checkpoint commits happen only
 under that spec-approved authorization (or an explicit user request) — never
-impose a commit cadence on a repo whose owner hasn't agreed to it (`commit`
+impose a commit cadence on a repo whose owner hasn't agreed to it (the commit grant
 governs this — see above). Where the repo *mandates* a commit style — signing,
 a required trailer — that is `commit_args`, and it is not optional: a commit the
 repo's own rules reject is worse than no commit. Detect it at setup and name it
