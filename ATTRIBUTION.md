@@ -11,15 +11,26 @@ parts are which.
 |---|---|
 | Upstream | **[amazingang/old-coder](https://github.com/amazingang/old-coder)** |
 | License | MIT — `Copyright (c) 2026 amazingang` (see `LICENSE`) |
-| Fork point | `57ead18` — *"Merge pull request #5 from AmazingAng/fix/verification-followup"*, 2026-08-10 |
-| Upstream HEAD when this was written | `01f8fe9` — *"Align README claims with current evidence"*, 2026-08-15 |
+| First fork point | `57ead18` — *"Merge pull request #5 from AmazingAng/fix/verification-followup"*, 2026-08-10 |
+| Last merged from upstream | `01f8fe9` — *"Align README claims with current evidence"*, 2026-08-15 |
 
-**This fork is currently 7 commits behind upstream.** Not yet merged: a new
-`CONTRIBUTING.md`, upstream's README alignment, and upstream's merges of PRs #6
-and #8. Two commits in this fork share titles with upstream commits
-(`An answer to a question is not an approval`, and the mutation-tooling change)
-because upstream accepted those contributions in modified form — they are not
-patch-identical, so `git cherry` still reports them as local.
+**This fork is in sync with upstream as of `01f8fe9`.** Upstream is an ancestor
+of this branch, so the divergence below is additive: this fork contains
+everything upstream has, plus its own work.
+
+### Staying in sync
+
+The intent here is collaboration, not a hard fork. Two working rules follow from
+that, and the merge at `f6fc5ea` applied both:
+
+- **Where upstream and this fork say the same thing, take upstream's wording.**
+  Divergence that buys nothing makes every future merge more expensive. Two of
+  this fork's changes were dropped in favour of upstream's text on exactly that
+  basis, and one was dropped because upstream's rule was simply better — ours
+  forbade hand-rolled mutation runners, which contradicted this repo's own demo.
+- **Contribute upstream rather than accumulate locally.** Upstream has already
+  accepted two changes from this fork (PRs #6 and #8), in modified form. See
+  `CONTRIBUTING.md`, which is upstream's.
 
 ## The underlying idea is not upstream's either
 
@@ -78,6 +89,18 @@ Nine commits, oldest first. Everything else is upstream's.
 | `1f7bd7e` | Ship the two reviewers as agent definitions; add the SPEC intent review |
 | `ae437e1` | Drop the integration-tree layer, keep the warning it was built around |
 | `b0f8df5` | Artifact TL;DRs, destination config (`spec_to`/`evidence_to`), and a hallucination hunt class |
+| `0989b52` | This file, the license notice, and a correction to the demo claims |
+| `f6fc5ea` | Merge upstream `01f8fe9`, resolving toward upstream wherever the meaning matched |
+
+### Contributed back
+
+| Upstream PR | Status |
+|---|---|
+| #6 — An answer to a question is not an approval | merged |
+| #8 — Prefer the real mutation tool, and make a hand-rolled runner prove it ran | merged |
+| #7 — Offer the loop before starting it | open, changes requested (shorten and reposition) |
+| #9 — Config and isolation | open, split requested: isolation yes, `.old-coder.toml` deferred |
+| #10 — Move the templates into `templates.md` | open, partially accepted |
 
 ## Third-party material
 
