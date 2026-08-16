@@ -12,6 +12,11 @@ A skill that makes coding agents **prove their work**. Instead of you reading ev
 
 It's plain markdown, so it works with any coding agent that follows instructions: Claude Code, Codex CLI, Cursor, Aider, or your own agent loop.
 
+> **This is a fork of [amazingang/old-coder](https://github.com/amazingang/old-coder)** (MIT).
+> The loop, the gauntlet, and the demo are upstream's work — this fork adds isolation,
+> durable artifacts, agent-defined reviews, and artifact templates. Full provenance,
+> upstream credits, and a commit-by-commit list of what changed: **[ATTRIBUTION.md](ATTRIBUTION.md)**.
+
 ## Installation
 
 ```sh
@@ -87,12 +92,19 @@ And one limit stated plainly: the gauntlet proves the code meets the spec — it
 ## What's in the repo
 
 ```
-skills/old-coder/         the skill (SKILL.md + references/gauntlet.md)
+skills/old-coder/         the skill (SKILL.md + references/)
+  references/gauntlet.md    the layer catalogue and risk model
+  references/setup.md       .old-coder.toml, isolation, artifact layout
+  references/templates.md   the SPEC and EVIDENCE templates
+  references/verifier.md    independent verification (separate from the gauntlet)
 agents/                   the two review subagents (spec-intent, adversary)
 demo-rate-limiter/        a rate limiter built end-to-end under the skill
+ATTRIBUTION.md            provenance, upstream credits, what this fork changed
 ```
 
-The demo's `evidence.md` is the point of the exercise: 17 tests, 100% branch coverage of the code, 8/8 planted bugs caught — and the process found a real bug the tests had missed (a `NaN` time window slipping through validation). Rerun the whole report:
+The demo's `evidence.md` is the point of the exercise: 41 tests, 100% changed-line coverage (49/49 statements, 20/20 branches), 22/22 planted bugs caught.
+
+The more useful result is what the *green* layers missed. Six rounds of independent verification, each a fresh agent context, found four defects no passing gauntlet could reach: a one-shot-key memory leak usable as a remote DoS against the very component meant to prevent one, `limit=NaN` producing a limiter that always allows, 2× over-allow under threads, and a mutation runner reporting kills for mutants it never executed. The report also records that **three defects were introduced by fixes**, and that its final state ships unverified. Rerun the whole thing:
 
 ```sh
 cd demo-rate-limiter
@@ -100,6 +112,40 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt -e .
 ./tools/gauntlet.sh
 ```
 
+## Configuration
+
+Optional. Missing config is never a blocker — the skill runs with restrictive
+defaults and mentions that setup exists. Written to `.old-coder.toml` at the repo
+root and gitignored, so every permission grant stays local to your machine.
+
+| Key | Default | What it decides |
+|---|---|---|
+| `isolation` | `auto` | worktree, branch, or neither |
+| `install` | `propose` | may the skill install tools unattended |
+| `commit` | `propose` | may the skill make checkpoint commits |
+| `commit_args` | `[]` | flags the repo mandates, e.g. `["-S"]` for signing |
+| `tracker` | `propose` | may the completion roll-up be posted to an issue |
+| `pr` | `propose` | may a projection be written into an existing PR body |
+| `pr_mode` | `draft` | which PRs may be filled — draft only, or ready too |
+| `artifacts` | `.old-coder` | where per-task SPEC, EVIDENCE, and logs go |
+| `spec_to` / `evidence_to` | `file` | where each artifact is *published*, on top of the file always written |
+| `commands.*` | detected | the project's real test / lint / types commands |
+
+Two properties worth knowing:
+
+- **`propose` is the default everywhere it matters.** With no config, nothing the
+  skill does is outward-facing, and an unattended run cannot cause external harm.
+- **The skill never pushes and never opens a pull request**, in any configuration.
+  `pr = "allow"` lets it fill the body of a PR *you* opened; it cannot create one.
+
+Full reference, including why publishing is a projection rather than a move:
+`skills/old-coder/references/setup.md`.
+
 ## License
 
-MIT
+MIT — `Copyright (c) 2026 amazingang`, with modifications in this fork.
+See [`LICENSE`](LICENSE) and [`ATTRIBUTION.md`](ATTRIBUTION.md).
+
+Portions of `references/gauntlet.md` and `agents/adversary.md` adapt one failure
+class from the `adversarial-agent-review` skill v1.0.1 (Apache-2.0), cited in
+[`ATTRIBUTION.md`](ATTRIBUTION.md).

@@ -12,6 +12,11 @@
 
 skill 就是纯 markdown，任何能遵循指令的 coding agent 都能用：Claude Code、Codex CLI、Cursor、Aider，或你自己的 agent loop。
 
+> **本仓库是 [amazingang/old-coder](https://github.com/amazingang/old-coder) 的 fork**（MIT）。
+> loop、gauntlet 和 demo 都是上游的工作；本 fork 增加了隔离、持久化产物、以 agent 定义的两道评审，
+> 以及 SPEC/EVIDENCE 模板。完整来源说明、上游致谢，以及逐个 commit 的改动清单见
+> **[ATTRIBUTION.md](ATTRIBUTION.md)**（英文）。
+
 ## 安装
 
 ```sh
@@ -97,7 +102,9 @@ agents/                   两个评审 subagent（spec-intent、adversary）
 demo-rate-limiter/        按此 skill 端到端做出来的限流器示例
 ```
 
-demo 的 `evidence.md` 就是重点：17 个测试、代码 100% 分支覆盖、8/8 个埋入的 bug 全部被抓——过程中还发现了一个测试没抓到的真 bug（`NaN` 时间窗口穿过了参数校验）。整份报告可以重跑：
+demo 的 `evidence.md` 就是重点：41 个测试、改动行 100% 覆盖（49/49 语句、20/20 分支）、22/22 个埋入的 bug 全部被抓。
+
+更有价值的是那些**全绿的关卡没能发现**的问题。六轮独立验证（每轮都是全新的 agent 上下文）找出了四个缺陷：单次 key 造成的内存泄漏——可以对这个本该阻止 DoS 的组件发起远程 DoS、`limit=NaN` 让限流器永远放行、多线程下 2 倍超发，以及一个会为从未真正执行过的 mutant 上报「已击杀」的 mutation runner。报告还记录了**三个缺陷是修复引入的**，以及最终交付状态未经验证。整份报告可以重跑：
 
 ```sh
 cd demo-rate-limiter
@@ -109,4 +116,9 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt -e .
 
 ## 许可证
 
-MIT
+MIT —— `Copyright (c) 2026 amazingang`，本 fork 的修改另行署名。
+见 [`LICENSE`](LICENSE) 与 [`ATTRIBUTION.md`](ATTRIBUTION.md)。
+
+`references/gauntlet.md` 和 `agents/adversary.md` 中有一类失败模式改编自
+`adversarial-agent-review` skill v1.0.1（Apache-2.0），出处见
+[`ATTRIBUTION.md`](ATTRIBUTION.md)。
