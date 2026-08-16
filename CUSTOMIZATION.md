@@ -27,6 +27,24 @@ pull request**, in any configuration.
 The mechanism behind all of this — detection, isolation, artifact layout — is in
 `skills/old-coder/references/setup.md`.
 
+## No frontmatter, and no schema
+
+Every rule below is a plain sentence naming the skill. There is nothing to
+declare, no `applies-to:` header, no file the skill goes looking for. The words
+`old-coder` in the sentence are the whole binding, which is why it works in any
+rule format — including ones that do not exist yet.
+
+If your agent's rule system is file-based with frontmatter (Cursor `.mdc`, a rules
+directory), wrap these sentences in whatever envelope it expects. The content is
+what matters; the envelope is your agent's business, and the skill neither reads
+nor requires it.
+
+One consequence worth stating plainly: the skill reads whatever your agent has
+already put in its context. It does not search the repo for rule files. A rule in
+a file your agent never loads is a rule that does not exist, and the skill will
+quietly ask you first — which is the safe direction, but it will not tell you the
+rule was missed.
+
 ---
 
 Each one names the file to edit and gives text you can paste. The wording does not
