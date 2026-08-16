@@ -65,7 +65,7 @@ nothing. The attack list is the deliverable; findings are a bonus.
    First confirm the environment actually tests the tree it claims to —
    a copied virtualenv, a stale install, or a cached artifact can silently
    exercise the original sources and make every later result meaningless.
-2. **The TL;DR against the tables.** Cheapest attack in the list and the one with
+2. **Orientation against the tables.** Cheapest attack in the list and the one with
    the most leverage, because it is the part of EVIDENCE most readers finish. Read
    the summary, then read the mapping and gauntlet tables, and diff them: a
    `PASSED` verdict over a table holding a `FAILED`, `unverified`, `N-A`,

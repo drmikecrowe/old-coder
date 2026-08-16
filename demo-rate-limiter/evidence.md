@@ -1,6 +1,6 @@
 # Evidence Report — Sliding-Window Rate Limiter (Tier 3)
 
-## TL;DR
+## Orientation
 - **Verdict:** **PASSED WITH LIMITS.** Every gauntlet layer is green at source
   state `8b88bda`, but independent verification is `not performed` against that
   state. This report is finalized as a **declared downgrade**, not on a passing

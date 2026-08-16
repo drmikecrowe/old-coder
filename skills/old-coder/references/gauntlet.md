@@ -308,7 +308,10 @@ The re-review is usually cheap. Send the follow-up diff back to **the same
 reviewer** — it already holds the context and can answer the one question it is
 best placed to answer: does this fix actually address what I found? Use a
 *fresh* reviewer instead when the fix changed the design rather than patching
-it, because at that point the shipped design is not the one anybody attacked.
+it, because at that point the shipped design is not the one anybody attacked. If
+EVIDENCE has been drafted by the time a re-review round runs, include it in the
+diff the reviewer sees — the summary-versus-tables check in its brief is
+unreachable otherwise.
 
 Watch for the same staleness in the prose. When a fix or a SPEC revision
 supersedes a mechanism, the docstrings, comments, and helper names describing

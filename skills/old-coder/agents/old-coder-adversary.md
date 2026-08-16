@@ -48,7 +48,7 @@ Read the whole diff first, once. Then hunt in this order, stopping when the budg
 5. **The default branch.** `else:` on a destructive handler is safe only until someone adds
    a case. Prefer an allow-list that skips what it does not recognise.
 6. **A summary that disagrees with its own tables.** If the diff touches an
-   EVIDENCE report, read its TL;DR against its mapping and gauntlet tables. A
+   EVIDENCE report, read its Orientation block against its mapping and gauntlet tables. A
    `PASSED` verdict above a `FAILED`, `unverified`, `UNAVAILABLE` or `SUBSTITUTED`
    row is a finding, as is a `Not proven:` line that omits a layer the tables show
    did not run. Nothing else checks this, and it is the part of the report most

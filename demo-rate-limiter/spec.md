@@ -1,6 +1,6 @@
 # Spec: Sliding-Window Rate Limiter (Tier 3)
 
-## TL;DR
+## Orientation
 - **Change:** a new in-process library class `RateLimiter(limit, window_seconds,
   clock)` answering `allow(key) -> bool` — at most `limit` requests per key in
   any sliding `window_seconds` interval.

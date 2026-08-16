@@ -12,7 +12,7 @@ SPEC time, before any implementation file is touched.
 ```markdown
 # SPEC — <task name>
 
-## TL;DR
+## Orientation
 - **Change:** <one sentence — what is different once this is done>
 - **Why:** <the problem, not the solution restated>
 - **Touches:** <files and subsystems in blast radius, or "new file only">
@@ -50,7 +50,7 @@ closely, never a substitute for reading them:
 - <appended only; each entry says what changed and why>
 ```
 
-**The TL;DR orients; the scenarios are the contract.** A human who approves the
+**Orientation is not the contract; the scenarios are.** A human who approves the
 summary has approved nothing — the four bullets are there to tell them which
 scenarios to read closely, and `Decide:` is where you name the calls you want
 overruled rather than burying them in a Given/When/Then. If the summary and the
@@ -96,7 +96,7 @@ Written to `EVIDENCE.md` in the task's artifact directory, alongside the
 ```markdown
 ## Evidence Report — <task name> (Tier <1|2|3>)
 
-## TL;DR
+## Orientation
 - **Verdict:** <PASSED | PASSED WITH LIMITS | FAILED | ABANDONED>
 - **Delivered:** <one sentence — the behavior now in the tree>
 - **Proven:** <N/N scenarios mapped and passing> — <the layers carrying the most weight>
@@ -242,22 +242,48 @@ Fixes are self-evidencing; dismissals are not. One line each:
 - <bugs found in relocated code: filed, not fixed here>
 ```
 
-**Why a summary at all, when the tables are right there.** Because the reader
-summarizes either way. A 250-line report meets a fixed attention budget: the
+**Why orient at all, when the tables are right there.** Because the reader
+orients either way. A 250-line report meets a fixed attention budget: the
 skeptic skims the first screen and stops, and the alternative to your summary is
 not "they consult the tables" — it is *their* summary, formed from whatever the
 skim caught, and worse than one written from the tables. Every field here earns
 its place by that test, including `Read first:`, whose whole job is to tell a
 reader which section their skim should not have skipped. The cost is duplication,
-and it is a priced trade: it buys navigation, and it is only safe because the
-summary has a checker — `verifier.md`'s attack order and the adversarial
-reviewer's brief both diff the TL;DR against the tables, and any disagreement is
-a finding. Without that check, every restated claim is an unwatched drift
-surface, and the trade stops being worth making.
+and it is a priced trade: it buys navigation, and it is safe only while the
+summary is checked. Three checks exist, in descending strength and ascending
+frequency: the independent verifier attacks it first (`verifier.md`), a re-review
+round that sees the drafted EVIDENCE diffs it against the tables (the adversary's
+brief names it), and the writer's own mechanical check below runs on every task.
+**Only the last is guaranteed** — the other two run when those layers run — so a
+report neither a verifier nor a re-review ever saw carries a summary checked only
+by its author, and that is part of what `Not proven:` should let a reader infer.
 
-**Write the TL;DR last, from the tables, never from memory.** It is the only part
-of this report most readers will finish, which makes it the one place overstating
-the result actually pays — so it is held to the strictest version of the rule the
+**Write Orientation last, from the tables, never from memory.** Then check it,
+mechanically, as the report's final act:
+
+- **Verdict:** `PASSED` requires zero gauntlet rows other than `PASSED`/`N-A`,
+  zero mapping rows other than `pass`/`n-a`, and `Not proven:` reading "nothing".
+  Anything else is at most `PASSED WITH LIMITS`.
+- **`Not proven:`** every `FAILED`, `unverified`, `UNAVAILABLE`, or `SUBSTITUTED`
+  row in either table appears here by name.
+- **Numbers:** every number in Orientation occurs verbatim in a table row below it.
+
+A summary that fails any line is a defect in the summary: fix it, never the table.
+
+Each line is pass/fail, so an agent can execute it and a human can audit that it
+was executed — which is what separates this from "be careful".
+
+**Scripting it is a Tier 3 option, not a default.** A human can ask for
+`tools/evidence_lint.sh` to run these three lines as a gate, and that is the only
+version independent of the author on every run. It is off by default because it
+is a home-grown checker over a prose format: under this skill's own rules it then
+needs fail-closed behavior and a negative control proving it can fail, and the
+format it parses is maintained by hand in this file. That is real ongoing cost
+for a check the procedure above already covers.
+
+This section exists because the reader will orient themselves either way; better
+they orient from the tables than from a skim. That is also what makes it the one
+place overstating the result actually pays — so it is held to the strictest version of the rule the
 rest of the report already follows. The mapping table and the gauntlet table are
 authoritative; the summary is a reading of them. A `PASSED` verdict above a table
 containing a `fail`, an `unverified`, or a `SUBSTITUTED` layer is not a summary,
@@ -334,7 +360,7 @@ convenience for the next reader, never the authoritative record.
 
 ### SPEC projection (destination: tracker)
 
-Post the SPEC's **TL;DR** to the issue as a **comment**, never into the issue
+Post the SPEC's **Orientation** block to the issue as a **comment**, never into the issue
 description. The distinction is load-bearing: comments are append-only by API on
 most trackers, so a revised spec becomes a second comment and the history stays
 readable. An issue description is edited in place, which reproduces exactly the
@@ -343,7 +369,7 @@ silent drift the commit-at-approval rule exists to prevent.
 ```markdown
 **SPEC — <task name>** (Tier <1|2|3>) · approval requested
 
-<the SPEC TL;DR block verbatim>
+<the SPEC Orientation block verbatim>
 
 Full contract (scenarios, Must NOT, failure model): `<artifacts>/<task dir>/SPEC.md`
 <committed as <sha> | uncommitted>
@@ -371,7 +397,7 @@ EVIDENCE — that is the expected outcome, not a failure.
 **Verdict: <verdict> — valid only for `<sha>`. If HEAD is not `<sha>`, this
 summary is stale and describes code that is no longer here.**
 
-<the rest of the EVIDENCE TL;DR block verbatim — delivered, proven, not proven,
+<the rest of the EVIDENCE Orientation block verbatim — delivered, proven, not proven,
 and the section-by-section digest>
 
 ---

@@ -195,7 +195,7 @@ implementation files:
   it (`references/templates.md`).
 - The spec is append-only during the task. If implementation reveals the spec was
   wrong, say so explicitly and revise it visibly — never silently drift.
-- Open it with a **TL;DR**: the change, why, what it touches, and the calls you
+- Open it with an **Orientation** block: the change, why, what it touches, and the calls you
   want the human to rule on. It tells them which scenarios to read closely — it
   does not replace them. Approval is of the scenarios; if the two disagree, the
   scenarios win (`references/templates.md`).
@@ -482,10 +482,15 @@ only whether the code does what the tests say. The real system is where the assu
 End with a report the human can trust without opening a single source file
 (template in `references/templates.md`):
 
-- A **TL;DR at the top**: verdict, what was delivered, what is proven, and what
-  is *not* proven. Write it last, read off the tables below it — it is the part
-  most readers finish, so it is the part where overstating the result pays. The
+- An **Orientation block at the top**: verdict, what was delivered, what is
+  proven, and what is *not* proven. It exists to tell a reader how to read the
+  detail, not to replace it. Write it last, read off the tables below it — the
+  reader orients from it either way, which is what makes it the place where
+  overstating the result pays. The
   tables are authoritative; a summary that disagrees with them is a defect.
+  **Before showing EVIDENCE, run the mechanical consistency check in
+  `references/templates.md`: `PASSED` only over all-green tables, and every
+  non-passed row named in `Not proven:`.**
 - The approved spec, with each behavior mapped to the test that verifies it.
 - Each gauntlet layer: the command run, and its actual result (pasted numbers,
   not adjectives). "All 47 tests pass, changed-line coverage 100% (31/31 lines),
@@ -540,7 +545,7 @@ it to the human, and stop — see "Where this skill stops". Give the absolute pa
 to `EVIDENCE.md`, the same as for `SPEC.md`.
 
 **Projections**, when the SPEC declared a destination beyond the file: publish a
-short rendering — the TL;DR, the source state, and the artifact path — never the
+short rendering — the Orientation block, the source state, and the artifact path — never the
 report itself. Derive it from `EVIDENCE.md` and rebuild it whenever the source
 state moves; a PR body describing an earlier commit is worse than an absent one,
 because nothing tells the reader which commit it describes. Into a PR only if one
