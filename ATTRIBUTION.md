@@ -59,7 +59,7 @@ the project, and it is upstream's.
 
 ### Added by this fork
 
-- `skills/old-coder/references/setup.md` — `.old-coder.toml`, isolation, artifact layout
+- `skills/old-coder/references/setup.md` — how rules are read, isolation, artifact layout
 - `skills/old-coder/references/templates.md` — the SPEC and EVIDENCE templates
 - `skills/old-coder/agents/` — the two reviews as bundled subagent briefs, usable as registered agent definitions
 

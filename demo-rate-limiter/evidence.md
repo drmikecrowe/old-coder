@@ -12,10 +12,14 @@
   (49/49 statements, 20/20 branches, gated), 22/22 mutants killed. The mutation
   score is carried **entirely by the scenario suite** — the properties alone
   kill 3/22.
-- **Not proven:** the shipped state was never independently verified; shell lint
-  never ran on the four scripts that implement half the gates; tool-based
-  mutation was substituted; two 2026-07 spec revisions remain unapproved;
-  evidence is generated on Python 3.14 while CI gates on 3.12.
+- **Not proven:** two layers this skill now requires at Tier 3 have **no row in
+  the table below and did not run** — adversarial review by an independent agent,
+  and the egress/output-surface check; both postdate this demo, and the six
+  verification rounds below are not a substitute for either. Also: the shipped
+  state was never independently verified; shell lint never ran on the four scripts
+  that implement half the gates; tool-based mutation was substituted; two 2026-07
+  spec revisions remain unapproved; evidence is generated on Python 3.14 while CI
+  gates on 3.12.
 - **Read first:** *Independent verification* — it is where the downgrade lives.
 
 The writeup below, in brief:

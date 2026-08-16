@@ -20,10 +20,12 @@ It's plain markdown, so it works with any coding agent that follows instructions
 ## Installation
 
 ```sh
-npx skills add https://github.com/amazingang/old-coder
+npx skills add https://github.com/drmikecrowe/old-coder
 ```
 
 That installs everything, including the two review agents — they live inside the skill at `skills/old-coder/agents/`, so there is no second copy step.
+
+Upstream (`amazingang/old-coder`) installs the same loop without this fork's additions — the bundled agents, `templates.md`, and `setup.md` ship only here. See [ATTRIBUTION.md](ATTRIBUTION.md) for what differs.
 
 Or manually:
 
@@ -35,7 +37,7 @@ Or manually:
   ```sh
   cp skills/old-coder/agents/*.md ~/.claude/agents/
   ```
-- **Other agents** — add `skills/old-coder/SKILL.md` to your `AGENTS.md`, rules file, or system prompt, and keep `references/gauntlet.md` alongside it. The two review passes are spawned as subagents briefed from `skills/old-coder/agents/old-coder-spec-intent.md` and `adversary.md`; no agent-definition support is required.
+- **Other agents** — add `skills/old-coder/SKILL.md` to your `AGENTS.md`, rules file, or system prompt, and keep `references/gauntlet.md` alongside it. The two review passes are spawned as subagents briefed from `skills/old-coder/agents/old-coder-spec-intent.md` and `old-coder-adversary.md`; no agent-definition support is required.
 
 ## The idea
 
@@ -95,7 +97,7 @@ skills/old-coder/         the skill (SKILL.md + references/ + agents/)
   references/setup.md       how rules are read, isolation, artifact layout
   references/templates.md   the SPEC and EVIDENCE templates
   references/verifier.md    independent verification (separate from the gauntlet)
-  agents/                   the two review subagents (spec-intent, adversary)
+  agents/                   the two review subagents (old-coder-spec-intent, old-coder-adversary)
 demo-rate-limiter/        a rate limiter built end-to-end under the skill
 CUSTOMIZATION.md          how to configure the skill with rules
 ATTRIBUTION.md            provenance, upstream credits, what this fork changed

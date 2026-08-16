@@ -185,14 +185,16 @@ confidence. That is not a setting; it is the honest state of a run nobody
 reviewed.
 
 If your tracker carries the approval — a comment or a label from a named human —
-say so, and the skill can cite that instead:
+the skill already accepts and cites it; nothing needs configuring. You can name
+the convention explicitly if your tracker has one:
+
+**Where:** your *user* rules. This one loosens the strongest gate in the skill,
+so a committed copy is ignored like any other grant.
 
 ```markdown
-old-coder: an approving comment from a maintainer on the linked issue counts as
-spec approval. Cite it in the evidence report.
+old-coder: on this tracker, an approving comment from a maintainer on the linked
+issue is spec approval. Cite the comment in the evidence report.
 ```
-
----
 
 ---
 

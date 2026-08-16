@@ -242,6 +242,19 @@ Fixes are self-evidencing; dismissals are not. One line each:
 - <bugs found in relocated code: filed, not fixed here>
 ```
 
+**Why a summary at all, when the tables are right there.** Because the reader
+summarizes either way. A 250-line report meets a fixed attention budget: the
+skeptic skims the first screen and stops, and the alternative to your summary is
+not "they consult the tables" — it is *their* summary, formed from whatever the
+skim caught, and worse than one written from the tables. Every field here earns
+its place by that test, including `Read first:`, whose whole job is to tell a
+reader which section their skim should not have skipped. The cost is duplication,
+and it is a priced trade: it buys navigation, and it is only safe because the
+summary has a checker — `verifier.md`'s attack order and the adversarial
+reviewer's brief both diff the TL;DR against the tables, and any disagreement is
+a finding. Without that check, every restated claim is an unwatched drift
+surface, and the trade stops being worth making.
+
 **Write the TL;DR last, from the tables, never from memory.** It is the only part
 of this report most readers will finish, which makes it the one place overstating
 the result actually pays — so it is held to the strictest version of the rule the
@@ -355,7 +368,10 @@ write this block to `PR_BODY.md` in the artifact directory and say so in
 EVIDENCE — that is the expected outcome, not a failure.
 
 ```markdown
-<the EVIDENCE TL;DR block verbatim — verdict, delivered, proven, not proven,
+**Verdict: <verdict> — valid only for `<sha>`. If HEAD is not `<sha>`, this
+summary is stale and describes code that is no longer here.**
+
+<the rest of the EVIDENCE TL;DR block verbatim — delivered, proven, not proven,
 and the section-by-section digest>
 
 ---
@@ -364,10 +380,19 @@ Full evidence and logs: `<artifacts>/<task dir>/` (EVIDENCE.md, SPEC.md, logs/)
 Reruns every layer: `<entry point command>`
 ```
 
-**Regenerate it on every push.** A PR body describing an earlier commit is worse
-than an absent one, because the reader has no way to tell. If the projection
-cannot be refreshed, replace its verdict line with
-`STALE — describes <sha>, HEAD is <sha>` rather than leaving the old verdict
-standing. The adversarial review's SHA-binding rule (`gauntlet.md`) applies here
-unchanged: a review is a claim about a commit, and a PR body is the easiest place
-to lose track of which one.
+**Make it self-expiring, not maintained.** A PR body describing an earlier commit
+is worse than an absent one, because the reader has no way to tell — and there is
+nobody to tell them. This skill ends at EVIDENCE and never pushes, so by the time
+the branch moves, no agent is watching: an instruction to "keep it current" is
+addressed to nobody and will not run.
+
+That is why the verdict line carries its own SHA and states its own expiry. The
+reader can falsify it against `git rev-parse HEAD` without trusting anyone to have
+refreshed anything, which is the difference between a claim that goes quietly
+wrong and one that announces it.
+
+Regenerate it whenever *this skill runs again* on the same branch — that is a
+moment an agent exists. Between runs, the expiry line is the whole mechanism. The
+adversarial review's SHA-binding rule (`gauntlet.md`) is the same idea: a review
+is a claim about a commit, and a PR body is the easiest place to lose track of
+which one.

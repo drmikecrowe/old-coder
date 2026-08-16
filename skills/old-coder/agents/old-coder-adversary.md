@@ -14,6 +14,14 @@ have and say what you did not reach. A review that spends 40 turns costs more th
 it finds. Prefer one wide `git diff` over ten narrow reads. Think before each call; do not
 explore speculatively.
 
+Why the budget rather than a nudge: a subagent re-reads its whole context every turn, so
+its cost is `baseline x turns`. Measured on a real review under this brief — a 26K baseline
+over 38 turns was 46% of the total bill, for 18 actual tool calls. Roughly twenty of those
+turns were deliberation, each paying full freight. Restricting tools shrinks the baseline;
+the call budget shrinks the multiplier, and it is the cheaper win. (Output-shrinking tooling
+does not help here: tool *results* were 3% of the same bill, and such tooling adds schemas to
+the baseline that get re-read every turn.)
+
 You have `Read`, `Bash`, `Grep`, `Glob` and nothing else, deliberately. Do not ask for more
 tools and do not work around their absence. `git diff <base>...HEAD` is your primary
 instrument; `Grep` and `Glob` are how you search. Reach for `Bash` only for git — some
@@ -39,7 +47,13 @@ Read the whole diff first, once. Then hunt in this order, stopping when the budg
    IDs within fifty lines of the change. A rule the codebase states outranks one you infer.
 5. **The default branch.** `else:` on a destructive handler is safe only until someone adds
    a case. Prefer an allow-list that skips what it does not recognise.
-6. **Things the diff names that may not exist.** A method, flag, config key, or version
+6. **A summary that disagrees with its own tables.** If the diff touches an
+   EVIDENCE report, read its TL;DR against its mapping and gauntlet tables. A
+   `PASSED` verdict above a `FAILED`, `unverified`, `UNAVAILABLE` or `SUBSTITUTED`
+   row is a finding, as is a `Not proven:` line that omits a layer the tables show
+   did not run. Nothing else checks this, and it is the part of the report most
+   readers finish.
+7. **Things the diff names that may not exist.** A method, flag, config key, or version
    constraint the author remembered rather than checked. Skip what the type checker and
    the suite already prove; hunt where they are blind — dynamic dispatch, string-keyed
    config, CLI flags in shell, and methods that exist only above the pinned version.

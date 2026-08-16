@@ -1,6 +1,6 @@
 ---
 name: old-coder
-description: Surround an implementation with an executable spec and a gauntlet of constraints (tests, types, coverage, mutation) so line-by-line review becomes optional. Load when the user asks for high-assurance work — "reliable", "TDD", "prove it works", "I won't read the code". Load unasked when a change touches money, auth, data loss, concurrency, a public API, or a hand-rolled parser or config-format reader; then offer the loop in one sentence and stop, so a wrong guess costs a sentence and no files. Skip it when the user wants ordinary tests — write those directly. Runs in an isolated branch or worktree, ends at an evidence report, and never pushes or opens a PR.
+description: Surround an implementation with an executable spec and a gauntlet of constraints (tests, types, coverage, mutation) so line-by-line review becomes optional. Load when the user asks for high-assurance work — "reliable", "TDD", "prove it works", "I won't read the code". Load unasked when a change touches money, auth, data loss, concurrency, a public API, or a hand-rolled parser or config-format reader; then offer the loop in one sentence and stop — but only when a reply is possible; an autonomous run records the domain and proceeds under the autonomous rules rather than stalling. Skip it when the user wants ordinary tests — write those directly. Runs in an isolated branch or worktree, ends at an evidence report, and never pushes or opens a PR.
 ---
 
 # Old Coder: Reliable Coding Under Constraint and Test
@@ -115,7 +115,7 @@ human already made:
 Both default to asking: build the text, write it to the artifact directory, post
 nothing.
 
-So with the default config, nothing this skill does is outward-facing and an
+So with no grants in effect, nothing this skill does is outward-facing and an
 unattended run cannot cause external harm. The confidence downgrade for
 autonomous mode is therefore about **evidence quality** — the spec was never
 reviewed by an independent party — not about blast radius. A tracker grant and a
@@ -216,14 +216,12 @@ implementation files:
   it. A published copy carries no `logs/`, binds to no SHA, and stays editable
   after review. Project to a tracker **comment**, never an issue description,
   which is edited in place and reproduces the silent drift the
-  commit-at-approval rule exists to prevent. This skill never opens a PR in any
-  configuration; it fills one the human already opened
-  (`references/templates.md`).
+  commit-at-approval rule exists to prevent (`references/templates.md`).
 - Declare the **isolation mechanism** (worktree / branch / none, and why) in the
   spec, so the human can see and veto it before work starts. Under worktree
   isolation the artifact directory spans two locations — tracked files in the
   worktree, gitignored ones (`logs/`) outside it, since nothing gitignored
-  survives the worktree's cleanup — unless `artifacts` is an absolute path, which
+  survives the worktree's cleanup — unless the artifact root is an absolute path, which
   makes the whole directory durable at the cost of spec-drift detection
   (`references/setup.md`).
 
@@ -548,7 +546,7 @@ state moves; a PR body describing an earlier commit is worse than an absent one,
 because nothing tells the reader which commit it describes. Into a PR only if one
 is already open, draft unless a rule says otherwise, and gated by a user-scope
 grant; **this skill
-opens no pull requests in any configuration.** With `propose`, or with no PR open,
+opens no pull requests in any configuration.** Without a standing grant, or with no PR open,
 write the block to the artifact directory and say so — that is the expected
 outcome, not a failure (`references/templates.md`).
 
@@ -709,17 +707,11 @@ no implementation yet, and a spec compared against the source instead of the int
 passes. The code reviewer must reach it and nothing else matters. Merging them produces one
 agent that does the heavy review at both stages, which is the failure this split prevents.
 
-**Why the tool lists are short.** A subagent re-reads its entire context every turn, so its
-cost is `baseline x turns`, and tool schemas sit in the baseline. Measured on a real
-adversarial review: a 26K baseline over 38 turns was 46% of the total bill, for 18 actual
-tool calls — roughly twenty turns of deliberation, each paying full freight. Restricting
-tools shrinks the baseline; the explicit call budget shrinks the multiplier. Both terms
-matter, and the budget is the cheaper win.
-
-**Do not reach for output-shrinking tooling here.** Context-compressing MCP servers, output
-filters, and the like target *tool result size* — measured at 3% of the same bill — while
-adding schemas to the baseline that get re-read every turn. For a bounded reviewer they cost
-more than they save. Give the agent few tools and a hard turn budget instead.
+**Why the tool lists and budgets are short.** A subagent re-reads its whole context every
+turn, so its cost is `baseline x turns` and tool schemas sit in the baseline. Give it few
+tools and a hard turn budget; do not reach for output-shrinking tooling, which targets tool
+*results* while adding schemas to the baseline. The measurements behind this are in
+`agents/old-coder-adversary.md`, beside the budget they justify.
 
 **One file, two ways to run it.** The brief is the same either way; what differs is whether
 the tool list is enforced or merely honored:
@@ -760,14 +752,12 @@ human uses is `CUSTOMIZATION.md` at the repo root.
 in `references/gauntlet.md` — those are fallbacks for when nothing is found. A
 guessed command produces confident, wrong evidence.
 
-The permission rule, once: **an operation proceeds if policy permits it AND (it
-is reversible OR an approver is present).** Policy can grant standing
-permission; it cannot manufacture a human. Writing tests and running the
-gauntlet are reversible and proceed unattended. Installs, commits, and tracker
-posts are not: they need the matching key set to `allow`, or an in-task approval.
-**With `propose` and no approver present, skip the operation, record the
-consequence in EVIDENCE, and continue** — never block on a human who is not
-there. A run that halts on configuration produces neither code nor evidence.
+**Permissions** combine as `references/setup.md` states: an operation proceeds
+if policy permits it AND (it is reversible OR an approver is present). The
+consequence that matters mid-task: when an install, commit, or tracker post has
+neither a standing grant nor an approver, **skip it, record the consequence in
+EVIDENCE, and continue** — never block on a human who is not there. A run that
+halts on permissions produces neither code nor evidence.
 
 **Isolation.** The invariant, not the mechanism: *do not mutate the user's
 working tree to do your work.* Default from Tier 2 up; Tier 1 edits in place,
@@ -809,7 +799,7 @@ Checkpoint commits are also **load-bearing for evidence reproducibility**:
 EVIDENCE must identify a source state the human can return to and rerun. A
 report that names only a dirty working tree becomes unverifiable at exactly the
 moment the human is relying on it *instead of* reading the code. If
-`commit = "propose"` and the human declines, or git is unavailable, record that
+there is no commit grant and the human declines, or git is unavailable, record that
 in EVIDENCE — mutant restores then rest on rerunning the suite, a weaker
 guarantee — say plainly that the work is uncommitted, and identify the state by
 tree hash instead of a SHA.

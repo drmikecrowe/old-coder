@@ -508,8 +508,8 @@ report files, the previous logs) so no layer can accidentally read a prior
 run's output — freshness by mechanism, not discipline. (Keep tool
 databases that accumulate value, e.g. hypothesis's example store.) The "final
 fresh run" IS this command; EVIDENCE cites it, and the human can rerun the
-whole report with it. It runs whatever commands the project's rules name
-specifies, so the script and the config never disagree. Pin dev-tool versions
+whole report with it. It runs whatever commands the project's rules name, so the script and the
+rules never disagree. Pin dev-tool versions
 (requirements-dev.txt, package.json devDependencies with exact versions, etc.)
 so the rerun uses the same gauntlet.
 

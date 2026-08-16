@@ -65,21 +65,28 @@ nothing. The attack list is the deliverable; findings are a bonus.
    First confirm the environment actually tests the tree it claims to —
    a copied virtualenv, a stale install, or a cached artifact can silently
    exercise the original sources and make every later result meaningless.
-2. **The spec against the contract.** The one failure class a test suite
+2. **The TL;DR against the tables.** Cheapest attack in the list and the one with
+   the most leverage, because it is the part of EVIDENCE most readers finish. Read
+   the summary, then read the mapping and gauntlet tables, and diff them: a
+   `PASSED` verdict over a table holding a `FAILED`, `unverified`, `N-A`,
+   `UNAVAILABLE` or `SUBSTITUTED` row is a finding, as is a `Not proven:` bullet
+   that omits a layer the tables show did not run. The tables are authoritative;
+   the summary is a reading of them, and nothing else in this protocol checks it.
+3. **The spec against the contract.** The one failure class a test suite
    structurally cannot catch. What would a caller reasonably expect, given the
    stated deployment, that no scenario or Must NOT covers? Approved exclusions
    are not findings — but an approved exclusion *described inaccurately* is.
-3. **The tests.** Try to make the suite pass wrongly: implementation keyed to
+4. **The tests.** Try to make the suite pass wrongly: implementation keyed to
    test inputs, mocks swallowing the logic, assertions that cannot fail. Invent
    mutants the builder did not choose; the builder's mutant list encodes the
    builder's blind spots. Watch for tests that pin less than they claim — a
    boundary pinned in one function and not in its twin, a magnitude left free
    while its boundary is fixed, an assertion satisfied by a caller that never
    arrived.
-4. **The checkers.** Feed every home-grown gate a known-bad input and confirm
+5. **The checkers.** Feed every home-grown gate a known-bad input and confirm
    it fails. Then ask the harder question: does it cover the constraint it
    claims, or only one spelling of it?
-5. **The mapping, both directions.** Every scenario, Must NOT and
+6. **The mapping, both directions.** Every scenario, Must NOT and
    failure-model row must name a falsification procedure that can be made to
    fail. Also look the other way: tests with no scenario, and demonstrated
    failure modes with no row.
