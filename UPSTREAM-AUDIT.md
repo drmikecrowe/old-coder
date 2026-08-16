@@ -354,3 +354,53 @@ in this audit lives (F1, F2, F3, F5, F8): the mechanisms that check claims got
 finished; the mechanisms that grant permissions did not. Finish F1 and sweep
 F2/F3, and the fork is a superset upstream can absorb in slices; ship as-is and
 the plumbing is the part a skeptical reader would quote back.
+
+---
+
+## Addendum — revision to Q4 and F7 after author review
+
+*Appended after the report above was already circulated; the original text is
+unchanged. This section supersedes the Q4 recommendation and sharpens F7.*
+
+The author's stated design intent: the TL;DR exists because the EVIDENCE report
+is detailed enough that a reviewer needs a high-level overview to know **how to
+read the detail**. That rationale changes the assessment.
+
+**Q4, revised.** A reader facing a 250-line report summarizes it themselves
+regardless — they skim the first screen and stop. The real alternative to a
+TL;DR is not "reader consults the tables"; it is "reader forms their own
+summary, worse than the author's." Framed that way, the TL;DR as a whole
+*passes* upstream's field bar: its absence would let the reader believe
+something false — whatever their skim produced. "Read first" in particular is
+withdrawn from the fail list: it is the field that most directly does the
+navigational job (in the demo it steers the skeptic to *Independent
+verification — it is where the downgrade lives*, which is exactly right). The
+trim recommendation (cut to Verdict/Proven/Not-proven) is **withdrawn**.
+
+What stands from the original Q4:
+
+- Read literally, upstream's bar as stated still fails "Delivered" and the
+  five-bullet digest — they restate rather than prevent a false belief. Treat
+  the original Q4 as a **prediction of upstream's objection**, not a verdict.
+  The counter-argument ("the reader will summarize anyway; better they read
+  ours, written from the tables") currently exists nowhere in the fork's text.
+  Write it down where upstream will read it — in the PR description, or as one
+  sentence in `templates.md` beside "write it last" — so the TL;DR arrives
+  upstream with its defense attached instead of waiting to be flagged.
+- The digest's drift cost is real but is a **priced trade** (navigation bought
+  with duplication), not a defect — *conditional on F7's checker existing*.
+
+**F7, sharpened — now the load-bearing finding.** F7 is independent of the
+TL;DR's size: the part most readers finish is the only part nothing checks,
+whether it is four bullets or ten. The fix is one line in two places:
+
+> Diff the TL;DR against the tables; any disagreement is a finding.
+
+added to `verifier.md`'s attack order and to the adversary's re-review brief.
+With the checker, the TL;DR is a mechanism upstream's doctrine endorses — a
+summary that fails visibly when it lies. Without it, ten restated claims are
+ten unwatched drift surfaces, and the original F7 stands in full.
+
+**Net for the PR-update agent:** keep the TL;DR, keep "Read first", do not
+trim; add the checker line to `verifier.md` and the adversary brief; carry the
+"reader summarizes anyway" defense into the upstream PR text.
