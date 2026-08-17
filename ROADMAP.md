@@ -5,6 +5,47 @@ The plan for moving this fork's work into
 a time. Written for the agent executing it. Companion to `UPSTREAM-AUDIT.md`
 (what diverged and why) and `ATTRIBUTION.md` (provenance and PR history).
 
+## Status
+
+In land order, not label order. The letter in each box is the state:
+
+| | |
+|---|---|
+| `[ ]` | not started |
+| `[c]` | committed and pushed to the fork |
+| `[p]` | PR open upstream |
+| `[x]` | merged upstream |
+
+- [p] **1c · PR #10 — Templates** · re-cut pushed 2026-08-17: the split plus the
+      four accepted fields, standalone off `upstream/main`. Open for review.
+- [p] **1a · PR #7 — Offer the loop** · PR open; the re-cut (down to ~10 lines
+      carrying the five rules, repositioned after the thesis paragraph) is not
+      done yet.
+- [p] **1b · PR #9 — Config and isolation** · PR open; the re-cut (isolation
+      only, ~12 lines folded into Setup, no new reference file) is not done yet.
+- [ ] **Phase 2 · The config positioning question** — an issue, not a PR, and
+      only after the maintainer signals.
+- [x] **3a · Checker notes** — fail-closed and negative controls. Already
+      upstream: `SKILL.md`'s "Checker note" carries both rules, the
+      one-known-bad-case caveat, and the non-vacuous-control proof. Confirm no
+      fork-only refinement remains, then drop this entry.
+- [ ] **3b · Manual-mutation hardening** + the gauntlet entry-point guard —
+      **half landed.** PR #8 (merged 2026-08-14) took "a hand-rolled runner must
+      prove it executed each mutant" and the entry-point guard. Still fork-only:
+      restore verified by `git diff --exit-code`, the mutants-as-committed-table
+      form, and the control mutant.
+- [ ] **3c · The egress layer**
+- [ ] **3d · Move-vs-modify** — a pure move has no RED
+- [ ] **3e · Five-status closed vocabulary** + anti-gaming 5–6 — blocked until
+      #10 merges, since it extends #10's three-way split
+- [ ] **4a · The adversarial layer** — gauntlet.md + SKILL.md wiring
+- [ ] **4b · The bundled agents** — `old-coder-adversary`, `old-coder-spec-intent`
+- [ ] **5 · Orientation** — last, with its defense attached
+
+States verified against `upstream/main` (`01f8fe9`) and the upstream PR list on
+2026-08-17. Re-verify after each merge rather than trusting this block —
+Phase 3's entries were written before #8 landed and were stale within a day.
+
 ## Re-cutting an existing PR — the procedure
 
 Validated on #10 (2026-08-17), which went from a #9-dependent diff carrying
@@ -94,7 +135,7 @@ because skipping it produces a specific, nameable defect.
 
     Leaving a stale body *unbannered* is the worse failure: on #10 it advertised
     the two fields the maintainer had just rejected, at the top of the page,
-    above his own review.
+    above their own review.
 14. **Prefix the title `RE-CUT: `** so the change of state is visible in a list
     view. Prefer it to `RENAMED:`, which reads as a claim about the codebase
     rather than about the PR.
@@ -327,7 +368,7 @@ references fork-only files.
 
 - Source: SKILL.md "Checker note" + the two follow-on notes (prove the control
   is non-vacuous; a control proves one case, not the constraint).
-- Pitch: home-grown checks (grep gates, custom scripts, manual mutation
+- Argument: home-grown checks (grep gates, custom scripts, manual mutation
   runners) fail open by default; off-the-shelf tools have earned their failure
   behavior, home-grown ones have not. Grounded in the demo's own history: the
   first negative control was itself vacuous and was caught only because it was
@@ -342,7 +383,7 @@ references fork-only files.
   `git diff --exit-code`; control mutant) and "Gauntlet entry point" (the
   skeleton, the `SPEC.md`-exists guard on the delete, `set -e` rationale,
   must-find-nothing grep exit codes).
-- Pitch: the demo's own war story — same-size mutants sharing a bytecode
+- Argument: the demo's own war story — same-size mutants sharing a bytecode
   cache, kills reported for mutants never run, a defect that can only inflate
   the score and therefore can never surface as red.
 
@@ -351,7 +392,7 @@ references fork-only files.
 - Source: SKILL.md layer-table row + gauntlet.md "Egress: what the change lets
   data reach" (origin / control / destination / bounds / precedent; removing
   the channel beats redacting it).
-- Pitch: coverage and mutation report that a line ran; neither can ask whether
+- Argument: coverage and mutation report that a line ran; neither can ask whether
   the data on it *belongs* where it goes. A question no existing layer can ask
   is the cleanest possible case for a new one.
 
@@ -360,7 +401,7 @@ references fork-only files.
 - Source: SKILL.md "A pure move has no RED" (byte-identity via
   `git show <base>:<path>` diff; mutation on relocated code) + gauntlet.md's
   relocated-code callout (patch-by-location tests silently stop applying).
-- Pitch: a green suite immediately after a move is the case most likely to be
+- Argument: a green suite immediately after a move is the case most likely to be
   hollow; inventing a RED for a move produces a test that asserts the refactor
   happened — a named anti-pattern, not a substitute.
 
