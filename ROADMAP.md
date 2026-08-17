@@ -18,9 +18,9 @@ In land order, not label order. The letter in each box is the state:
 
 - [p] **1c · PR #10 — Templates** · re-cut pushed 2026-08-17: the split plus the
       four accepted fields, standalone off `upstream/main`. Open for review.
-- [p] **1a · PR #7 — Offer the loop** · PR open; the re-cut (down to ~10 lines
-      carrying the five rules, repositioned after the thesis paragraph) is not
-      done yet.
+- [p] **1a · PR #7 — Offer the loop** · re-cut pushed 2026-08-17: 37 lines down
+      to 12, the five rules only, repositioned after the thesis paragraph,
+      `+13/−1`. Draft, awaiting review.
 - [p] **1b · PR #9 — Config and isolation** · PR open; the re-cut (isolation
       only, ~12 lines folded into Setup, no new reference file) is not done yet.
 - [ ] **Phase 2 · The config positioning question** — an issue, not a PR, and
@@ -48,10 +48,11 @@ Phase 3's entries were written before #8 landed and were stale within a day.
 
 ## Re-cutting an existing PR — the procedure
 
-Validated on #10 (2026-08-17), which went from a #9-dependent diff carrying
-`setup.md` and two rejected fields to a standalone `+214/−82`, restacked off
-`upstream/main` and left in draft. Follow it step for step; each step exists
-because skipping it produces a specific, nameable defect.
+Validated on #10 and #7 (both 2026-08-17). #10 went from a #9-dependent diff
+carrying `setup.md` and two rejected fields to a standalone `+214/−82`; #7 cut a
+37-line section to 12 and moved it below the thesis paragraph, `+13/−1`. Both
+were restacked off `upstream/main` and handed over in draft. Follow it step for
+step; each step exists because skipping it produces a specific, nameable defect.
 
 ### Read the ruling
 
