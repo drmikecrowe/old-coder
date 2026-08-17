@@ -5,6 +5,112 @@ The plan for moving this fork's work into
 a time. Written for the agent executing it. Companion to `UPSTREAM-AUDIT.md`
 (what diverged and why) and `ATTRIBUTION.md` (provenance and PR history).
 
+## Re-cutting an existing PR — the procedure
+
+Validated on #10 (2026-08-17), which went from a #9-dependent diff carrying
+`setup.md` and two rejected fields to a standalone `+214/−82`, restacked off
+`upstream/main` and left in draft. Follow it step for step; each step exists
+because skipping it produces a specific, nameable defect.
+
+### Read the ruling
+
+1. **Read the maintainer's comments on the PR itself**, not this file's summary
+   of them: `gh api repos/AmazingAng/old-coder/issues/<n>/comments --jq '.[].body'`.
+   Also read the PR's current title and body
+   (`gh pr view <n> -R AmazingAng/old-coder --json title,body`) — it is usually
+   stale by the time you re-cut, and you are about to be judged against what it
+   currently claims.
+2. **Write down the take-list and the leave-out-list verbatim before touching a
+   file.** Every later step is a check against those two lists. On #10 the
+   leave-out list was the per-layer wall-clock column and the Config header
+   line; both had to be absent from the final diff *and* named as absent in the
+   re-cut comment.
+
+### Build the branch
+
+3. **Fork main is a superset; the port selects, it never copies.** "Take main
+   and apply it to upstream" means take the in-scope subset. Before porting,
+   enumerate what main's version of each file carries that this PR must *not* —
+   on #10 that was wall-clock, `Grants in effect`, `setup.md` references, the
+   `Isolation` field, Orientation, the projections machinery, and the Phase 4
+   agent references. If you cannot list the exclusions, you have not read main's
+   version closely enough to port from it.
+4. **Work in that PR's own worktree.** Each open PR has a persistent one — see
+   `git worktree list`. Restack it with `git reset --hard upstream/main`. Never
+   cherry-pick fork commits and never merge fork main into a contrib branch;
+   both drag the whole divergence along, which is what put #9's commits on #10.
+5. **Port by editing upstream's files.** Open fork main's version with
+   `git show main:<path>`, copy the sections the phase names, and rewrite
+   fork-only vocabulary into upstream's. Config, grant, and artifact-directory
+   vocabulary are the usual offenders — they read as ordinary prose and quietly
+   carry a dependency on deferred work.
+6. **Respect this file's own sequencing.** A later phase that *extends* this PR
+   must not be pre-merged into it. #10 deliberately omits the five-status closed
+   vocabulary because 3e extends #10's three-way split and has to diff against
+   upstream's then-current text.
+
+### Verify before anyone sees it
+
+7. **Sweep the changed files for out-of-scope vocabulary.** Expect zero hits:
+
+   ```sh
+   rg -in 'setup\.md|CUSTOMIZATION|Orientation|wall-clock|old-coder\.toml|adversar|spec-intent|grant|projection|/home/|ROADMAP|ATTRIBUTION|Isolation' <changed files>
+   ```
+
+   Every hit is either a defect or a carry you can defend out loud.
+8. **After a move, hunt what now dangles** — repo-wide, in both directions:
+   `rg -n '<old section heading>|<old file>|<new file>' .`. Reachability counts
+   too: a template nothing points at is the F3 defect class, in public.
+9. **Ask what else the change touches** — anything hashed, parsed, linted, or
+   run in CI — and answer with command output rather than a guess. On #10 that
+   meant checking `demo-rate-limiter/tools/source_state.sh` (confirmed
+   `evidence.md` is outside its hashed set, so relabelling it does not
+   invalidate the recorded tree hash) and confirming no script or workflow
+   parses `evidence.md`.
+10. **Commit signed (`-S`), and let the message name what was excluded** and on
+    whose instruction. The exclusions are the part a reviewer cannot see.
+11. **Get an independent review before pushing.** Spawn a context-free subagent;
+    give it the worktree path, the base commit, the PR number, and the primary
+    sources — and *not* your conclusions, or it will confirm them. Tell it
+    explicitly to use `rg`/`fd` and never `grep`/`find`; subagents do not
+    inherit those rules. Treat its output as claims to verify, not verdicts: on
+    #10 its README finding was wrong, because upstream's README already omitted
+    two other reference files, and checking took one command.
+
+### Publish
+
+12. **Mike's explicit yes, then** `git push --force-with-lease origin <branch>`.
+    Force-pushing to the existing head branch is the expected move for a re-cut:
+    it preserves the review threads and does not clear draft status. **Leave the
+    PR in draft.**
+13. **Never rewrite the PR body.** The maintainer's review answers the text that
+    was there, and replacing it orphans the thread. Prepend a banner instead,
+    keeping the original intact:
+
+    > ⚠️ **Re-cut — the description below is the original and no longer matches
+    > the diff.** It is kept as written so your review still reads against the
+    > text it answered. See [the re-cut comment](<url>) for what this PR now
+    > contains.
+
+    Leaving a stale body *unbannered* is the worse failure: on #10 it advertised
+    the two fields the maintainer had just rejected, at the top of the page,
+    above his own review.
+14. **Prefix the title `RE-CUT: `** so the change of state is visible in a list
+    view. Prefer it to `RENAMED:`, which reads as a claim about the codebase
+    rather than about the PR.
+15. **Post the re-cut comment first, then edit the body** — the banner needs the
+    comment's URL:
+    `gh api repos/AmazingAng/old-coder/issues/<n>/comments --jq '.[-1].html_url'`.
+16. **What the re-cut comment must contain**, in this order: that it is
+    restacked, and on what; what was dropped, naming the objection it answers;
+    what it carries now; **what the mechanism does when it is broken** —
+    honestly, so if it is prose with no checker, say that rather than implying a
+    gate; every field added *beyond* the accepted list, flagged as yours with an
+    offer to strike it; every hunk outside the skill directory, offered as
+    droppable; and every deliberate non-change disclosed. Disclose rather than
+    let it surface in review — the proposal is stronger for answering the
+    question itself.
+
 ## Standing rules — read before every proposal
 
 1. **One proposal at a time, smallest first.** The maintainer reviews carefully
