@@ -57,13 +57,6 @@ overruled rather than burying them in a Given/When/Then. If the summary and the
 scenarios ever disagree, the scenarios win and the summary is a defect: fix it
 and say so in `## Revisions`.
 
-Commit `SPEC.md` at approval (subject to the commit grant). Once the
-approved spec is a commit, later drift is literally a `git diff` — that is what
-turns "append-only" and "revise it visibly" from promises into mechanisms.
-Without a durable spec, a compaction loses the approved contract while the code
-it authorized remains, and nobody can check whether a scenario was quietly
-dropped from the EVIDENCE mapping.
-
 **If the human rejects the spec**, keep the directory and the file: revise
 `SPEC.md` in place, add the reason to `## Revisions`, and re-request approval.
 Do not delete it and start clean — what the human turned down, and why, is the
@@ -122,7 +115,10 @@ section's headline rather than its title:
   <what you disagreed with and why> | not run — reason>
 - Source state: <commit SHA | uncommitted work, tree hash <sha256>> — persist
   the computation as a script (e.g. tools/source_state.sh); a hash recipe
-  written in prose is working-directory-sensitive and will fail to reproduce
+  written in prose is working-directory-sensitive and will fail to reproduce. When
+  Git exists, derive the tree hash from version-controlled inputs, fail on
+  relevant staged, unstaged, deleted, or non-ignored untracked files, and
+  never hash ambient ignored build artifacts
 - Isolation: <worktree | branch | none> <; fallback reason if a worktree could
   not run the gauntlet>
 - Grants in effect: <which permissions were standing, and from which scope; note

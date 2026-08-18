@@ -2,13 +2,13 @@
 
 ## Orientation
 - **Verdict:** **PASSED WITH LIMITS.** Every gauntlet layer is green at source
-  state `8b88bda`, but independent verification is `not performed` against that
+  state `4734451`, but independent verification is `not performed` against that
   state. This report is finalized as a **declared downgrade**, not on a passing
   verdict.
 - **Delivered:** an in-process `RateLimiter(limit, window_seconds, clock)` with
   `allow(key) -> bool` — sliding window per key, thread-safe, with a throttled
   sweep that bounds the key map temporally.
-- **Proven:** 28/28 mapped scenarios pass; 41 tests, 100% changed-line coverage
+- **Proven:** 31/31 mapped scenarios pass; 50 tests, 100% changed-line coverage
   (49/49 statements, 20/20 branches, gated), 22/22 mutants killed. The mutation
   score is carried **entirely by the scenario suite** — the properties alone
   kill 3/22.
@@ -24,10 +24,11 @@
 
 The writeup below, in brief:
 
-- **Spec → test mapping:** 28 rows, all `pass`, no `unverified` or `n-a`. Both
+- **Spec → test mapping:** 31 rows, all `pass`, no `unverified` or `n-a`. Both
   Must NOT constraints are mapped — one to a test, one to the must-not scan.
-- **Gauntlet:** 13 layers. Two exist to prove the harness can fail — a checker
-  self-test (3/3) and a mutation negative control (C1 killed, C2 survived).
+- **Gauntlet:** 15 layers. Three exist to prove the harness can fail — a checker
+  self-test (3/3), a source-state self-test (9/9), and a mutation negative
+  control (C1 killed, C2 survived).
   One layer is `n-a` (license check: zero runtime dependencies); the rest pass.
 - **Verification:** six rounds, each a fresh context at a different commit. Round
   6 returned **`failed`** with one behavioural gap. Rounds 1–3 found what no
@@ -47,35 +48,40 @@ The writeup below, in brief:
   by fixes**, and verification did not converge just because round 4 came back
   clean.
 
-- Spec approval: **obtained** for REVISION 4 (2026-08-09) — the human approved
-  each contract change item by item before implementation. Earlier revisions
-  (2026-07-25, 2026-07-27) were autonomous and are still unapproved; treat
-  them as the weaker part of the spec.
+- Spec approval: **obtained** for REVISION 4 (2026-08-09), REVISION 5 and
+  REVISION 6 (2026-08-18) — the human approved each contract change before
+  implementation. Earlier revisions (2026-07-25, 2026-07-27) were autonomous
+  and are still unapproved; treat them as the weaker part of the spec.
 - Independent verification: **not performed against the final source state
-  `8b88bda`.** Six earlier rounds were performed; the last verified state
+  `4734451`.** Six earlier rounds were performed; the last verified state
   `d0b506c` returned `failed`, and the fixes made since — one of them
   behavioural — are disclosed below as unverified. This report is finalized as
   a **declared downgrade**, not on the strength of a passing verdict. A
   verdict attaches to the state a verifier actually saw, and no verifier has
   seen this one.
-- Source state: git commit `8b88bda`; sha256 tree hash `c80e8cccf0a1ed3a` —
-  reproduce both with `./tools/source_state.sh` (works from any directory;
-  now includes `.github/workflows`, which decides whether the gauntlet runs
-  in CI at all). Commits after `8b88bda` on this branch touch only
-  `skills/`, which is outside the hashed tree — hence the same hash at a
-  later HEAD, not a stale binding.
+- Source state: source commit `4734451`; sha256 tree hash
+  `dbccc212daa35442` — reproduce both with `./tools/source_state.sh` from any
+  directory. When a binding is produced the tree hash is the required content
+  identity; the source commit is provenance and is supplied only where
+  complete history is available, so a shallow checkout reports
+  `(unavailable: shallow history)` and a no-Git archive reports `(no git)`,
+  both alongside this same tree hash. No error path emits a binding at all.
+  The script separately reports current HEAD; commits after `4734451` that
+  touch only this report or other out-of-scope paths preserve the source
+  commit and tree hash. The manifest includes `.github/workflows`, which
+  decides whether the gauntlet runs in CI at all.
 - Toolchain: pinned in `requirements-dev.txt` (local run: Python 3.14.3;
   CI runs the same gauntlet on 3.12 via `.github/workflows/gauntlet.yml`).
 - Entry point: `./tools/gauntlet.sh` reruns every layer below.
 
 All numbers are from one final fresh run of the entry point, executed
-2026-08-10 after the last code edit.
+2026-08-18 at source commit `4734451` after the last code edit.
 
-`spec.md` was deliberately pruned back to a contract afterwards (339 → 255
-lines). Every clause, invariant, obligation and failure-model row survives;
-what was removed is the per-revision forensics, which lives in the honest
-notes below and in git. The spec is the artifact a human reads before any
-code exists, and it had stopped being readable as one.
+`spec.md` was deliberately pruned back to a contract before REVISION 5
+(339 → 255 lines). Every clause, invariant, obligation and failure-model row
+survived; what was removed is the per-revision forensics, which lives in the
+honest notes below and in git. REVISION 5 adds the approved source-binding
+contract and tests without changing rate-limiter behaviour.
 
 ## Spec → Test mapping
 
@@ -111,24 +117,29 @@ Status legend: pass / fail / unverified / n-a.
 | Must NOT: denials store nothing (no memory growth) | test_ratelimiter.py::test_must_not_denials_store_nothing + M8 | pass |
 | Must NOT: the limiter is never driven by a real clock | layer: must-not scan in `tools/gauntlet.sh` over tests/ → no matches | pass |
 | failure-model row: allow() is atomic | test_ratelimiter.py::test_allow_is_atomic_a_second_caller_cannot_interleave + M13 | pass |
+| REVISION 5: source binding is reproducible and fail-closed | test_source_state.py (ignored artifacts, staged/unstaged/untracked/deleted inputs, clean clone, no-Git archive, arbitrary cwd, evidence-only commit) | pass |
+| REVISION 6: truncated history withholds provenance, never invents it | test_source_state.py::test_shallow_history_withholds_provenance (exact marker, shallow HEAD, tree equal to the full clone, empty stderr) | pass |
+| REVISION 6: covered error scenarios pin their reason and emit no binding | test_source_state.py (Git dirty, Git deletion, Git untracked, no-Git missing input, no-Git empty scope — each asserts the reason and `stdout == ""`) | pass |
 
 ## Gauntlet (final fresh run: `./tools/gauntlet.sh`)
 
 | Layer | Command | Result |
 |---|---|---|
 | Checker self-test | `sh tools/test_gauntlet_checks.sh` (first layer; asserts the must-not scan fails on a planted pattern, passes on a clean tree, and fails closed with a distinct rc 2 when the scan itself breaks) | 3/3 expectations ok |
+| Source-state self-test | `pytest -q tests/test_source_state.py` (negative controls for the covered fail-closed scenarios; shallow/full-history, clean clone and no-Git archive comparisons) | 9/9 passed |
 | Mutation harness negative control | `python tools/mutants.py --negative-control` (a killer and a strictly-equivalent mutant of identical size under one pinned mtime) | C1 KILLED, C2 SURVIVED — ok |
-| Tests | `pytest -q --cov=ratelimiter` | 41 passed, 0 failed |
-| Types | `mypy src tests examples tools` (strict) | 0 errors in 6 files |
-| Lint + format + complexity | `ruff check . && ruff format --check .` (mccabe ≤ 8) | 0 warnings, 8 files formatted |
+| Tests | `pytest -q --cov=ratelimiter` | 50 passed, 0 failed |
+| Types | `mypy src tests examples tools` (strict) | 0 errors in 8 files |
+| Lint + format + complexity | `ruff check . && ruff format --check .` (mccabe ≤ 8) | 0 warnings, 10 files formatted |
 | Changed-line coverage | `pytest --cov … --cov-fail-under=100` | 49/49 statements, 20/20 branches (100%). **This layer is a gate**; before 2026-08-09 it printed a percentage and exited 0 no matter how far coverage fell |
 | Mutation | `python tools/mutants.py` (manual, scripted; only pytest exit 1 counts as a kill; `__pycache__` cleared and `PYTHONDONTWRITEBYTECODE` set per mutant) | 22/22 killed |
 | Property-based | hypothesis, 2 properties | 100 examples each, 0 falsified |
 | Real execution | `python examples/demo.py` (real `time.monotonic`) | burst of 5 → `[True, True, True, False, False]`; other key unaffected; allowed again after window |
 | Supply chain | `pip-audit -r requirements-dev.txt` | no known vulnerabilities; runtime dependencies: **none** (stdlib only; `threading` is stdlib) |
 | Secret scan | must-not scan in `tools/gauntlet.sh` over src, tests, tools, examples, spec.md, pyproject.toml, requirements-dev.txt and `../.github` | clean, no matches |
+| Source binding | `tools/source_state.sh` (last gauntlet layer) | source commit `4734451`; tree `dbccc212daa35442`; current HEAD is reported separately |
 | License check | — | n-a: zero runtime dependencies, nothing redistributed beyond this repo's own MIT code |
-| Suite health | pytest-randomly (order shuffled every run) | 41 passed in randomized order, 10/10 consecutive runs |
+| Suite health | pytest-randomly (order shuffled every run) | 50 passed in randomized order, 10/10 consecutive runs |
 
 ## Layer attribution
 
@@ -139,13 +150,17 @@ Status legend: pass / fail / unverified / n-a.
 - Scenario suite alone: **22/22**. The headline mutation score is carried
   entirely by the scenario tests.
 
-## Skipped layers
+## Layers not run as specified
 
-- Tool-based mutation (mutmut): unverified compatibility with Python 3.14;
-  replaced with the scripted manual procedure (`tools/mutants.py`, 22 mutants).
-- Shell lint (shellcheck) for the four scripts that implement half the gates:
-  **not run**, no tool installed. Every Python file gets three static layers
-  and the shell gets none. Known gap, raised by verification round 4.
+- **SUBSTITUTED — tool-based mutation (mutmut):** unverified compatibility with
+  Python 3.14; the scripted manual procedure ran instead (`tools/mutants.py`,
+  22 mutants). What it cannot detect: the mutant list is hand-written, so
+  unlike a tool generating mutants from the syntax tree it can only test
+  weaknesses somebody thought of in advance.
+- **UNAVAILABLE — shell lint (shellcheck)** for the four scripts that implement
+  half the gates: no tool installed, and nothing ran in its place. Every Python
+  file gets three static layers and the shell gets none. Known gap, raised by
+  verification round 4.
 
 ## Independent verification
 
@@ -191,9 +206,81 @@ independently verified**:
 - the six prose corrections listed in commit `66df5cd`;
 - the prune of `spec.md` from 339 to 255 lines in commit `8b88bda`. No clause
   was changed, but it is a large edit to the document a verifier attacks
-  hardest, and it was made after the last verified state.
+  hardest, and it was made after the last verified state;
+- REVISION 5 and the reproducible, fail-closed source-state mechanism in
+  commits `86bfcf4` and `d45cc2f`;
+- REVISION 6 and the shallow-history provenance repair in commits `3e45e16`
+  and `49e8762`, plus the historical CI wording correction in `4734451`.
 
 ## Honest notes
+
+- **The first REVISION 6 evidence rebind was internally stale.** Commit
+  `83004bf` updated the headline source state but left four REVISION 5 values in
+  the gauntlet table: 6 rather than 9 source-state tests, 47 rather than 50
+  total tests, the old `d45cc2f` / `76389992f4e342e2` binding, and a suite-health
+  row for the old 47-test suite. Review caught the mismatch against the same
+  successful CI log the report was meant to summarize. The table now comes
+  from a fresh gauntlet at `4734451`; the 50-test randomized suite was also
+  rerun separately 10/10 times rather than inheriting the old result. Its
+  negative-control wording is narrowed from “every error path” to the five
+  failure scenarios actually exercised.
+
+- **The REVISION 5 binding shipped a provenance defect, and CI published it
+  twice.** `source commit` was defined as the most recent commit that changed
+  the source scope, but the command never checked whether the repository held
+  enough history to answer. In a shallow repository `git log` attributes the
+  scope to the grafted HEAD, so the command returned a real-looking commit
+  that had not touched the source — at exit 0, with no warning. Because
+  `actions/checkout@v4` defaults to `fetch-depth: 1`, the canonical CI was
+  exactly the environment that ran it wrongly:
+
+  | Run | Reported source commit | Truth |
+  |---|---|---|
+  | PR #12 check (temporary merge checkout) | `a4276a2` | `d45cc2f` |
+  | post-merge `main` | `57ebbbb` | `d45cc2f` |
+
+  The tree hash `76389992f4e342e2` was correct in both runs, so the content
+  binding held throughout; only the provenance label was wrong. It failed in
+  the direction that looks fine — plausible SHA, exit 0, gauntlet green — and
+  no layer could catch it, because no negative control covered a truncated
+  history. Found by re-deriving the binding in a `--depth 1` clone during
+  review of REVISION 5, not by the gauntlet. REVISION 6 makes truncated
+  history report `(unavailable: shallow history)`, adds the missing control,
+  and sets `fetch-depth: 0` so CI exercises the real path instead of sitting
+  permanently in the degraded one.
+
+- **Three of the REVISION 5 negative controls were weaker than they read.**
+  The wrapper exits 2 when Python cannot find the implementation, so
+  `assert returncode != 0` proved nothing about which guard fired;
+  `test_missing_manifest_input_fails_closed` asserted only that, and would
+  have passed against a completely broken script. It also mis-described
+  itself: under Git a deleted tracked input is reported as *dirty*, and the
+  `source input is missing` guard it appeared to cover is unreachable in the
+  Git path. It is renamed, every control now pins its reason and asserts
+  `stdout == ""`, and two new controls exercise that guard in the no-Git
+  manifest where it actually lives.
+
+- **One REVISION 6 change is not covered by a negative control, deliberately
+  disclosed.** The test fixture used to copy the implementation only
+  `if implementation.exists()`, so a deleted implementation would have
+  degraded the fixture silently. It is now copied unconditionally. Reinstating
+  the guard does not turn any test red, because the implementation exists in
+  every tree the suite can reach; the change buys diagnosability, not a
+  provable property, and writing a control for a state the suite cannot enter
+  would cost more than it proves. Recorded rather than counted as verified.
+
+- **The previous source binding was invalid.** The reported tree
+  `c80e8cccf0a1ed3a` included four Git-ignored `*.egg-info` files created by
+  `pip install -e .`; a clean checkout at the cited commit instead produced
+  `939188446f61289c`. Because those generated files can also vary with the
+  setuptools version, neither hash was a trustworthy Git-source binding. The
+  old `find | sort | xargs | shasum` pipeline could additionally print success
+  after a missing input. REVISION 5 replaced it with a canonical tracked-file
+  manifest, explicit dirty/untracked rejection, structured path+content
+  hashing, a deterministic no-Git fallback, six negative controls, and a
+  second clean-state check around hashing. The binding REVISION 5 produced was
+  `d45cc2f` / `76389992f4e342e2`; it was gauntlet-tested but never independently
+  verified, and REVISION 6 superseded it.
 
 - **The A/B experiment that started this failed.** The design was to plant a
   defect in one copy and verify a clean copy as a false-positive control. The

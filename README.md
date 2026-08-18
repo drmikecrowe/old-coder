@@ -8,7 +8,7 @@
 
 **An old coder's strategy for the agent era: don't read the code — make it run the gauntlet.**
 
-A skill that makes coding agents **prove their work**. Instead of you reading every line the agent writes, the agent must push its code through a gauntlet of checks — and hand you a test plan before coding and an evidence report after. You review those two documents, not the code.
+A skill that makes coding agents **prove their work**. Instead of you reading every line, the agent pushes its code through a gauntlet of checks and hands you a test plan before coding and an evidence report after. You review those two documents, not the code.
 
 It's plain markdown, so it works with any coding agent that follows instructions: Claude Code, Codex CLI, Cursor, Aider, or your own agent loop.
 
@@ -19,8 +19,10 @@ It's plain markdown, so it works with any coding agent that follows instructions
 
 ## Installation
 
+Install `old-coder`:
+
 ```sh
-npx skills add https://github.com/drmikecrowe/old-coder
+npx skills add https://github.com/drmikecrowe/old-coder --skill old-coder
 ```
 
 That installs everything, including the two review agents — they live inside the skill at `skills/old-coder/agents/`, so there is no second copy step.
@@ -29,15 +31,32 @@ Upstream (`amazingang/old-coder`) installs the same loop without this fork's add
 
 Or manually:
 
-- **Claude Code** — copy the skill into a skills folder, then invoke `/old-coder` or let it trigger on "prove it works"-style requests:
+- **Claude Code** — copy the skill into a skills folder, then invoke `/old-coder` or let it trigger on high-assurance requests:
   ```sh
-  cp -r skills/old-coder ~/.claude/skills/    # or <project>/.claude/skills/
+  cp -r skills/old-coder ~/.claude/skills/
+  # or copy it to <project>/.claude/skills/
   ```
   Optionally register the two reviews as real agent types, which makes their tool restrictions enforced rather than advisory:
   ```sh
   cp skills/old-coder/agents/*.md ~/.claude/agents/
   ```
-- **Other agents** — add `skills/old-coder/SKILL.md` to your `AGENTS.md`, rules file, or system prompt, and keep `references/gauntlet.md` alongside it. The two review passes are spawned as subagents briefed from `skills/old-coder/agents/old-coder-spec-intent.md` and `old-coder-adversary.md`; no agent-definition support is required.
+- **Other agents** — add `skills/old-coder/SKILL.md` to your `AGENTS.md`, rules file, or system prompt, and keep its `references/` directory alongside it. The two review passes are spawned as subagents briefed from `skills/old-coder/agents/old-coder-spec-intent.md` and `old-coder-adversary.md`; no agent-definition support is required.
+
+### Optional companion: `old-coder-api`
+
+This repository also includes a focused HTTP/JSON API design and review skill. Install it when you want compatibility, authorization, idempotency, pagination, rate-limit, and operability gates:
+
+```sh
+npx skills add https://github.com/drmikecrowe/old-coder --skill old-coder-api
+```
+
+To install both skills:
+
+```sh
+npx skills add https://github.com/drmikecrowe/old-coder --skill old-coder --skill old-coder-api
+```
+
+When both apply, `old-coder` owns workflow, approval, and evidence; `old-coder-api` owns the API contract, and its gate decisions become SPEC constraints and gauntlet checks.
 
 ## The idea
 
@@ -92,13 +111,14 @@ And one limit stated plainly: the gauntlet turns the constraints expressed in th
 ## What's in the repo
 
 ```
-skills/old-coder/         the skill (SKILL.md + references/ + agents/)
+skills/old-coder/         reliable coding workflow (SKILL.md + references/ + agents/)
   references/gauntlet.md    the layer catalogue and risk model
   references/setup.md       how rules are read, isolation, artifact layout
   references/templates.md   the SPEC and EVIDENCE templates
   references/verifier.md    independent verification (separate from the gauntlet)
   agents/                   the two review subagents (old-coder-spec-intent, old-coder-adversary)
-demo-rate-limiter/        a rate limiter built end-to-end under the skill
+skills/old-coder-api/     HTTP/JSON API design and review (SKILL.md + references/)
+demo-rate-limiter/        a rate limiter built end-to-end under old-coder
 CUSTOMIZATION.md          how to configure the skill with rules
 ATTRIBUTION.md            provenance, upstream credits, what this fork changed
 ```

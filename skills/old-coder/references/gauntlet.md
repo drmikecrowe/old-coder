@@ -580,4 +580,7 @@ keep that true:
 
 ## Templates
 
-The `SPEC.md` and `EVIDENCE.md` templates live in `templates.md`.
+The Gherkin scenario template, the SPEC template, the EVIDENCE report
+template, and the tracker roll-up live in `references/templates.md`. This
+file is read while building the gauntlet; that one is read while writing the
+two artifacts the human reads.
