@@ -165,13 +165,24 @@ implementation files:
 - **Audit the gauntlet's tooling here, in the setup plan, before any code.** Walk
   the layer table and ask of each: *what does this project declare that runs it?*
   Read the manifests (`pyproject.toml`, `package.json`, `mise.toml`, lockfiles),
-  not your PATH. Then list, for the human to approve in the same breath as the
+  not your PATH. **Read the merge gate in the same pass** — `.github/workflows/*`,
+  `.gitlab-ci.yml`, `.pre-commit-config.yaml`, the CI target in a Makefile or
+  justfile — and transcribe each check into the layer it corresponds to,
+  **verbatim, arguments included**. The gate states, one line per tool, the
+  command that will judge this change; it is readable before you write a line,
+  and reading it afterwards is how a report ends up documenting a scope you chose
+  rather than the scope that judges you. **Scope is part of the command:**
+  `pyright src/` is not a narrower `pyright`, it is a different check over a
+  different set of files, and the difference is invisible in a row that reports
+  `0 errors`. Then list, for the human to approve in the same breath as the
   spec:
   - what is already declared and will be run — a configured tool you skip is a
     layer you skipped, not a layer that does not exist;
   - what is missing, as **named tools with one line each on what they would
     catch**, proposed as additions to the project's manifests, pinned;
-  - which layers stay `UNAVAILABLE` if the human declines.
+  - which layers stay `UNAVAILABLE` if the human declines;
+  - which gate checks correspond to no layer, and will therefore be run as the
+    gate writes them.
 
   Asking costs one round trip at the point where they are already reading and
   approving. A tool added to the project this way serves every future task in
@@ -343,16 +354,17 @@ the answer in EVIDENCE's per-layer yield.
 
 | Layer | What it catches | How |
 |---|---|---|
+| Merge gate parity | a layer that measured a narrower slice than the thing which will judge the change | map every check the merge gate declares to the layer row that covers it, and run each with the gate's own arguments. A check with no layer runs as the gate writes it. A layer whose command differs from its gate counterpart reports the difference rather than the number alone. Every other layer's scope is self-declared, and a self-declared scope cannot detect its own gap — this is the only layer that can. Where a check cannot run locally (a version matrix, a service container, a secret) the row is `SUBSTITUTED`, naming what the local run does not reach |
 | Egress: new data paths | secrets and unlimited data that reach an output | For each field, log line, message, or artifact that the change ADDS, name four things: where the data comes from, whether the environment controls it, where it ends up (CI log, JSON, terminal, PR body), and whether it is limited in bytes AND redacted. Coverage and mutation cannot ask whether data *belongs* somewhere. They report only that the line ran. Scan the diff for secrets at rest also, but that is a different question |
 | Full test suite | regressions | project's test command, zero NEW failures (baseline note below) |
 | Static types | whole classes of bugs | tsc / mypy / etc., zero new errors |
 | Lint + format | latent bugs, drift | project's linter, zero new warnings |
 | Coverage on changed lines | untested code paths | every changed/added line executed by a test; branch coverage where the tool supports it. Global % is vanity — changed-line coverage is the constraint. **This layer must exit nonzero when its threshold is missed** (`--cov-fail-under`, `diff-cover --fail-under`, equivalent): a layer that prints a percentage and exits 0 is a report, not a gauntlet layer, and it will sit there green while coverage falls |
-| Mutation testing | tests that assert nothing | **prefer the project's mutation tool** (mutmut, cosmic-ray, Stryker, PIT…), which generates mutants from the syntax tree and cannot silently skip one. No tool available? Manual mutation, per `references/gauntlet.md` — introduce 3–5 plausible bugs one at a time; the suite must kill every one; restore after. A hand-rolled runner must **prove it executed each mutant**: a runner that can report a kill it never ran inflates the score and no red gauntlet will ever surface it |
+| Mutation testing | tests that assert nothing | **Scope is derived, never typed.** The mutated set comes from `git diff --name-only <base>...HEAD`, filtered to source files — not from your sense of where the new logic is. Hand-scoping to the new module leaves the glue unmutated, and the glue is where caller-side defects live. A changed source file the tool cannot mutate is a **named** exclusion in EVIDENCE, never a silent one. Then: **prefer the project's mutation tool** (mutmut, cosmic-ray, Stryker, PIT…), which generates mutants from the syntax tree and cannot silently skip one. No tool available? Manual mutation, per `references/gauntlet.md` — introduce 3–5 plausible bugs one at a time; the suite must kill every one; restore after. A hand-rolled runner must **prove it executed each mutant**: a runner that can report a kill it never ran inflates the score and no red gauntlet will ever surface it |
 | Property-based tests | edge cases you didn't imagine | for parsing, math, serialization, anything with invariants (round-trip, idempotence, ordering) — add hypothesis/fast-check properties |
 | Complexity budget | unmaintainable output | new functions small and single-purpose; if a function needs a paragraph to explain, split it |
 | Parity with the authority | a second implementation that drifts from the first | Whenever the change RE-IMPLEMENTS something that already exists in executable form — a shell pipeline rewritten in Python, a regex ported between languages, a schema restated in code, a rule the build already enforces — the test must **run both and compare outputs on the same inputs**. Never assert the equivalence in prose: a docstring saying "reads the file the way the Dockerfile does" is a claim, and claims are what this skill exists to replace. The comparison must read the authority **from its source at test time**, not from a copy pasted into the test — a copy agrees with your reading forever, including after the original changes. Cannot execute the authority from a test? That is `SUBSTITUTED`, and name what the substitute cannot see |
-| Real execution | "passes tests, doesn't run" | actually run the app/CLI/endpoint once on a realistic input, not only the test harness |
+| Real execution | "passes tests, doesn't run" | actually run the app/CLI/endpoint once on a realistic input, not only the test harness. **Enumerate the entry points the change is reachable from and run one you did NOT develop against** — the path you built on is the path where the code is correct, so a run through it returns green *because* it used the working path. Where the change is reachable only one way, say so in the row; that is a fact about the code, not a pass |
 | Supply chain & secrets | vulnerable/unnecessary deps, leaked credentials | when the dependency set changed: audit it (pip-audit / npm audit / govulncheck / cargo-audit) and check licenses; scan the diff for secrets; every new dependency must trace back to its SPEC justification. Also eyeball the capability diff: did the change start using network / subprocess / filesystem / env it didn't before? |
 | Suite health | flaky or order-dependent tests | run the suite in randomized order (pytest-randomly etc.); repeat suspected flakes. Every EVIDENCE number rests on the suite being deterministic — a flaky suite quietly invalidates the report |
 | Adversarial review | reasoning that the author cannot audit. **If the change adds or widens an output surface, one reviewer must use a security lens.** An author who picks the lenses omits the category that the author does not fear | the **`old-coder-adversary` agent, spawned fresh with no inherited context** (brief bundled inside the skill at `agents/old-coder-adversary.md`; see "The bundled agents"), briefed to falsify the claim that the change is correct — run as a registered agent where the host supports it, otherwise a general-purpose subagent carrying that file's body. Reviews the whole `<base>...HEAD` diff and **binds to that SHA**: any later commit — including your fix for its own findings — drops this layer back to not-run. Procedure, failure-class list, and the two-round limit in `references/gauntlet.md` |
@@ -361,10 +373,13 @@ Redirect every layer to its own log under the task's `logs/` dir and read a
 bounded slice — `cmd > log 2>&1`, never `tee` (`references/gauntlet.md`).
 EVIDENCE cites the log path beside each number, so every claim traces to a run.
 
-**Name the invariant before you correct the symptom.** Write the one sentence that the code must
-satisfy. Then test the correction against that sentence, not against the words of the finding. A
-symptom-shaped correction passes the new test. It leaves the invariant broken one line away. This is how a loop of six lines takes three review rounds instead of one. The rounds stop
-when someone writes "the deadline limits when a probe STARTS, not when a sleep ends".
+**The gate runs before EVIDENCE, not after it.** This layer's target is to leave nothing for an
+external reviewer to find, and the merge gate *is* an external reviewer — authoritative, free, and
+written down in a file you can read on day one. This skill never pushes, so CI itself cannot be the
+thing that runs; run the gate's own commands locally instead, inside the final fresh run
+(`references/gauntlet.md`). Consulting the gate after the report is written is the inversion that
+makes a scope error survive: at that point the report has already recorded the number your command
+produced, and nothing in it says which command it should have been.
 
 **Reuse carries the failure mode, not just the signature.** When you call an existing function from
 a new context, the types lining up is the easy half. Ask what it does when it FAILS, and whether
@@ -375,25 +390,40 @@ safe one, or there must be no default.** `else: <the destructive handler>` is sa
 as nobody adds a case, and it reads as deliberate long after it stopped being true. Prefer an
 allow-list that skips what it does not recognise.
 
-**Each finding is a class, not one instance.** When a layer or a reviewer finds a defect, search the
-diff for other instances of the same shape before you call it corrected. Also verify that you did
-not put back an instance that you corrected earlier. A defect corrected twice and shipped a third
-time was three instances of one class that nobody named.
+**Each finding is a class, not one instance — and the class has to be written as a generator.** A
+finding arrives wearing the clothes of one line of code, so a symptom-shaped correction is the
+default: it passes the new test and leaves the invariant broken one line away. This rule is old and
+keeps getting read past, so it is four steps with an artifact, not a sentiment. Do all four before
+any finding is marked fixed:
 
-Both rules above are old and both keep getting read past, because a finding arrives wearing the
-clothes of one line of code. So they are steps, not sentiments — do all three before any finding is
-marked fixed:
+1. **Write the generator in one sentence**, in the commit or the fix note — the condition that
+   *produces* instances, not the shape the reported one happened to have. Not "CRLF broke the
+   parser" but "Python's idea of a line is not the pipeline's". Not "`splitlines()` disagrees with
+   the shell" but "we open a path that arrived from outside without validating what it is or how
+   much of it we read".
+2. **Test the sentence: can you enumerate from it, or only search for it?** A generator names a set
+   you can list — every call site of this function, every place a value of this kind enters, every
+   branch of this dispatch. A symptom names a spelling, and a spelling finds only the instances
+   already written the way you remember them. **If the only way to reach a sibling is to grep the
+   token out of the finding, you have written the symptom. Rewrite it.** Under a symptom, two call
+   sites in different files doing different jobs look unrelated; under the generator they are the
+   same line twice.
+3. **Produce the enumeration with a command, and put the list in the commit.** One line per site,
+   each marked fixed, already-correct, or not-applicable-because — including any site you corrected
+   earlier in this branch and have since reintroduced. A list of one site is not an enumeration, it
+   is the instance you already had. Carry it into EVIDENCE under `Defect classes closed`
+   (`references/templates.md`), where a reader who opens no source file can see how wide the search
+   was.
+4. **Brief the next review round with the generator and the list**, never with the fix. A reviewer
+   told "CRLF was fixed" re-checks CRLF. A reviewer handed the generator and the sites you believe
+   you closed hunts the one you missed. This is the cheapest upgrade available to the adversarial
+   layer, and it costs one sentence and one list in the prompt.
 
-1. **Write the class in one sentence**, in the commit or the fix note. Not the symptom
-   ("CRLF broke the parser") but the generator ("Python's idea of a line is not the pipeline's").
-2. **Search for siblings and record the search.** If the class is "Python and this tool disagree
-   about separators", enumerate every separator the two treat differently and test the lot — do not
-   fix the one that was reported. An enumeration you can write down is a class you have closed; a
-   spot fix is an instance you have closed.
-3. **Brief the next review round with the CLASS, not the fix.** A reviewer told "CRLF was fixed"
-   re-checks CRLF. A reviewer told "the author has twice confused Python's line-splitting with
-   awk's — hunt that" finds the third instance. This is the single cheapest upgrade available to
-   the adversarial layer, and it costs one sentence in the prompt.
+**The same enumeration closes the seam no layer is aimed at.** When the change alters a function,
+list its callers before deciding the tests are sufficient. Tests that drive the function directly
+all sit on one side of the seam, and the defect lives in the caller that computes the argument.
+Coverage will not find it: coverage asks whether a line ran, never whether anything asserted what
+it produced.
 
 Baseline note — on a repo with pre-existing failures, record the baseline
 first (which tests already fail, verbatim) and hold the line at zero NEW
@@ -509,6 +539,11 @@ End with a report the human can trust without opening a single source file
   a type checker that you skipped is a degraded run.
 - The mutation row must carry a **command**, not prose. A score with no
   runnable command beside it is an incomplete row, not a quiet footnote.
+- **Every layer row names the merge-gate check it mirrors**, or reads
+  `no gate counterpart`. Where the command differs from the gate's, the row states
+  the difference rather than only the number. This is the one field in the report
+  a reader can check without opening a source file, and it is what turns a scope
+  error from invisible into obvious.
 - All numbers must come from one final fresh run executed after the last code
   edit — results from mid-task runs are stale and must not be reported. The same
   applies to the reviewer: name the SHA the adversarial review actually read, and

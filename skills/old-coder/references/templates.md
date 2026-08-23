@@ -33,6 +33,9 @@ closely, never a substitute for reading them:
 - Artifacts: file only <| + tracker comment | + PR body> — <where a projection
   goes, if anywhere; the file is always written>
 - Setup plan:
+  - Merge gate: <path(s) read, e.g. .github/workflows/lint.yml> — <n> checks
+    transcribed, <n> with no layer counterpart, <n> that cannot run locally
+    (or "none found — no CI config, pre-commit config, or ci target in this repo")
   - Tools to install: <or "none">
   - Git: <init? checkpoint commit cadence? commit flags the repo mandates>
   - Files the gauntlet will add, **by path**: `tools/mutants.py` (mutation
@@ -93,8 +96,9 @@ Written to `EVIDENCE.md` in the task's artifact directory, alongside the
 - **Verdict:** <PASSED | PASSED WITH LIMITS | FAILED | ABANDONED>
 - **Delivered:** <one sentence — the behavior now in the tree>
 - **Proven:** <N/N scenarios mapped and passing> — <the layers carrying the most weight>
-- **Not proven:** <every substituted or not-run layer, and the known limits — or
-  "nothing: every layer ran as specified">
+- **Not proven:** <every substituted or not-run layer, every reviewer gap no
+  layer covered, and the known limits — or "nothing: every layer ran as
+  specified and every reviewer finished its hunt list">
 - **Read first:** <the one section a skeptical reader should open>
 
 The writeup below, in brief — one bullet per section, each carrying that
@@ -169,19 +173,29 @@ instrument". `N-A` and `UNAVAILABLE` are likewise distinct: three `N-A` layers
 describe the project, not a degraded run, and EVIDENCE should say so rather than
 leaving a reader to count empty rows.
 
-| Layer | Command | Status + result | Wall-clock | Log |
-|---|---|---|---|---|
-| Tests | <cmd> | PASSED — <N> passed, 0 failed | <mm:ss> | logs/tests.log |
-| Types | <cmd> | PASSED — 0 errors (or `N-A: no type checker in this project — untyped codebase, no CI job`) | <mm:ss> | logs/types.log |
-| Lint + format | <cmd> | PASSED — 0 warnings | <mm:ss> | logs/lint.log |
-| Changed-line coverage | <cmd> | PASSED — <covered>/<total> changed lines (list any misses) | <mm:ss> | logs/coverage.log |
-| Mutation | **required: the command**, e.g. `python tools/mutants.py` | PASSED — <killed>/<total> killed | <mm:ss> | logs/mutation.log |
-| Property-based | <cmd> | PASSED — <N> properties, <examples/property> examples each | <mm:ss> | logs/property.log |
-| Complexity budget | <cmd or "manual review"> | PASSED — <max function length / cyclomatic score, or "reviewed: N new functions, all single-purpose"> | <mm:ss> | logs/complexity.log \| manual |
-| Real execution | <cmd> | PASSED — <observed output> | <mm:ss> | logs/run.log |
-| Supply chain & secrets | <cmd> | PASSED — 0 known vulns; new deps: none (or list, each ↔ SPEC justification) | <mm:ss> | logs/supply-chain.log |
-| Suite health | <cmd> | PASSED — randomized order (seed <n>), all passed (or `SUBSTITUTED: <what ran> — cannot detect <blind spot>`) | <mm:ss> | logs/suite-health.log |
-| Adversarial review | <agent + model, e.g. "`old-coder-adversary`, fresh, no inherited context, model X"; note any deviation from its declared tools/budget> | PASSED — <N> findings: <N> CONFIRMED (resolved, numbers above are from a run post-dating the fixes), <N> dismissed (each with the check that disproves it), round <1|2> (or `N-A: Tier <1|2>, author wrote the code` / "abandoned after round 2") | <mm:ss> | logs/review.log † |
+| Layer | Command | Gate | Status + result | Wall-clock | Log |
+|---|---|---|---|---|---|
+| Merge gate parity | <how the gate was read, e.g. `cat .github/workflows/ci.yml`> | — | PASSED — <n> gate checks, all mirrored by a row below with the same arguments (or: `SUBSTITUTED — <check> runs a 3-version matrix; one version run locally`) | <mm:ss> | logs/gate.log \| manual |
+| Tests | <cmd> | <job/step name> | PASSED — <N> passed, 0 failed | <mm:ss> | logs/tests.log |
+| Types | <cmd> | <job/step name> | PASSED — 0 errors (or `N-A: no type checker in this project — untyped codebase, no CI job`) | <mm:ss> | logs/types.log |
+| Lint + format | <cmd> | <job/step name> | PASSED — 0 warnings | <mm:ss> | logs/lint.log |
+| Changed-line coverage | <cmd> | <job/step, or `no gate counterpart`> | PASSED — <covered>/<total> changed lines (list any misses) | <mm:ss> | logs/coverage.log |
+| Mutation | **required: the command**, e.g. `python tools/mutants.py` | no gate counterpart | PASSED — <killed>/<total> killed over <the derived scope>; derived from `git diff --name-only <base>...HEAD`; excluded: <changed source files not mutated, and why — or "none"> | <mm:ss> | logs/mutation.log |
+| Property-based | <cmd> | <job/step, or `no gate counterpart`> | PASSED — <N> properties, <examples/property> examples each | <mm:ss> | logs/property.log |
+| Complexity budget | <cmd or "manual review"> | <job/step, or `no gate counterpart`> | PASSED — <max function length / cyclomatic score, or "reviewed: N new functions, all single-purpose"> | <mm:ss> | logs/complexity.log \| manual |
+| Real execution | <cmd> | <job/step, or `no gate counterpart`> | PASSED — <observed output>; entry points: <N> enumerated, ran <which>, <the one developed against> | <mm:ss> | logs/run.log |
+| Supply chain & secrets | <cmd> | <job/step, or `no gate counterpart`> | PASSED — 0 known vulns; new deps: none (or list, each ↔ SPEC justification) | <mm:ss> | logs/supply-chain.log |
+| Suite health | <cmd> | <job/step, or `no gate counterpart`> | PASSED — randomized order (seed <n>), all passed (or `SUBSTITUTED: <what ran> — cannot detect <blind spot>`) | <mm:ss> | logs/suite-health.log |
+| <gate check with no layer, e.g. Docs build> | <the gate's own command, verbatim> | <job/step name> | PASSED — <result> | <mm:ss> | logs/<name>.log |
+| Adversarial review | <agent + model, e.g. "`old-coder-adversary`, fresh, no inherited context, model X"; note any deviation from its declared tools/budget> | no gate counterpart | PASSED — <N> findings: <N> CONFIRMED (resolved, numbers above are from a run post-dating the fixes), <N> dismissed (each with the check that disproves it), round <1|2>; budget <n>/10, unreached items carried below (or `N-A: Tier <1|2>, author wrote the code` / "abandoned after round 2") | <mm:ss> | logs/review.log † |
+
+**The `Gate` column is the cheapest audit in this report.** It names the merge-gate
+job or step each row mirrors, or reads `no gate counterpart`. A row whose command
+differs from its gate counterpart writes the difference into `Status + result` —
+`pyright src/` beside a gate that runs bare `pyright` is not a narrower run, it is
+a different check, and the row's `0 errors` stays true while the gate goes red. A
+reader who never opens a source file can check this column; nothing else here has
+that property.
 
 The **mutation row has no prose form.** "12/12 killed, mutants listed below for
 manual re-application" is an incomplete row, not a passing one — the command is
@@ -222,6 +236,37 @@ Split by status, because they mean different things to a reader:
 - **SUBSTITUTED:** <layer — what ran instead, and what that cannot detect>
 - (or "none")
 
+### Defect classes closed
+One block per class a layer or reviewer surfaced. A fix with no block here is an
+instance closed, not a class closed — and the enumeration is what tells those
+apart for a reader who opens no source file.
+
+- **Generator:** <the condition that produces instances — "we open a path that
+  arrived from outside without validating what it is or how much we read", never
+  "`splitlines()` disagrees with the shell">
+- **Enumerated by:** <the command that produced the site list>
+- **Sites:** <n> — one line each: `file:line — fixed | already correct (why) |
+  not applicable (why)`. Include any site fixed earlier in this branch and since
+  reintroduced.
+- **Handed to review round <n>:** <yes — generator and site list | no, and why>
+
+A class whose enumeration returns exactly one site says so explicitly:
+"enumeration returned one site" and "I did not enumerate" are indistinguishable
+in a report that shows only the fix.
+
+### Reviewer coverage (what the review did not reach)
+Verbatim from each reviewer's Coverage block, carried as open items rather than
+summarised away. Per round:
+
+- **Budget:** <n>/10 calls — <ran out of budget | finished with budget left>
+- **Not reached:** <hunts, call sites, and enumeration gaps the reviewer named> —
+  each either covered by a layer (say which) or standing as a named gap
+- (or "none — the reviewer reported full coverage of its hunt list")
+
+**Two rounds that both exhausted their budgets are not convergence.** Agreement
+between them is worth exactly the ground they both covered. If neither round
+finished early, say that here rather than reporting the agreement as a result.
+
 ### Dismissed review findings
 Fixes are self-evidencing; dismissals are not. One line each:
 - <finding> — dismissed because <the command / file:line / test that disproves
@@ -261,8 +306,15 @@ mechanically, as the report's final act:
   zero mapping rows other than `pass`/`n-a`, and `Not proven:` reading "nothing".
   Anything else is at most `PASSED WITH LIMITS`.
 - **`Not proven:`** every `FAILED`, `unverified`, `UNAVAILABLE`, or `SUBSTITUTED`
-  row in either table appears here by name.
+  row in either table appears here by name, plus every uncovered item from
+  `Reviewer coverage`.
 - **Numbers:** every number in Orientation occurs verbatim in a table row below it.
+- **Gate:** every gauntlet row has a non-empty `Gate` cell, and every check the
+  merge gate declares appears in the table exactly once. A gate check with no row
+  is a layer you did not run; a row whose command's arguments differ from its gate
+  counterpart's says so in `Status + result`. Compare argument lists, not tool
+  names — this line exists because `pyright src/` beside a gate's bare `pyright`
+  reported `0 errors` and passed while nine errors sat in `tests/`.
 
 A summary that fails any line is a defect in the summary: fix it, never the table.
 
@@ -270,7 +322,7 @@ Each line is pass/fail, so an agent can execute it and a human can audit that it
 was executed — which is what separates this from "be careful".
 
 **Scripting it is a Tier 3 option, not a default.** A human can ask for
-`tools/evidence_lint.sh` to run these three lines as a gate, and that is the only
+`tools/evidence_lint.sh` to run these four lines as a gate, and that is the only
 version independent of the author on every run. It is off by default because it
 is a home-grown checker over a prose format: under this skill's own rules it then
 needs fail-closed behavior and a negative control proving it can fail, and the

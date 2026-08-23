@@ -30,30 +30,47 @@ tools are still cheaper than shelling out.
 
 ## What to hunt
 
-Read the whole diff first, once. Then hunt in this order, stopping when the budget runs out:
+Read the whole diff first, once. Then hunt in this order, stopping when the budget runs out.
+The first three are cheap and mechanical — one call each — and they are ahead of the
+judgement-heavy hunts on purpose: each one has shipped a defect past a full gauntlet.
 
-1. **The failure class you were briefed on.** Whoever spawned you should have named a class
-   ("the author has twice confused Python's line-splitting with awk's"). Hunt that first
-   and hunt it to exhaustion — the third instance is what you are for.
-2. **Input the code accepts that the tests never feed it.** This is the highest-yield
+1. **Do the author's commands match the merge gate?** You should have been given the layer
+   commands and the gate's text or path (`.github/workflows/*`, `.pre-commit-config.yaml`, a
+   `ci` target). Compare **argument lists**, not tool names: `pyright src/` against a gate's
+   bare `pyright` is a different check over a different file set, and the row reporting
+   `0 errors` is true while the gate is red. A layer scoped narrower than its gate
+   counterpart is a finding, and the trigger is "run the gate's command instead".
+2. **Who calls what the diff changed?** List the call sites of every changed function before
+   hunting anything else. Tests usually drive the changed function directly and all sit on
+   one side of that seam; the defect lives in the caller that computes the argument, which
+   coverage counts as covered because the line ran. A caller *outside* the diff is the
+   highest-yield place in this review.
+3. **The failure class you were briefed on.** You should have been given it as a generator
+   sentence ("we open a path that arrived from outside without validating what it is"), not
+   as a fix ("the CRLF bug is fixed"), plus the list of sites the author believes they
+   closed. **Hunt for the site missing from that list** — enumerate from the generator
+   yourself and diff your set against theirs. The third instance of a class is what you are
+   for. If you were handed a symptom rather than a generator, say so in your report and
+   restate it as a generator before hunting.
+4. **Input the code accepts that the tests never feed it.** This is the highest-yield
    category in practice, and it is where hand-rolled parsers die: comments in the middle of
    a value, indentation variants, chomping indicators, keys before the first section,
    quoting and escaping, CRLF, empty and one-element cases, duplicate keys.
-3. **Error paths that no test reaches.** What does this raise, and who catches it? An
+5. **Error paths that no test reaches.** What does this raise, and who catches it? An
    exception a new call site does not handle is a finding even when the happy path is
-   perfect. Check *every* call site, not the one in the diff. A handler that swallows the
-   error counts too — a failure nobody can observe is worse than one that crashes.
-4. **Invariants the surrounding code states about itself** — docstrings, guards, threat-model
+   perfect — walk the call-site list from step 2, not only the site in the diff. A handler
+   that swallows the error counts too — a failure nobody can observe is worse than one that crashes.
+6. **Invariants the surrounding code states about itself** — docstrings, guards, threat-model
    IDs within fifty lines of the change. A rule the codebase states outranks one you infer.
-5. **The default branch.** `else:` on a destructive handler is safe only until someone adds
+7. **The default branch.** `else:` on a destructive handler is safe only until someone adds
    a case. Prefer an allow-list that skips what it does not recognise.
-6. **A summary that disagrees with its own tables.** If the diff touches an
+8. **A summary that disagrees with its own tables.** If the diff touches an
    EVIDENCE report, read its Orientation block against its mapping and gauntlet tables. A
    `PASSED` verdict above a `FAILED`, `unverified`, `UNAVAILABLE` or `SUBSTITUTED`
    row is a finding, as is a `Not proven:` line that omits a layer the tables show
    did not run. Nothing else checks this, and it is the part of the report most
    readers finish.
-7. **Things the diff names that may not exist.** A method, flag, config key, or version
+9. **Things the diff names that may not exist.** A method, flag, config key, or version
    constraint the author remembered rather than checked. Skip what the type checker and
    the suite already prove; hunt where they are blind — dynamic dispatch, string-keyed
    config, CLI flags in shell, and methods that exist only above the pinned version.
@@ -72,6 +89,22 @@ Findings only, worst first. For each: **file:line — the defect in one sentence
 concrete input or state that triggers it — what goes wrong.** A finding you cannot state a
 trigger for is a hunch; label it as one or drop it.
 
-End with one line: how many tool calls you used, and what you did not get to. If you found
-nothing, say so plainly — "no findings within budget" is a real result and far better than
-padding. Do not invent findings to look thorough.
+If you found nothing, say so plainly — "no findings within budget" is a real result and far
+better than padding. Do not invent findings to look thorough.
+
+Then end with a **Coverage** block. It is not a footnote; the author is required to carry it
+into their evidence report as open items, so write it to be acted on:
+
+```
+Coverage
+- Tool calls used: <n>/10 — <ran out of budget | finished with budget left>
+- Hunts not reached: <numbered items from the list above, or "none">
+- Call sites not opened: <file:line each, or "all opened">
+- Enumerated for the briefed class: <your set> vs author's list: <what differs>
+```
+
+**"Ran out of budget" and "found nothing" are different results.** A review that stopped at
+9 of 10 calls stopped because it was out of calls, not because it was out of defects, and a
+second round agreeing with the first proves only that both covered the same ground. The
+Coverage block is what lets the author tell those apart, so never compress it to "did a
+thorough pass".

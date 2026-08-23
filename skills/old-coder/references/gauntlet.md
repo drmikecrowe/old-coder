@@ -5,9 +5,11 @@
 Command resolution has a strict order:
 
 1. **Commands named in the project's rules** (see `setup.md`) — always win.
-2. **Detection** — package.json scripts, Makefile targets, pyproject, justfile,
-   CI workflow.
-3. **The tables below** — fallbacks, used only when 1 and 2 find nothing.
+2. **The merge gate** — the CI workflow, pre-commit config, or CI target that
+   decides whether this change may land. See the next section: it outranks
+   generic detection because it is the command that will judge the change.
+3. **Detection** — package.json scripts, Makefile targets, pyproject, justfile.
+4. **The tables below** — fallbacks, used only when 1–3 find nothing.
 
 Treat the tables as last resort, not as prescription. A project's real test
 command usually encodes setup the raw tool call skips: virtualenv selection,
@@ -15,6 +17,53 @@ per-branch environments, required flags, service fixtures. And many repos
 forbid the exact invocation a table suggests — a repo standardized on `pnpm`
 will reject `npx`. Guessing does not fail loudly; it produces confident, wrong
 evidence, which is the one failure mode this skill exists to prevent.
+
+## The merge gate is the other reviewer, and it is readable on day one
+
+Every gauntlet layer reports on what it ran. Nothing in the gauntlet checks what
+a layer *should* have run — a self-declared scope cannot detect its own gap, and
+the number in the row is true either way. The merge gate closes that hole,
+because it states the intended scope in a file, before any code exists.
+
+**Find it and transcribe it at SPEC time**, in the tooling audit:
+`.github/workflows/*`, `.gitlab-ci.yml`, `.circleci/config.yml`,
+`.pre-commit-config.yaml`, a `ci` / `check` target in a Makefile or justfile, or
+whatever the repo's rules name as required. Write down each check as the gate
+writes it, arguments included, and map it to the layer it corresponds to.
+
+**Scope is part of the command.** `pyright src/` is not "`pyright`, narrowed" —
+it is a different check over a different file set, and a row reading
+`pyright src/ | 0 errors | PASSED` is fully true while nine errors sit in
+`tests/`, which the gate checks and the row did not. The same holds for
+`ruff check src tests` against a gate's `ruff check src tests tools`. Compare the
+argument lists, not the tool names.
+
+**Run the gate's commands, in the final fresh run, before EVIDENCE is written.**
+`tools/gauntlet.sh` is where they go, so the entry point is a superset of the
+gate rather than a second opinion beside it. Then each EVIDENCE row carries the
+gate check it mirrors:
+
+- **Same command** — cite the gate job name in the row's `Gate` column.
+- **Different command** — state the difference in the row. A deliberate
+  difference (the gate runs a matrix; you ran one version) is a `SUBSTITUTED`
+  row naming what the local run does not reach. An accidental one is a defect
+  you just caught for free.
+- **No gate counterpart** — write `no gate counterpart`. Mutation, property
+  tests, and adversarial review usually have none; that is expected and worth
+  seeing, because it says which of your evidence nothing external will re-check.
+- **A gate check with no layer** — run it as written and give it its own row. A
+  docs build, a changelog check, or a schema validation gets no attention from
+  any layer in this skill and fails just as loudly.
+
+**Where the gate cannot run locally** — a service container, a secret, a
+platform you are not on — do not silently drop it. The row is `UNAVAILABLE` or
+`SUBSTITUTED` with the reason, and it belongs in EVIDENCE's `Not proven:`. The
+point is not that every gate check runs; it is that no gate check is missing
+without a reader being told.
+
+This skill never pushes, so CI is never the thing that runs here. The gate's
+*text* is the artifact being used, and it is available from the first minute of
+the task.
 
 ## Python
 
@@ -176,9 +225,23 @@ independent reviews" has the comparison.
 **Use the `old-coder-adversary` brief, in a subagent spawned fresh with no inherited
 context.** It ships inside this skill at `agents/old-coder-adversary.md` and already carries
 the hunting order, the tool restrictions, and the call budget — do not re-brief it
-from scratch, and do not hand it a wider toolset than it declares. Add only what
-is task-specific: the base SHA, the lens, and the failure **class** from the
-previous round.
+from scratch, and do not hand it a wider toolset than it declares.
+
+**Four task-specific inputs, and the last two are the ones usually forgotten:**
+
+1. the base SHA of the diff, and the lens;
+2. the failure **class from the previous round, as its generator sentence**, plus
+   the enumeration you produced and the sites you believe you closed — a reviewer
+   given the fix re-checks the fix; a reviewer given the generator and your list
+   hunts the site missing from it;
+3. **the layer commands you ran and the merge gate's own text** (or its path), so
+   the reviewer can answer *do these commands match the gate?* Nothing else in
+   this skill asks that question of an adversary, and it costs one `Read`;
+4. **the list of functions the diff changed**, so the reviewer can enumerate
+   callers rather than spend its budget rediscovering them.
+
+A reviewer pointed at code cannot audit the evidence about that code unless you
+point it there.
 
 Two ways to run it, and EVIDENCE should say which:
 
@@ -337,6 +400,25 @@ such fixpoint. Be clear about the trade: grading buys termination by giving up
 completeness, and a behavioural gap can live inside a round you chose not to
 run. Say in EVIDENCE which rounds were not run.
 
+### A reviewer's "did not reach" list is work, not a footnote
+
+Every reviewer under this brief ends with what it did not get to. That line is
+the most useful sentence in the report and the easiest to discard, because it
+arrives attached to findings that feel like the result.
+
+- **Copy it into EVIDENCE verbatim**, under the review row. Each unreached item
+  is an open item: either you cover it another way and say which layer did, or it
+  stands as a named gap a reader can weigh.
+- **Record the tool calls used.** A reviewer that stopped at 9 of 10 calls stopped
+  because it ran out of budget, not because it ran out of defects. **Two rounds
+  that both exhausted their budgets are not two rounds converging** — treat the
+  agreement between them as worth exactly as much as the ground they both
+  covered, which the unreached lists tell you. Convergence is a signal only when
+  a round finished early with findings left unfound.
+- **A round that ended with budget to spare and no findings is the real
+  convergence signal.** Say which kind you got; the two read identically in a
+  report that records only the findings.
+
 **Two rounds maximum.** If a second round still finds CONFIRMED problems, the
 change is too entangled to be verified this way: abandon it and take a smaller
 cut. That is a legitimate outcome, not a failure of nerve. Report it in EVIDENCE
@@ -404,6 +486,58 @@ run.
 - **Honest tradeoff**: a redirected run shows no live progress. For a long
   suite, say that it is running before starting it, then read the tail — an
   agent that goes silent for four minutes reads as hung.
+
+## Scoping mutation: derive the set, do not type it
+
+Mutation is slow, so it gets scoped, and scoping is where it stops covering the
+defect. The failure has one shape: the author scopes to *the new module*, because
+that is where the new logic is, while the change also touched the glue that calls
+it — and the caller-side defect gets no mutants at all. Coverage will not flag
+this; the glue line ran.
+
+So the target set is **computed from the diff, not chosen**:
+
+```sh
+git diff --name-only <base>...HEAD    # then filter to source files
+```
+
+Every source file in that list is either mutated or **named in EVIDENCE as an
+exclusion, with the reason**. "Too slow" and "the tool cannot reach it" are
+legitimate reasons; the requirement is that the name appears, so a reader can see
+which changed file nobody's tests were tested against. The mutation row shows
+both the derivation and the resulting scope — a scope with no derivation beside
+it is a claim about where the risk was, made by the person who wrote the risk.
+
+Where the tool takes a module pattern rather than a file list (mutmut's
+`"pkg.module*"`, Stryker's `mutate:`), translate the derived file list into that
+pattern and check the translation covers every file. That translation is the step
+that quietly drops the glue.
+
+## Enumerating a defect class
+
+SKILL.md requires four things of every finding: a generator sentence, an
+enumeration produced by a command, the list in the commit, and the generator
+handed to the next review round. The middle two are the mechanical part.
+
+The test of the sentence is whether it names something you can list:
+
+| Written as | Reachable by | Verdict |
+|---|---|---|
+| "`splitlines()` disagrees with the shell" | grepping `splitlines(` | symptom — finds only the spelling you already know |
+| "we open a path that arrived from outside without validating what it is" | listing every `open`/`read` whose argument came from JSON, argv, or config | generator — a set, enumerable |
+| "the CRLF case was missed" | grepping `\r\n` | symptom |
+| "Python's idea of a line is not the pipeline's" | listing every place the two split the same text | generator |
+
+Produce the list with a command — call sites of a function, every reader of a
+config key, every branch of a dispatch — and record the command beside the list,
+so the enumeration is reproducible rather than an assertion that you looked.
+Then one line per site: `fixed`, `already correct (why)`, or
+`not applicable (why)`. The disposition column is what makes a missed sibling
+visible: an unexamined site simply has no row.
+
+A class that returns one site is either genuinely singular or wrongly stated.
+Both are worth a sentence — say which, because "the enumeration returned one" and
+"I did not enumerate" look identical in a report that only shows the fix.
 
 ## Manual mutation procedure (any language, no tool)
 
