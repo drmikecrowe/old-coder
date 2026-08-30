@@ -555,7 +555,9 @@ End with a report the human can trust without opening a single source file
   not in a scratch directory or only in the conversation. Reproducible means:
   dev-tool versions pinned or recorded, one entry-point command that reruns
   every layer, and the source state identified (commit SHA, or a source-tree
-  hash when git is absent).
+  hash when git is absent). Where the entry point writes a completion stamp
+  (`references/gauntlet.md`), cite it: the narrative interprets the harness's
+  own record of the run, never substitutes for it.
 - Layers not run as specified, grouped by which of the three non-passing
   statuses they carry (`N-A` / `UNAVAILABLE` / `SUBSTITUTED`), and why.
 - **Findings dismissed rather than fixed**, each with the check that disproves
