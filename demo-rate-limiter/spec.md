@@ -427,6 +427,68 @@ reported success.
   implementation second; evidence rebinding third. Independent verification
   remains `not performed` unless a separate verifier inspects the final state.
 
+## REVISION 8 — harness-written completion stamp and exit vocabulary (Tier 3)
+
+Approved 2026-08-30 (as part of the loop-alignment roadmap,
+`docs/loop-alignment.md` Phases B and D). This revision extends REVISION 7's
+fail-closed orchestration; it does not change rate-limiter runtime behaviour
+or its public API.
+
+Before this revision the entry point proved completion only through its exit
+status and terminal output. The evidence report that cites it is written by
+the model, so nothing harness-written asserted the three facts a completion
+claim rests on: that the layers passed, against which exact content, and
+after the last change. On failure the run left no artifact at all, so the
+trace existed only for the runs nobody needs to re-read. And the exit status
+was whatever the failing tool exited with, so automation could not tell a
+layer verdict from a broken script.
+
+### Behaviour
+
+- After every run — green, failed, or crashed — the entry point writes a
+  completion stamp to `gauntlet-stamp.txt` (git-ignored) recording the
+  result, the expected and completed layer sets, the failed layer where one
+  failed, a UTC timestamp, and the source-state binding.
+- The stamp's source-state section is the output of `tools/source_state.sh`.
+  Where that command fails — dirty tree, truncated input — the stamp records
+  that the binding is unavailable; no stamp carries a partial or guessed
+  binding.
+- The stamp reports green only after the final completion audit has passed.
+  A run that exits zero without reaching the audit is stamped incomplete,
+  never green, and the exit is remapped to the orchestration-failure code.
+- The entry point's exit status distinguishes a decision from a crash:
+  0 — all layers green; 2 — a layer ran and failed (its own status is
+  preserved inside the stamp); 3 — the orchestration contract was violated
+  (unknown, duplicate, or missing layer, or an exit before the audit); any
+  other status is a crash, passed through unchanged.
+- `run_layer` and `finish_gauntlet` keep their return statuses; the
+  vocabulary is applied once, at the entry point's exit. The existing
+  orchestration controls that assert preserved statuses stay valid.
+
+### Must NOT do
+
+- Do not write a green stamp from anywhere but the final completion audit.
+- Do not let a stamp claim a source binding that `tools/source_state.sh` did
+  not produce.
+- Do not skip the stamp on the failure path — a trace that exists only for
+  green runs is missing exactly the runs a reader needs.
+- Do not change the return statuses of `run_layer` or `finish_gauntlet`.
+- Do not add a runtime or development dependency for this repair.
+
+### Setup plan
+
+- Modify `tools/gauntlet_layers.sh` (stamp writer, failure classification,
+  exit-trap installer) and `tools/gauntlet.sh` (delete the stale stamp,
+  install the trap). Extend `tools/test_gauntlet_orchestration.sh` with
+  controls for the green stamp, the failed-layer stamp and exit 2, the
+  orchestration stamp and exit 3, crash passthrough, the
+  exit-zero-before-audit remap, and the unavailable-binding stamp. Add
+  `gauntlet-stamp.txt` to `.gitignore`.
+- No new dependency. Commit cadence: this approved SPEC first; tests plus
+  implementation second; evidence rebinding third. Independent verification
+  remains `not performed` unless a separate verifier inspects the final
+  state.
+
 ## Revision history
 
 Revisions 1–3 (2026-07-25 → 07-27) were made autonomously during the original
