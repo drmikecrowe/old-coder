@@ -2,7 +2,7 @@
 
 ## Orientation
 - **Verdict:** **PASSED WITH LIMITS.** Every gauntlet layer is green at source
-  state `4734451`, but independent verification is `not performed` against that
+  state `a0bd66a`, but independent verification is `not performed` against that
   state. This report is finalized as a **declared downgrade**, not on a passing
   verdict.
 - **Delivered:** an in-process `RateLimiter(limit, window_seconds, clock)` with
@@ -16,8 +16,7 @@
   the table below and did not run** — adversarial review by an independent agent,
   and the egress/output-surface check; both postdate this demo, and the six
   verification rounds below are not a substitute for either. Also: the shipped
-  state was never independently verified; shell lint never ran on the six scripts
-  that implement half the gates; tool-based mutation was substituted; two 2026-07
+  state was never independently verified; tool-based mutation was substituted; two 2026-07
   spec revisions remain unapproved; evidence is generated on Python 3.14 while CI
   gates on 3.12.
 - **Read first:** *Independent verification* — it is where the downgrade lives.
@@ -26,7 +25,7 @@ The writeup below, in brief:
 
 - **Spec → test mapping:** 32 rows, all `pass`, no `unverified` or `n-a`. Both
   Must NOT constraints are mapped — one to a test, one to the must-not scan.
-- **Gauntlet:** 16 layers. Four exist to prove the harness can fail — an
+- **Gauntlet:** 17 layers. Four exist to prove the harness can fail — an
   orchestration self-test (5 scenarios, 13/13 expectations), a checker self-test
   (3/3), a source-state self-test (9/9), and a mutation negative control (C1
   killed, C2 survived).
@@ -54,20 +53,20 @@ The writeup below, in brief:
   Earlier revisions (2026-07-25, 2026-07-27) were autonomous and are still
   unapproved; treat them as the weaker part of the spec.
 - Independent verification: **not performed against the final source state
-  `42528d9`.** Six earlier rounds were performed; the last verified state
+  `a0bd66a`.** Six earlier rounds were performed; the last verified state
   `d0b506c` returned `failed`, and the fixes made since — one of them
   behavioural — are disclosed below as unverified. This report is finalized as
   a **declared downgrade**, not on the strength of a passing verdict. A
   verdict attaches to the state a verifier actually saw, and no verifier has
   seen this one.
-- Source state: source commit `42528d9`; sha256 tree hash
-  `5aa96ec5487c957c` — reproduce both with `./tools/source_state.sh` from any
+- Source state: source commit `a0bd66a`; sha256 tree hash
+  `1e8c69768056880c` — reproduce both with `./tools/source_state.sh` from any
   directory. When a binding is produced the tree hash is the required content
   identity; the source commit is provenance and is supplied only where
   complete history is available, so a shallow checkout reports
   `(unavailable: shallow history)` and a no-Git archive reports `(no git)`,
   both alongside this same tree hash. No error path emits a binding at all.
-  The script separately reports current HEAD; commits after `42528d9` that
+  The script separately reports current HEAD; commits after `a0bd66a` that
   touch only this report or other out-of-scope paths preserve the source
   commit and tree hash. The manifest includes `.github/workflows`, which
   decides whether the gauntlet runs in CI at all.
@@ -76,7 +75,7 @@ The writeup below, in brief:
 - Entry point: `./tools/gauntlet.sh` reruns every layer below.
 
 All numbers are from one final fresh run of the entry point, executed
-2026-08-18 at source commit `42528d9` after the last code edit.
+2026-08-30 at source commit `a0bd66a` after the last code edit.
 
 `spec.md` was deliberately pruned back to a contract before REVISION 5
 (339 → 255 lines). Every clause, invariant, obligation and failure-model row
@@ -135,13 +134,14 @@ Status legend: pass / fail / unverified / n-a.
 | Tests | `pytest -q --cov=ratelimiter` | 50 passed, 0 failed |
 | Types | `mypy src tests examples tools` (strict) | 0 errors in 8 files |
 | Lint + format + complexity | `ruff check . && ruff format --check .` (mccabe ≤ 8) | 0 warnings, 10 files formatted |
+| Shell lint | `shellcheck tools/*.sh` (0.11.0); fails closed with rc 2 when shellcheck is absent, so a missing linter is a red layer rather than a silent skip | 0 findings across 6 scripts |
 | Changed-line coverage | `pytest --cov … --cov-fail-under=100` | 49/49 statements, 20/20 branches (100%). **This layer is a gate**; before 2026-08-09 it printed a percentage and exited 0 no matter how far coverage fell |
 | Mutation | `python tools/mutants.py` (manual, scripted; only pytest exit 1 counts as a kill; `__pycache__` cleared and `PYTHONDONTWRITEBYTECODE` set per mutant) | 22/22 killed |
 | Property-based | hypothesis, 2 properties | 100 examples each, 0 falsified |
 | Real execution | `python examples/demo.py` (real `time.monotonic`) | burst of 5 → `[True, True, True, False, False]`; other key unaffected; allowed again after window |
 | Supply chain | `pip-audit -r requirements-dev.txt` | no known vulnerabilities; runtime dependencies: **none** (stdlib only; `threading` is stdlib) |
 | Secret scan | must-not scan in `tools/gauntlet.sh` over src, tests, tools, examples, spec.md, pyproject.toml, requirements-dev.txt and `../.github` | clean, no matches |
-| Source binding | `tools/source_state.sh` (last gauntlet layer) | source commit `42528d9`; tree `5aa96ec5487c957c`; current HEAD is reported separately |
+| Source binding | `tools/source_state.sh` (last gauntlet layer) | source commit `a0bd66a`; tree `1e8c69768056880c`; current HEAD is reported separately |
 | License check | — | n-a: zero runtime dependencies, nothing redistributed beyond this repo's own MIT code |
 | Suite health | pytest-randomly (order shuffled every run) | 50 passed in randomized order, 10/10 consecutive runs |
 
@@ -161,10 +161,6 @@ Status legend: pass / fail / unverified / n-a.
   22 mutants). What it cannot detect: the mutant list is hand-written, so
   unlike a tool generating mutants from the syntax tree it can only test
   weaknesses somebody thought of in advance.
-- **UNAVAILABLE — shell lint (shellcheck)** for the six scripts that implement
-  half the gates: no tool installed, and nothing ran in its place. Every Python
-  file gets three static layers and the shell gets none. Known gap, raised by
-  verification round 4.
 
 ## Independent verification
 
@@ -216,9 +212,25 @@ independently verified**:
 - REVISION 6 and the shallow-history provenance repair in commits `3e45e16`
   and `49e8762`, plus the historical CI wording correction in `4734451`;
 - REVISION 7 and the fail-closed gauntlet orchestration in commits `5b8dc1b`
-  and `42528d9`.
+  and `42528d9`;
+- the `shell-lint` layer and the four shellcheck fixes in commit `a0bd66a`.
+  Two were behavioural: the checker and orchestration self-tests had an
+  unguarded `cd`, so a failed `cd` would have run them against the wrong tree.
 
 ## Honest notes
+
+- **The missing linter was hiding a fail-open in the controls themselves.**
+  Shell lint sat in this report as `UNAVAILABLE` from verification round 4 until
+  `a0bd66a`. The first run of it found four issues, and two were `SC2164` in
+  `test_gauntlet_checks.sh` and `test_gauntlet_orchestration.sh`: an unguarded
+  `cd "$(dirname "$0")/.."`. Neither script sets `-e`, so a failed `cd` would
+  have left the negative-control suites running against whatever tree they
+  happened to be in — the controls that exist to prove the harness fails closed
+  could themselves have passed vacuously. `tools/gauntlet.sh` carries the same
+  line and was never flagged, because its `set -e` covers it; that is why only
+  the two suites were exposed, and it is a fair example of a whole class of
+  defect that no other layer here can reach. A declared `UNAVAILABLE` is not a
+  neutral gap.
 
 - **The gauntlet previously authenticated headings, not completed work.** The
   issue investigation removed the committed mutation invocation while keeping
