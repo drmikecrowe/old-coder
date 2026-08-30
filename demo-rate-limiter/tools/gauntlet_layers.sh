@@ -1,6 +1,6 @@
 #!/bin/sh
 # Fail-closed execution and completion accounting for the gauntlet entry point.
-GAUNTLET_EXPECTED_LAYERS="orchestration-self-test checker-self-test source-state-self-test tests-coverage types lint-format supply-chain must-not-scans mutation-control mutation real-execution source-state"
+GAUNTLET_EXPECTED_LAYERS="orchestration-self-test checker-self-test source-state-self-test tests-coverage types lint-format shell-lint supply-chain must-not-scans mutation-control mutation real-execution source-state"
 GAUNTLET_COMPLETED_LAYERS=""
 
 run_layer() {

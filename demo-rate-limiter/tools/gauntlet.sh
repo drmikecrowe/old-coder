@@ -31,6 +31,18 @@ layer_lint_format() {
 }
 run_layer lint-format layer_lint_format
 
+# Half the gates are implemented in shell, and every Python file gets three
+# static layers. Fail closed when shellcheck is absent: a missing linter must
+# be a red layer someone reads, never a silent skip. ubuntu-latest ships it.
+layer_shell_lint() {
+  command -v shellcheck >/dev/null 2>&1 || {
+    echo "FAIL: shellcheck not installed; shell layers are unproven" >&2
+    return 2
+  }
+  shellcheck tools/*.sh || return $?
+}
+run_layer shell-lint layer_shell_lint
+
 run_layer supply-chain "$PY/pip-audit" -r requirements-dev.txt
 
 layer_must_not_scans() {

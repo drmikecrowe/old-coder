@@ -1,6 +1,6 @@
 #!/bin/sh
 # Negative controls for the gauntlet's layer-completion contract.
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || { echo "FAIL: cannot enter demo root" >&2; exit 2; }
 
 failures=0
 

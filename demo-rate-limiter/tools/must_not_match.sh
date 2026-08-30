@@ -1,3 +1,4 @@
+# shellcheck shell=sh
 # Must-find-nothing grep, fail closed: grep rc 1 (no matches) is the only
 # pass; grep rc 0 = forbidden pattern present (we return 1), grep rc >= 2 =
 # the check itself broke (we return 2, so the self-test can tell the two
