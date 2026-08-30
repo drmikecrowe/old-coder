@@ -755,25 +755,20 @@ layer, the manifest is what proves an *absent* one cannot report green. Keep
 both, and handle the command status explicitly rather than assuming the shell
 did it for you.
 
-**Have the entry point write a completion stamp, on every exit path.** The
-evidence report is written by the model; the stamp is the one completion
-artifact the harness writes. On exit — green, failed, or crashed — write a
-small file recording the result, the expected and completed layer sets, a UTC
-timestamp, and the source-state binding, under two rules: the green result
-comes only from the final completion audit, and the binding comes only from
-the source-state command — where that command fails, record `unavailable`
-rather than guessing. EVIDENCE then cites the stamp instead of asserting
-completion on its own authority, and the failure path leaves a trace, which
-is the run a reader actually needs to re-read. Give the exit status a
-vocabulary in the same trap: 0 all green, one code for a layer that ran and
-failed, one for a violated orchestration contract (including an exit 0 that
-never reached the audit), everything else a crash passed through — automation
-upstream needs a number, not a paragraph. The demo's
-`tools/gauntlet_layers.sh` implements both, with a negative control per exit
-path in its orchestration self-test; the stamp is honest about its own limit
-there too — it is written by the same sourced helper it reports on, so it
-guards against accident, not against a coordinated edit to helper and
-controls together.
+**Write a completion stamp from the entry point, on every exit path.**
+EVIDENCE is model-written; the stamp is the completion artifact the harness
+writes. Record the result, the expected and completed layer sets, a UTC
+timestamp, and the source binding. Two rules: only the final audit produces
+`green`, and only the source-state command produces the binding — if it
+fails, write `unavailable`, never a guess. Cite the stamp in EVIDENCE, and
+the failure path now leaves the trace a reader actually needs. In the same
+trap, give the exit a vocabulary: 0 green; one code for a failed layer; one
+for a violated orchestration contract (an exit 0 that skipped the audit
+included); pass crashes through — automation needs a number, not a
+paragraph. The demo's `tools/gauntlet_layers.sh` implements both, one
+negative control per exit path. Limit: the stamp is written by the helper it
+reports on, so it guards against accident, not a coordinated edit to helper
+and controls together.
 
 **Every EVIDENCE row must cite a log this script actually writes.** Two rules
 keep that true:

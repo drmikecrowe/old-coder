@@ -319,11 +319,10 @@ mechanically, as the report's final act:
   names — this line exists because `pyright src/` beside a gate's bare `pyright`
   reported `0 errors` and passed while nine errors sat in `tests/`.
 - **Stamp:** where the entry point writes a completion stamp
-  (`references/gauntlet.md` § Gauntlet entry point; the demo's does), the
-  report agrees with it: a `PASSED` verdict requires a stamp reading green
-  over the same source state EVIDENCE cites, and a stamp whose binding is
-  unavailable caps the verdict at `PASSED WITH LIMITS`. No stamp mechanism in
-  the project — nothing to check; this line does not apply.
+  (`references/gauntlet.md` § Gauntlet entry point), the report must agree
+  with it: `PASSED` requires a green stamp over the same source state; an
+  unavailable binding caps the verdict at `PASSED WITH LIMITS`. No stamp
+  mechanism in the project — this line does not apply.
 
 A summary that fails any line is a defect in the summary: fix it, never the table.
 

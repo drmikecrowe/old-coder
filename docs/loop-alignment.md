@@ -1,27 +1,23 @@
 # Loop-engineering alignment
 
-A rule-by-rule audit of this skill against a private design document for
-autonomous agent loops ("Loop engineering", v0.1). That document states rules
-for the control system around a model — intent, execution, verification,
-control, drift — each with a stable id. This file maps every rule onto this
-repository, in the document's own reporting style: by id, with evidence, no
-aggregate score.
-
-Each rule is restated in one line, because the source document is not
-committed here. The mapping was done on fork `main` at `78187f9`.
+A rule-by-rule audit of this repo against a private design document for
+autonomous agent loops ("Loop engineering" v0.1: intent, execution,
+verification, control, drift — stable rule ids). Reported the document's own
+way: by id, with evidence, no aggregate score. Each rule is restated in one
+line because the source is not committed. Audited at fork `main` `78187f9`.
 
 Status vocabulary, closed:
 
 | Status | Means |
 |---|---|
-| `enforced` | a mechanism in this repo already does it; the evidence column names it |
-| `partial` | the intent is present but part of the rule is unmet; the gap is named |
+| `enforced` | a mechanism already does it; the evidence column names it |
+| `partial` | intent present, part unmet; the gap is named |
 | `gap` | not done; the phase column says where it lands |
-| `n-a` | does not apply here; the reason is named |
+| `n-a` | does not apply; the reason is named |
 
-The skill is a human-gated methodology, not a scheduled loop, so the
-control-plane rules about outer-loop iteration and durable state are largely
-`n-a` by scope: this audit deliberately does not build the loop.
+The skill is a human-gated methodology, not a scheduled loop. Outer-loop
+iteration and durable-state rules are `n-a` by scope: this audit does not
+build the loop.
 
 ## Plane 1 — Intent
 
@@ -107,8 +103,7 @@ here diffs against fork `main` first and is re-cut upstream later, if at all.
 | D | CO-9, CO-10 | the stamp is written on the failure path too; the entry point's exit distinguishes layer verdict (2), orchestration failure (3), and crash (the original status) | `demo-rate-limiter/tools/` | candidate, with Phase B |
 | E | DR-4 | CONTRIBUTING states it: a skill-text change that alters what the gauntlet accepts ships with the fixture that fails without it | `CONTRIBUTING.md` | candidate |
 
-Two rules are consciously not adopted: CO-13 (last-round narrowing — the human
-grades rounds and can direct it) and the outer-loop control rules
-(CO-1/CO-3/CO-7 and kin — this skill is the inner loop; whoever schedules it
-owns them). Absence of a budget *type* (CO-4) is likewise accepted: prose
-cannot raise, so the enforcement is that a breached budget voids the round.
+Consciously not adopted: CO-13 (the human grades rounds and can narrow the
+last one) and the outer-loop rules (CO-1/CO-3/CO-7 — whoever schedules this
+skill owns them). CO-4's budget *type* is likewise accepted as unbuildable in
+prose: the enforcement is that a breached budget voids the round.

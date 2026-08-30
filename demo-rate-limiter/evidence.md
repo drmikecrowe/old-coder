@@ -231,21 +231,17 @@ independently verified**:
 
 ## Honest notes
 
-- **What the completion stamp does and does not prove.** REVISION 8 makes the
-  entry point write `gauntlet-stamp.txt` on every exit path: the result, the
-  layer sets, a UTC timestamp, and the source binding, with the green result
-  produced only by the final completion audit and the binding produced only by
-  `tools/source_state.sh` — a failed binding is recorded as unavailable, never
-  guessed. That gives a reader one harness-written artifact asserting the
-  completion conjunction (checks passed, on this exact content, at this time)
-  instead of taking this report's word for it, and it exists for red runs,
-  which previously left no artifact at all. Its limits: the stamp is written
-  by the same sourced helper it reports on, so a coordinated edit to helper
-  and controls together is out of its reach — the six negative controls prove
-  the named failure paths only; and the classification/vocabulary trap was
-  verified on a real failure (a dirty-tree run stamped
-  `layer-failed (source-state, rc=2)`, exit 2) but each control proves its
-  own case, not every path.
+- **What the completion stamp does and does not prove.** REVISION 8: the
+  entry point writes `gauntlet-stamp.txt` on every exit path — result, layer
+  sets, UTC time, source binding. Only the final audit produces `green`; only
+  `tools/source_state.sh` produces the binding, recorded unavailable on
+  failure, never guessed. A reader gets one harness-written artifact
+  asserting the completion conjunction (checks passed, on this content, at
+  this time), and red runs now leave a trace. Limits: the stamp is written by
+  the helper it reports on, so a coordinated edit to helper and controls is
+  out of reach; each of the six controls proves its named path only. The trap
+  was also verified on a real failure: a dirty-tree run stamped
+  `layer-failed (source-state, rc=2)`, exit 2.
 
 - **The missing linter was hiding a fail-open in the controls themselves.**
   Shell lint sat in this report as `UNAVAILABLE` from verification round 4 until

@@ -56,13 +56,12 @@ when it is broken. If the answer is "reports success", it is not finished.
 
 ## Skill text is behavior
 
-A change to `SKILL.md` or `references/` that alters what the gauntlet accepts
-is a behavior change, and it ships with the fixture that fails without it —
-usually a negative control in the demo's self-tests, the way the
-orchestration and completion-stamp controls arrived. Review catches the
-wording; only a fixture catches a mechanism that quietly stops doing what the
-new text claims. A pure wording change with no acceptance consequence needs
-none — say which kind your PR is.
+If a change to `SKILL.md` or `references/` alters what the gauntlet accepts,
+ship the fixture that fails without it — usually a negative control in the
+demo's self-tests, the way the orchestration and stamp controls arrived.
+Review catches wording; only a fixture catches a mechanism that stops doing
+what the text claims. A pure wording change needs none — say which kind your
+PR is.
 
 ## Keeping `SKILL.md` short
 
