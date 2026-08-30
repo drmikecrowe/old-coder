@@ -2,7 +2,7 @@
 # Gauntlet entry point: run every layer; fail on the first broken one.
 set -e
 cd "$(dirname "$0")/.."
-rm -f .coverage coverage.xml   # stale artifacts from previous runs
+rm -f .coverage coverage.xml gauntlet-stamp.txt   # stale artifacts from previous runs
 # Bytecode caches are both a correctness hazard for the mutation layer and
 # binary noise the must-not scans would grep through.
 find . -name __pycache__ -type d -prune -exec rm -rf {} +
@@ -10,6 +10,7 @@ PY=.venv/bin
 
 . tools/must_not_match.sh
 . tools/gauntlet_layers.sh
+install_gauntlet_exit_trap
 
 run_layer orchestration-self-test sh tools/test_gauntlet_orchestration.sh
 
