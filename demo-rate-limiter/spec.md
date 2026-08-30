@@ -573,7 +573,13 @@ revision closes that wiring gap and three adjacent ones, then makes
   `skills/old-coder/references/gauntlet.md`: the stamp now makes a
   substituted or overridden binding producer *visible in the stamp*; it
   still does not resist an edit to the helper that writes the stamp, and a
-  hash names a file's content without proving that content honest.
+  hash names a file's content without proving that content honest. The hash
+  also covers only the command file itself: the default command is a wrapper
+  that execs `tools/source_state.py`, and the implementation behind it is
+  bound by the source scope (which includes `tools/`), not by this field —
+  an edit there is in the already-disclosed coordinated-edit class. (Found
+  by a cross-model intent review; the field deliberately does not chase the
+  transitive closure — interpreter, libraries — which no stamp can pin.)
 
 **Item 4 — close the pre-trap window** (`tools/gauntlet.sh`):
 
