@@ -660,6 +660,17 @@ into a vacuous pass. Prove each home-grown check can fail with a one-off
 negative control (feed it a known-bad fixture; make its input unreadable) and
 record the control in EVIDENCE's honest notes.
 
+Keep the assurance boundary explicit: application coverage and mutation target
+the subject under test; do not widen them across every orchestration script by
+default. Protect home-grown tools in the gauntlet's trust chain with targeted
+negative controls for identified fail-open modes, and pin the failure reason,
+not merely a non-zero status. A control proves only its named known-bad case,
+not the whole tool. For the entry point itself, bind execution to completion:
+maintain a fixed expected-layer manifest, record each layer only after its
+commands succeed, and audit the manifest before printing success. Do not use a
+heading as evidence that a layer ran, and do not rely on `set -e` through `&&`
+or another conditional context; handle the command status explicitly.
+
 Skeleton — adapt the commands, keep the structure. The three lines that carry
 the mechanism claims are the `set -e`, the stale-artifact delete, and the
 `mkdir -p`; drop any of them and "by construction" stops being true:
