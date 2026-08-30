@@ -54,6 +54,16 @@ reported from a tree that could not run it.
 If your change adds anything that produces a claim, say in the PR what it does
 when it is broken. If the answer is "reports success", it is not finished.
 
+## Skill text is behavior
+
+A change to `SKILL.md` or `references/` that alters what the gauntlet accepts
+is a behavior change, and it ships with the fixture that fails without it —
+usually a negative control in the demo's self-tests, the way the
+orchestration and completion-stamp controls arrived. Review catches the
+wording; only a fixture catches a mechanism that quietly stops doing what the
+new text claims. A pure wording change with no acceptance consequence needs
+none — say which kind your PR is.
+
 ## Keeping `SKILL.md` short
 
 The main file is loaded in full on every invocation, including for tasks that
