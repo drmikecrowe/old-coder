@@ -489,6 +489,218 @@ layer verdict from a broken script.
   remains `not performed` unless a separate verifier inspects the final
   state.
 
+## REVISION 9 — prove the trap's wiring; name the stamp's producer (Tier 3)
+
+Drafted 2026-08-30 on an autonomous run (approval pending — nothing beyond
+this spec text and the item-6 status edits is implemented until this revision
+is approved). Isolation: worktree `worktree-revision-9-pre-audit`.
+Destination: this file only; no tracker issue is named and no PR is open, so
+nothing is projected. This revision edits the trust chain — the gauntlet's
+own completion mechanism and the audit document the next audit is measured
+against — hence Tier 3. It does not change rate-limiter runtime behaviour or
+its public API.
+
+REVISION 8 proved the stamp and exit vocabulary *in the helper*: scenarios
+6–11 source `tools/gauntlet_layers.sh` and call `install_gauntlet_exit_trap`
+themselves. None of them invokes `tools/gauntlet.sh`. Delete that call from
+the entry point and every layer passes, the run exits 0, no stamp is written,
+and the self-test still reports 11/11. The layer manifest proves an absent
+*layer* cannot report green; nothing proves an absent *trap* cannot. This
+revision closes that wiring gap and three adjacent ones, then makes
+`docs/loop-alignment.md` say only what is proven.
+
+### Behaviour
+
+**Item 1 — the wiring control** (new scenario in
+`tools/test_gauntlet_orchestration.sh`):
+
+- The self-test inspects the text of `tools/gauntlet.sh` and asserts, in
+  order: it sources `tools/gauntlet_layers.sh`; it invokes
+  `install_gauntlet_exit_trap` as a command on a later line; the first
+  `run_layer` line comes later still; the file defines no function named
+  `install_gauntlet_exit_trap`; the file contains no `trap` command of its
+  own (the helper owns the trap).
+- The control fails closed: an unreadable entry point or a zero-match search
+  is a red scenario, never a skip.
+- Deleting the `install_gauntlet_exit_trap` line from `tools/gauntlet.sh`
+  turns the self-test red, naming the wiring; restoring it turns the
+  self-test green. Both runs are observed and recorded in `evidence.md`, not
+  argued. Two further mutants are observed red once each during RED: the
+  invocation moved after the first `run_layer`, and a same-named no-op
+  function defined in the entry point.
+- **Route and what it pins.** The control is a static assertion over the
+  entry point's text, because the orchestration self-test is layer 1 of the
+  gauntlet: it cannot invoke `tools/gauntlet.sh` without recursing, and a
+  recursion guard would alter the code under test. It pins the presence and
+  order of the wiring tokens and the absence of a local override in the
+  entry point. It does not pin runtime semantics (scenarios 6–11 pin those,
+  against the real helper — the two controls close the gap only together),
+  it does not survive an edit to the helper (already the disclosed limit),
+  and it does not defend against deliberate evasion via `eval` or
+  indirection — the threat model here is REVISION 8's: accident, not
+  coordinated edit.
+
+**Item 2 — the no-stamp exemption becomes mechanical**
+(`skills/old-coder/references/templates.md`, Stamp line, plus its fixture):
+
+- The Stamp consistency line's escape hatch — "No stamp mechanism in the
+  project — this line does not apply" — is replaced by a condition: the
+  exemption applies only when inspection of the *entry point* shows it
+  installs no stamp trap. Absence of a stamp file where the entry point
+  installs a trap is a **failed** consistency line, never an exemption.
+- Per `CONTRIBUTING.md` (skill text is behavior), this ships with a fixture:
+  a new self-test scenario exercises the decision rule against two synthetic
+  entry points in a temp directory — one that installs no trap, judged
+  exempt with no stamp present; one that installs the trap, judged failed
+  when no stamp exists after a run. Weakening the rule back to
+  "no stamp file → exempt" turns the second case red (observed during RED).
+
+**Item 3 — the stamp names the binding's producer**
+(`tools/gauntlet_layers.sh`):
+
+- `write_gauntlet_stamp` records, on the success *and* failure paths of the
+  binding: `source_state_cmd:` — the resolved path of
+  `$GAUNTLET_SOURCE_STATE_CMD` — and `source_state_cmd_sha256:` — the sha256
+  of that file. Where the command does not resolve to a readable file, or no
+  sha256 tool is available, the field reads `unavailable (<reason>)`; no
+  field is ever guessed. Metadata failure does not by itself fail the run
+  (same stance as REVISION 8's unavailable binding, scenario 11).
+- Controls: a run with `GAUNTLET_SOURCE_STATE_CMD` overridden produces a
+  stamp naming the override's path, with a hash matching an independently
+  computed sha256 of that file; a default run's stamp names
+  `tools/source_state.sh`.
+- The disclosed limit is then restated in `evidence.md` and in
+  `skills/old-coder/references/gauntlet.md`: the stamp now makes a
+  substituted or overridden binding producer *visible in the stamp*; it
+  still does not resist an edit to the helper that writes the stamp, and a
+  hash names a file's content without proving that content honest.
+
+**Item 4 — close the pre-trap window** (`tools/gauntlet.sh`):
+
+- The entry point's first act after entering the demo root is writing a
+  minimal `result: started` stamp to the stamp path, inline — before any `.`
+  source, so it cannot depend on the helper. The `rm -f` of the stale stamp
+  is dropped (the write replaces it); the `rm -f` of `.coverage` and
+  `coverage.xml` stays. The exit trap overwrites the stamp on every governed
+  path, so a stamp still reading `started` after a run means the script died
+  before the trap was installed — absence is no longer ambiguous.
+- Controls: the item-1 static assertion also pins the order (started-write
+  before the first `.` source, before the installer call); the green-run
+  scenario pre-seeds the stamp path with `result: started` and asserts the
+  finished run stamps green (the trap overwrites); a synthetic replica of
+  the preamble whose `.` source fails is observed to exit nonzero leaving
+  `result: started`. The replica proves the *pattern* fails the right way;
+  the static assertion is what binds the shipped file to that pattern.
+
+**Item 5 — citation sweep, with a premise correction (deviation from the
+task prompt, for the approver to rule on):**
+
+- The prompt calls VE-10's citation `tools/source_state.py` fabricated and
+  orders it changed to `tools/source_state.sh`. The premise is wrong:
+  `demo-rate-limiter/tools/source_state.py` exists and is the
+  implementation — `source_state.sh` is a ten-line wrapper that `exec`s it,
+  and the manifest-hashing, fail-closed behaviour VE-10's evidence column
+  describes lives in the `.py`. Proposed action: **no edit to VE-10**.
+- The sweep still runs: every file path cited in `docs/loop-alignment.md` is
+  resolved against the tree (audit-doc citations are short names, so a path
+  resolves if it exists under the repo root, `skills/old-coder/`, or
+  `demo-rate-limiter/`), and the result is reported in the final report and
+  in `evidence.md`'s honest notes even if clean.
+
+**Item 6 — status honesty in `docs/loop-alignment.md`, two commits:**
+
+- Commit A, before any item-1 implementation: VE-9, VE-11, CO-9 and CO-10
+  read `partial`, each naming the gap: the stamp/exit mechanism landed in
+  the helper, and trap installation is untested at the entry point. (The
+  rows currently still read `gap → Phase B/D` although those phases landed
+  at REVISION 8 — commit A also corrects that staleness; it is the same
+  edit.)
+- Commit B, after item 1 is green: the four rows flip to `enforced`, citing
+  the wiring control as the evidence.
+- No other status cell in the document is touched.
+
+**Item 7 — two new rows, fork-local ids:**
+
+- The audit's ids mirror stable ids in a private source document this run
+  cannot read, so this is a decision for the approver, not the spec (the
+  request allows either): **(a) proposed default** — add the rows under
+  fork-local ids, explicitly marked as observed in this fork and not present
+  in "Loop engineering" v0.1 as audited, proposed for the doctrine document;
+  or **(b)** add no row, and state in the document that both rules belong in
+  the doctrine document first. Approving this revision unamended selects
+  (a); the row text below implements it.
+- `FL-1` (Plane 3): *reachability is proven separately from behavior — a
+  mechanism can be implemented, controlled and green while absent from the
+  path that would invoke it.* Status `partial`: the layer manifest covers
+  layers and the item-1 control covers the exit trap; nothing covers any
+  other mechanism.
+- `FL-2` (Plane 2, beside EX-3): *a patch and its failing test written by
+  one author can be wrong in the same direction; a same-model reviewer
+  compresses the same English the same shallow way, and VE-2 does not catch
+  it.* Status `gap`: this repo has no mechanism for it, and none is built
+  here.
+
+### Investigation (report only, no edits)
+
+`evidence.md` claims 17 gauntlet layers; `GAUNTLET_EXPECTED_LAYERS` holds 13.
+Each of the 17 rows is classified — manifest layer, sub-part of a manifest
+layer, `n-a`, or work the entry point does not perform (the suite-health
+row's 10 consecutive randomized runs are already known to be a separate
+rerun; the entry point performs one randomized run via pinned
+pytest-randomly). Reported in the final report and the honest notes; the
+table is not restructured.
+
+### Failure model (Tier 3)
+
+- *The wiring control guards a spelling, not the property.* Mitigated by
+  asserting order and the absence of a local override, and by observing the
+  three mutants red; residual evasion (`eval`, indirection) is disclosed,
+  not defended.
+- *The control is itself fail-open.* Mitigated by fail-closed construction
+  (unreadable file or zero matches is red) and by the delete-and-observe
+  proof — the RED principle applied to the checker.
+- *The started stamp masks a real result if the trap never overwrites.*
+  Mitigated by the pre-seeded-stamp overwrite control.
+- *The hash fields imply more than they enforce.* Mitigated by restating the
+  disclosed limit in both documents (item 3) rather than only adding the
+  mechanism.
+- *The audit document drifts from the mechanisms again.* Mitigated by the
+  two-commit ordering in item 6 and by touching no other status cell.
+
+### Must NOT do
+
+- Do not change the return statuses of `run_layer` or `finish_gauntlet`, and
+  do not break any of the eleven existing orchestration scenarios.
+- Do not write any stamp field the run did not produce; `unavailable` with a
+  reason is the only fallback.
+- Do not touch any `docs/loop-alignment.md` status cell outside items 6
+  and 7.
+- Do not widen coverage or mutation targets across `tools/`.
+- Do not add a runtime or development dependency.
+- Do not start the out-of-scope work: the versioned loop-alignment index,
+  Phase C (adversary hardening, budgets, brief-path downgrade), or any
+  upstream cut.
+
+### Setup plan
+
+- Files modified: `demo-rate-limiter/tools/gauntlet.sh`,
+  `demo-rate-limiter/tools/gauntlet_layers.sh`,
+  `demo-rate-limiter/tools/test_gauntlet_orchestration.sh`,
+  `skills/old-coder/references/templates.md`,
+  `skills/old-coder/references/gauntlet.md`, `docs/loop-alignment.md`,
+  `demo-rate-limiter/spec.md` (this section),
+  `demo-rate-limiter/evidence.md` (rebind, last). No files added or
+  deleted.
+- No new dependency; sha256 comes from `sha256sum`/`shasum`, already present
+  on the platforms CI and the demo run on, with `unavailable` as the
+  fail-closed fallback.
+- Commit cadence: (1) this spec at approval; (2) item 6 commit A;
+  (3) RED controls, observed failing; (4) implementation to green;
+  (5) skill-text edits (items 2 and 3's limit wording) with their fixtures;
+  (6) item 6 commit B, item 7 rows, item 5 sweep note; (7) evidence rebind
+  after a final fresh gauntlet run. Commits signed.
+- Isolation: worktree. Nothing is pushed and no PR is opened.
+
 ## Revision history
 
 Revisions 1–3 (2026-07-25 → 07-27) were made autonomously during the original
