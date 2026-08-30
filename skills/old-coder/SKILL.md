@@ -774,6 +774,9 @@ the tool list is enforced or merely honored:
 Prefer the registered path where it exists, because a constraint the host applies cannot be
 forgotten under pressure. Say in EVIDENCE which path ran — "adversary, registered agent" and
 "adversary, brief in a general-purpose subagent" are different strengths of the same claim.
+The brief path is a confidence downgrade, not a neutral note: the tool list was honored
+rather than enforced, so record it the way an unapproved spec is recorded, and claim
+correspondingly less.
 
 What must not change either way: **the subagent is spawned fresh, with no inherited
 context.** A fork-style subagent inherits the author's reasoning and rubber-stamps the work,

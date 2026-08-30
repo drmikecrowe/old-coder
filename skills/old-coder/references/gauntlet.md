@@ -409,7 +409,11 @@ arrives attached to findings that feel like the result.
 - **Copy it into EVIDENCE verbatim**, under the review row. Each unreached item
   is an open item: either you cover it another way and say which layer did, or it
   stands as a named gap a reader can weigh.
-- **Record the tool calls used.** A reviewer that stopped at 9 of 10 calls stopped
+- **Record the tool calls used.** A report with no Coverage block, or one that
+  spent more calls than its budget, is a failed round, not a thorough one: the
+  budget lives in the brief precisely because nothing else enforces it, so a
+  breach voids the round — rerun with a fresh reviewer rather than averaging it
+  in. A reviewer that stopped at 9 of 10 calls stopped
   because it ran out of budget, not because it ran out of defects. **Two rounds
   that both exhausted their budgets are not two rounds converging** — treat the
   agreement between them as worth exactly as much as the ground they both
