@@ -671,9 +671,10 @@ commands succeed, and audit the manifest before printing success. Do not use a
 heading as evidence that a layer ran, and do not rely on `set -e` through `&&`
 or another conditional context; handle the command status explicitly.
 
-Skeleton — adapt the commands, keep the structure. The three lines that carry
-the mechanism claims are the `set -e`, the stale-artifact delete, and the
-`mkdir -p`; drop any of them and "by construction" stops being true:
+Skeleton — adapt the commands, keep the structure. Four things carry the
+mechanism claims: the `set -e`, the stale-artifact delete, the `mkdir -p`, and
+the expected-layer manifest with its closing audit. Drop any of them and "by
+construction" stops being true:
 
 ```sh
 #!/usr/bin/env bash
@@ -687,15 +688,41 @@ LOGS="$ARTIFACT_DIR/logs"
 rm -rf "$LOGS" .coverage coverage.xml <other stale report files>
 mkdir -p "$LOGS"
 
-<test+coverage command>  > "$LOGS/tests.log"        2>&1
-<coverage report command> > "$LOGS/coverage.log"    2>&1
-<types command>          > "$LOGS/types.log"        2>&1
-<lint command>           > "$LOGS/lint.log"         2>&1
-<mutation command>       > "$LOGS/mutation.log"     2>&1   # the persisted script, e.g. python tools/mutants.py
-<property command>       > "$LOGS/property.log"     2>&1
-<dep audit + secret scan> > "$LOGS/supply-chain.log" 2>&1
-<randomized-order run>   > "$LOGS/suite-health.log" 2>&1
-<real-execution command> > "$LOGS/run.log"          2>&1
+# Every layer this run must complete. Kept in one place so a layer that is
+# deleted, commented out, or never reached is a failure rather than a silence.
+EXPECTED_LAYERS="tests coverage types lint mutation property supply-chain suite-health real-execution"
+COMPLETED_LAYERS=""
+
+# Records the layer ONLY after its command exits 0. Not before, and never from
+# the heading — a printed heading proves the script reached a line, nothing more.
+run_layer() {
+  layer=$1; log=$2; shift 2
+  printf '=== %s ===\n' "$layer"
+  if "$@" > "$LOGS/$log" 2>&1; then
+    COMPLETED_LAYERS="$COMPLETED_LAYERS $layer"
+  else
+    rc=$?; echo "FAIL: layer '$layer' (rc=$rc); see $LOGS/$log" >&2; return "$rc"
+  fi
+}
+
+run_layer tests          tests.log         <test+coverage command>
+run_layer coverage       coverage.log      <coverage report command>
+run_layer types          types.log         <types command>
+run_layer lint           lint.log          <lint command>
+run_layer mutation       mutation.log      <mutation command>   # the persisted script, e.g. python tools/mutants.py
+run_layer property       property.log      <property command>
+run_layer supply-chain   supply-chain.log  <dep audit + secret scan>
+run_layer suite-health   suite-health.log  <randomized-order run>
+run_layer real-execution run.log           <real-execution command>
+
+# Not `echo "all layers passed"`. Audit the manifest first: name every expected
+# layer that never completed, and print success only if none is missing.
+for layer in $EXPECTED_LAYERS; do
+  case " $COMPLETED_LAYERS " in
+    *" $layer "*) ;;
+    *) echo "FAIL: missing layer '$layer'" >&2; exit 1 ;;
+  esac
+done
 echo "gauntlet: all layers passed; logs in $LOGS"
 ```
 
@@ -711,6 +738,18 @@ run that had failures in it. The consequence is one failure per run: you fix,
 rerun, and meet the next one. On a slow gauntlet that is worth knowing in
 advance, so a clean tail after a fix is not misread as "only one thing was
 wrong" — nothing after the first failure had a chance to run.
+
+`set -e` is necessary and not sufficient, in two ways this skill has been bitten
+by. It is *suppressed* wherever the command sits in a conditional context — the
+left side of `&&`, a `!` negation, an `if` or `while` test, a command
+substitution whose status you never read — so a layer written that way fails
+silently and the script sails on. And even where it fires, it only stops a
+command that ran; it cannot notice a layer that was deleted, commented out,
+never reached, or run twice while another was skipped. That is what the
+expected-layer manifest above is for: `set -e` bounds the damage of a *failing*
+layer, the manifest is what proves an *absent* one cannot report green. Keep
+both, and handle the command status explicitly rather than assuming the shell
+did it for you.
 
 **Every EVIDENCE row must cite a log this script actually writes.** Two rules
 keep that true:

@@ -8,7 +8,7 @@
 - **Delivered:** an in-process `RateLimiter(limit, window_seconds, clock)` with
   `allow(key) -> bool` — sliding window per key, thread-safe, with a throttled
   sweep that bounds the key map temporally.
-- **Proven:** 31/31 mapped scenarios pass; 50 tests, 100% changed-line coverage
+- **Proven:** 32/32 mapped scenarios pass; 50 tests, 100% changed-line coverage
   (49/49 statements, 20/20 branches, gated), 22/22 mutants killed. The mutation
   score is carried **entirely by the scenario suite** — the properties alone
   kill 3/22.
@@ -16,7 +16,7 @@
   the table below and did not run** — adversarial review by an independent agent,
   and the egress/output-surface check; both postdate this demo, and the six
   verification rounds below are not a substitute for either. Also: the shipped
-  state was never independently verified; shell lint never ran on the four scripts
+  state was never independently verified; shell lint never ran on the six scripts
   that implement half the gates; tool-based mutation was substituted; two 2026-07
   spec revisions remain unapproved; evidence is generated on Python 3.14 while CI
   gates on 3.12.
@@ -24,11 +24,12 @@
 
 The writeup below, in brief:
 
-- **Spec → test mapping:** 31 rows, all `pass`, no `unverified` or `n-a`. Both
+- **Spec → test mapping:** 32 rows, all `pass`, no `unverified` or `n-a`. Both
   Must NOT constraints are mapped — one to a test, one to the must-not scan.
-- **Gauntlet:** 15 layers. Three exist to prove the harness can fail — a checker
-  self-test (3/3), a source-state self-test (9/9), and a mutation negative
-  control (C1 killed, C2 survived).
+- **Gauntlet:** 16 layers. Four exist to prove the harness can fail — an
+  orchestration self-test (5 scenarios, 13/13 expectations), a checker self-test
+  (3/3), a source-state self-test (9/9), and a mutation negative control (C1
+  killed, C2 survived).
   One layer is `n-a` (license check: zero runtime dependencies); the rest pass.
 - **Verification:** six rounds, each a fresh context at a different commit. Round
   6 returned **`failed`** with one behavioural gap. Rounds 1–3 found what no
