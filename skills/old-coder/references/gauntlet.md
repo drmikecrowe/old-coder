@@ -409,7 +409,11 @@ arrives attached to findings that feel like the result.
 - **Copy it into EVIDENCE verbatim**, under the review row. Each unreached item
   is an open item: either you cover it another way and say which layer did, or it
   stands as a named gap a reader can weigh.
-- **Record the tool calls used.** A reviewer that stopped at 9 of 10 calls stopped
+- **Record the tool calls used.** A report with no Coverage block, or one that
+  spent more calls than its budget, is a failed round, not a thorough one: the
+  budget lives in the brief precisely because nothing else enforces it, so a
+  breach voids the round — rerun with a fresh reviewer rather than averaging it
+  in. A reviewer that stopped at 9 of 10 calls stopped
   because it ran out of budget, not because it ran out of defects. **Two rounds
   that both exhausted their budgets are not two rounds converging** — treat the
   agreement between them as worth exactly as much as the ground they both
@@ -660,9 +664,21 @@ into a vacuous pass. Prove each home-grown check can fail with a one-off
 negative control (feed it a known-bad fixture; make its input unreadable) and
 record the control in EVIDENCE's honest notes.
 
-Skeleton — adapt the commands, keep the structure. The three lines that carry
-the mechanism claims are the `set -e`, the stale-artifact delete, and the
-`mkdir -p`; drop any of them and "by construction" stops being true:
+Keep the assurance boundary explicit: application coverage and mutation target
+the subject under test; do not widen them across every orchestration script by
+default. Protect home-grown tools in the gauntlet's trust chain with targeted
+negative controls for identified fail-open modes, and pin the failure reason,
+not merely a non-zero status. A control proves only its named known-bad case,
+not the whole tool. For the entry point itself, bind execution to completion:
+maintain a fixed expected-layer manifest, record each layer only after its
+commands succeed, and audit the manifest before printing success. Do not use a
+heading as evidence that a layer ran, and do not rely on `set -e` through `&&`
+or another conditional context; handle the command status explicitly.
+
+Skeleton — adapt the commands, keep the structure. Four things carry the
+mechanism claims: the `set -e`, the stale-artifact delete, the `mkdir -p`, and
+the expected-layer manifest with its closing audit. Drop any of them and "by
+construction" stops being true:
 
 ```sh
 #!/usr/bin/env bash
@@ -676,15 +692,41 @@ LOGS="$ARTIFACT_DIR/logs"
 rm -rf "$LOGS" .coverage coverage.xml <other stale report files>
 mkdir -p "$LOGS"
 
-<test+coverage command>  > "$LOGS/tests.log"        2>&1
-<coverage report command> > "$LOGS/coverage.log"    2>&1
-<types command>          > "$LOGS/types.log"        2>&1
-<lint command>           > "$LOGS/lint.log"         2>&1
-<mutation command>       > "$LOGS/mutation.log"     2>&1   # the persisted script, e.g. python tools/mutants.py
-<property command>       > "$LOGS/property.log"     2>&1
-<dep audit + secret scan> > "$LOGS/supply-chain.log" 2>&1
-<randomized-order run>   > "$LOGS/suite-health.log" 2>&1
-<real-execution command> > "$LOGS/run.log"          2>&1
+# Every layer this run must complete. Kept in one place so a layer that is
+# deleted, commented out, or never reached is a failure rather than a silence.
+EXPECTED_LAYERS="tests coverage types lint mutation property supply-chain suite-health real-execution"
+COMPLETED_LAYERS=""
+
+# Records the layer ONLY after its command exits 0. Not before, and never from
+# the heading — a printed heading proves the script reached a line, nothing more.
+run_layer() {
+  layer=$1; log=$2; shift 2
+  printf '=== %s ===\n' "$layer"
+  if "$@" > "$LOGS/$log" 2>&1; then
+    COMPLETED_LAYERS="$COMPLETED_LAYERS $layer"
+  else
+    rc=$?; echo "FAIL: layer '$layer' (rc=$rc); see $LOGS/$log" >&2; return "$rc"
+  fi
+}
+
+run_layer tests          tests.log         <test+coverage command>
+run_layer coverage       coverage.log      <coverage report command>
+run_layer types          types.log         <types command>
+run_layer lint           lint.log          <lint command>
+run_layer mutation       mutation.log      <mutation command>   # the persisted script, e.g. python tools/mutants.py
+run_layer property       property.log      <property command>
+run_layer supply-chain   supply-chain.log  <dep audit + secret scan>
+run_layer suite-health   suite-health.log  <randomized-order run>
+run_layer real-execution run.log           <real-execution command>
+
+# Not `echo "all layers passed"`. Audit the manifest first: name every expected
+# layer that never completed, and print success only if none is missing.
+for layer in $EXPECTED_LAYERS; do
+  case " $COMPLETED_LAYERS " in
+    *" $layer "*) ;;
+    *) echo "FAIL: missing layer '$layer'" >&2; exit 1 ;;
+  esac
+done
 echo "gauntlet: all layers passed; logs in $LOGS"
 ```
 
@@ -700,6 +742,33 @@ run that had failures in it. The consequence is one failure per run: you fix,
 rerun, and meet the next one. On a slow gauntlet that is worth knowing in
 advance, so a clean tail after a fix is not misread as "only one thing was
 wrong" — nothing after the first failure had a chance to run.
+
+`set -e` is necessary and not sufficient, in two ways this skill has been bitten
+by. It is *suppressed* wherever the command sits in a conditional context — the
+left side of `&&`, a `!` negation, an `if` or `while` test, a command
+substitution whose status you never read — so a layer written that way fails
+silently and the script sails on. And even where it fires, it only stops a
+command that ran; it cannot notice a layer that was deleted, commented out,
+never reached, or run twice while another was skipped. That is what the
+expected-layer manifest above is for: `set -e` bounds the damage of a *failing*
+layer, the manifest is what proves an *absent* one cannot report green. Keep
+both, and handle the command status explicitly rather than assuming the shell
+did it for you.
+
+**Write a completion stamp from the entry point, on every exit path.**
+EVIDENCE is model-written; the stamp is the completion artifact the harness
+writes. Record the result, the expected and completed layer sets, a UTC
+timestamp, and the source binding. Two rules: only the final audit produces
+`green`, and only the source-state command produces the binding — if it
+fails, write `unavailable`, never a guess. Cite the stamp in EVIDENCE, and
+the failure path now leaves the trace a reader actually needs. In the same
+trap, give the exit a vocabulary: 0 green; one code for a failed layer; one
+for a violated orchestration contract (an exit 0 that skipped the audit
+included); pass crashes through — automation needs a number, not a
+paragraph. The demo's `tools/gauntlet_layers.sh` implements both, one
+negative control per exit path. Limit: the stamp is written by the helper it
+reports on, so it guards against accident, not a coordinated edit to helper
+and controls together.
 
 **Every EVIDENCE row must cite a log this script actually writes.** Two rules
 keep that true:
