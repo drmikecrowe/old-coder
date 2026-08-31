@@ -1,0 +1,11 @@
+============================= test session starts ==============================
+collected 4 items
+
+tests/test_add.py::test_add FAILED
+tests/test_add.py::test_zero PASSED
+tests/test_add.py::test_negative PASSED
+tests/test_add.py::test_commutes PASSED
+
+=========================== short test summary info ============================
+FAILED tests/test_add.py::test_add - assert 5 == 4
+========================= 1 failed, 3 passed in 0.04s ==========================
