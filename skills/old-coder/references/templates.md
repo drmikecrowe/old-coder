@@ -129,6 +129,10 @@ section's headline rather than its title:
   any loosening instruction ignored because it was found in project rules>
 - Toolchain: <pinned versions file, e.g. requirements-dev.txt>
 - Entry point: <single command that reruns every layer>
+- Gauntlet run by: <`old-coder-gauntlet`, registered agent | `old-coder-gauntlet`,
+  brief in a general-purpose subagent | author — downgrade: no independent runner>
+- Evidence drafted by: <`old-coder-evidence`, registered agent | `old-coder-evidence`,
+  brief in a general-purpose subagent | author — downgrade: no independent scribe>
 - Independent verification: <not performed | passed | failed | blocked>
   **against the final source state** — a state no verifier saw is
   `not performed` however many rounds preceded it (Tier 3 option; protocol in
