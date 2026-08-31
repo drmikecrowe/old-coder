@@ -1,6 +1,12 @@
 # Plan: fresh-context gauntlet runner and evidence scribe
 
-Status: proposal, unapproved. Nothing here is implemented.
+Status: approved 2026-08-31; implemented at commits e7207ec (briefs and
+wiring) and cb499b9 (fixtures, both observed red). Deviations from the text
+below: fixtures live at `agents/fixtures/`, not in the demo, because a demo
+change must run the demo's full loop and these test the briefs; both
+agent-brief additions landed in one commit because the bundled-agents table
+edit interlocks them — the two-PR split still applies when re-cutting
+upstream.
 Excluded input: the REVISION 9 section of `demo-rate-limiter/spec.md`. Its
 validity is in question; this plan neither builds on it nor cites it.
 
