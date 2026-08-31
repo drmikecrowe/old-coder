@@ -381,6 +381,15 @@ thing that runs; run the gate's own commands locally instead, inside the final f
 makes a scope error survive: at that point the report has already recorded the number your command
 produced, and nothing in it says which command it should have been.
 
+**At Tier 3, the final fresh run executes in a fresh agent.** Spawn `old-coder-gauntlet`
+(see "The bundled agents") with four inputs — the entry-point command, the artifact
+directory, the expected source state, and the layer/gate table from SPEC — and take back
+its structured verdict. The run's interpreter then did not write the code, and the raw
+logs never enter your context. The runner fixes nothing and reruns nothing; a red verdict
+comes back to you. Optional at Tier 2. Where no subagent can be spawned, run it yourself
+and record `Gauntlet run by: author` in EVIDENCE — a downgrade, recorded the way the
+brief path is.
+
 **Reuse carries the failure mode, not just the signature.** When you call an existing function from
 a new context, the types lining up is the easy half. Ask what it does when it FAILS, and whether
 that fits where you have just put it. A validator that refuses the whole input is right for a gate
@@ -581,6 +590,15 @@ End with a report the human can trust without opening a single source file
   on the first try and a gauntlet you fixed your way through are equally fine;
   a gauntlet you quietly weakened is the only failure.
 
+**At Tier 3, a fresh scribe drafts the report.** Write your claims first — defect-class
+generators, dismissal rationale, honest notes — to `FACTS.md` in the artifact directory,
+then spawn `old-coder-evidence` (see "The bundled agents") with the artifacts and take
+back the drafted report. The scribe copies numbers and cannot run anything, so a row
+without an artifact comes back failed rather than remembered green; `FACTS.md` enters as
+labeled claims that never upgrade a status. Optional at Tier 2. Where no subagent can be
+spawned, draft it yourself and record `Evidence drafted by: author` — a downgrade,
+recorded the way the brief path is.
+
 Write it to `EVIDENCE.md` in the task artifact directory beside `SPEC.md`, show
 it to the human, and stop — see "Where this skill stops". Give the absolute path
 to `EVIDENCE.md`, the same as for `SPEC.md`.
@@ -737,21 +755,27 @@ Where the newer layers attach:
 | Isolation (branch or worktree) | Tier 2 up |
 | Intent review of the SPEC (`old-coder-spec-intent`) | Tier 2 up |
 | Adversarial review by an independent agent (`old-coder-adversary`) | Tier 3, **or any change to code you did not write** |
+| Final fresh run in a fresh agent (`old-coder-gauntlet`) | Tier 3; optional at Tier 2 |
+| EVIDENCE drafted by a fresh scribe (`old-coder-evidence`) | Tier 3; optional at Tier 2 |
 
 ## The bundled agents
 
-Two review layers in this loop run as subagents. Both briefs ship **inside** the skill, at
+Four layers of this loop run as subagents. The briefs ship **inside** the skill, at
 `agents/` beside `references/`, so they are always present wherever the skill is:
 
 | Agent | Layer | Tools | Budget |
 |---|---|---|---|
 | `old-coder-spec-intent` | Intent review, end of SPEC | `Read` only | ~0 tool calls, one round |
 | `old-coder-adversary` | Adversarial review, in the gauntlet | `Read`, `Bash`, `Grep`, `Glob` | 10 tool calls, one round |
+| `old-coder-gauntlet` | Final fresh run, end of the gauntlet | `Read`, `Bash`, `Grep`, `Glob` | 1 entry-point run + 15 tool calls, one round |
+| `old-coder-evidence` | EVIDENCE draft, step 6 | `Read`, `Grep`, `Glob`, `Write` | 25 tool calls, one round |
 
-**They are two agents on purpose.** The spec reviewer must not reach the codebase — there is
-no implementation yet, and a spec compared against the source instead of the intent always
-passes. The code reviewer must reach it and nothing else matters. Merging them produces one
-agent that does the heavy review at both stages, which is the failure this split prevents.
+**They are separate agents on purpose.** The spec reviewer must not reach the codebase —
+there is no implementation yet, and a spec compared against the source instead of the intent
+always passes. The code reviewer must reach it and nothing else matters. The gauntlet runner
+can execute and must not fix; the evidence scribe can write and must not execute — a scribe
+with no `Bash` cannot produce a number, only transcribe one. Merging any pair produces one
+agent that certifies its own work, which is the failure these splits prevent.
 
 **Why the tool lists and budgets are short.** A subagent re-reads its whole context every
 turn, so its cost is `baseline x turns` and tool schemas sit in the baseline. Give it few
