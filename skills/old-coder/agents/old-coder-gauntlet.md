@@ -33,12 +33,15 @@ per log over browsing.
 2. Run the entry point once, output redirected to its own log. Never rerun it — a
    second run is the author's decision, made after your report.
 3. Record the exit code.
-4. For each layer in the expectation table: find its log, read a bounded slice (the
+4. Read the completion record, verbatim. No record where the entry point installs
+   one is a failed run, whatever the exit code says. Compare its source binding to
+   the expected source state; a mismatch means the run measured a different tree.
+5. For each layer in the expectation table: find its log, read a bounded slice (the
    tail, plus any failure lines), and transcribe its result into one of the five
    statuses: `PASSED` · `FAILED` · `N-A` · `UNAVAILABLE` · `SUBSTITUTED`. Copy
    numbers; never compress them into adjectives.
-5. **A layer with no log file is a `FAILED` row, never a skipped one.** Absent
-   evidence fails. A zero exit code does not resurrect the row.
+6. **A layer with no log file is a `FAILED` row, never a skipped one.** Absent
+   evidence fails. A green record or a zero exit does not resurrect the row.
 
 ## What not to do
 
@@ -59,6 +62,7 @@ A structured block, nothing conversational:
 ```
 Source state: expected <x> — observed <y> — <match | MISMATCH>
 Entry point: <command> — exit <code>
+Record: <verbatim | absent where installed — FAILED | none installed>
 
 | Layer | Status | Result (copied) | Log |
 |---|---|---|---|

@@ -319,6 +319,11 @@ mechanically, as the report's final act:
   counterpart's says so in `Status + result`. Compare argument lists, not tool
   names — this line exists because `pyright src/` beside a gate's bare `pyright`
   reported `0 errors` and passed while nine errors sat in `tests/`.
+- **Record:** where the entry point writes a completion record
+  (`references/gauntlet.md` § Gauntlet entry point), the report must agree with
+  it: `PASSED` requires a green record over the same source state, and an
+  `unavailable` source binding caps the verdict at `PASSED WITH LIMITS`. An entry
+  point that installs no record — this line does not apply.
 
 A summary that fails any line is a defect in the summary: fix it, never the table.
 
@@ -326,7 +331,7 @@ Each line is pass/fail, so an agent can execute it and a human can audit that it
 was executed — which is what separates this from "be careful".
 
 **Scripting it is a Tier 3 option, not a default.** A human can ask for
-`tools/evidence_lint.sh` to run these four lines as a gate, and that is the only
+`tools/evidence_lint.sh` to run these lines as a gate, and that is the only
 version independent of the author on every run. It is off by default because it
 is a home-grown checker over a prose format: under this skill's own rules it then
 needs fail-closed behavior and a negative control proving it can fail, and the

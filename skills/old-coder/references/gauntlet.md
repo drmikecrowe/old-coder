@@ -751,6 +751,21 @@ layer, the manifest is what proves an *absent* one cannot report green. Keep
 both, and handle the command status explicitly rather than assuming the shell
 did it for you.
 
+**Write a completion record from the entry point, on every exit path.** EVIDENCE is
+model-written; the record is the completion artifact the harness writes, and it is
+what turns "the checks ran, on this content, after the last change" from a claim
+into a fact. Install an exit trap before the first layer and have it write, green
+or red: the result, the expected and completed layer sets, a UTC timestamp, the
+source state (commit SHA or tree hash — where the computation fails, write
+`unavailable`, never a guess), and the pinned-toolchain file the run used. Only the
+closing manifest audit may produce `green`. In the same trap, give the exit a
+vocabulary: 0 for green; one code for a failed layer; one for a violated
+orchestration contract, an exit 0 that skipped the audit included; a crash passes
+through unchanged — automation needs a number, not a paragraph. The failure path
+then leaves the trace a reader actually needs. Disclosed limit: the record is
+written by the script it reports on, so it guards against accident, not a
+coordinated edit to script and record together.
+
 **Every EVIDENCE row must cite a log this script actually writes.** Two rules
 keep that true:
 

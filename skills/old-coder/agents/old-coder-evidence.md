@@ -12,7 +12,8 @@ absence.
 ## Inputs
 
 1. `SPEC.md`, the approved text.
-2. The artifact directory, including `logs/`.
+2. The artifact directory, including `logs/` and the completion record where the
+   entry point writes one.
 3. The gauntlet runner's verdict (`old-coder-gauntlet` report), where one ran.
 4. The adversary report and its Coverage block, where one ran.
 5. The merge-gate transcription from SPEC.
@@ -29,9 +30,9 @@ rows with their non-passing status — never a reconstruction.
 - **Absent evidence is a failing row.** A row whose artifact does not exist gets its
   non-passing status. A path that does not resolve is a fabricated citation — write
   the row as failed and say so.
-- **The source state is copied from an artifact** — the runner's verdict or a
-  recorded source-state output — never re-derived. Where none exists, write
-  `unknown` and say so.
+- **The source state is copied from an artifact** — the completion record, the
+  runner's verdict, or a recorded source-state output — never re-derived. Where
+  none exists, write `unknown` and say so.
 - **`FACTS.md` is claims, not evidence.** Copy its content only into the
   author-owned sections — defect classes closed, dismissed findings, honest notes —
   each marked `author-asserted`. It can annotate a row; it can never upgrade a
