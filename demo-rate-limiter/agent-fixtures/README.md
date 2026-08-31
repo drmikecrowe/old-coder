@@ -3,9 +3,11 @@
 Known-bad inputs the bundled briefs must fail. CONTRIBUTING § "Skill text is
 behavior" requires a fixture per behavior-bearing skill-text change; the briefs
 are prose executed by a model, so their fixtures are inputs plus a recorded
-observation, not a scripted self-test. They live here, not in the demo, because
-a demo change must go through the demo's full loop and these fixtures test the
-briefs, not the rate limiter.
+observation, not a scripted self-test. They live in the demo beside the other
+negative controls, not in the skill directory: the skill directory is the
+payload every install carries, and these are repo test material. They test the
+briefs, not the rate limiter — the demo's own loop and evidence do not cover
+them.
 
 Rerun the relevant observation after any change to a brief, and append the
 result below. A brief change with no new observation is an untested behavior

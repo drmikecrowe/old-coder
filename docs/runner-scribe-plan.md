@@ -2,8 +2,9 @@
 
 Status: approved 2026-08-31; implemented at commits e7207ec (briefs and
 wiring) and cb499b9 (fixtures, both observed red). Deviations from the text
-below: fixtures live at `agents/fixtures/`, not in the demo, because a demo
-change must run the demo's full loop and these test the briefs; both
+below: fixtures live at `demo-rate-limiter/agent-fixtures/`, beside the
+demo's other negative controls — the skill directory is install payload and
+carries no test material; both
 agent-brief additions landed in one commit because the bundled-agents table
 edit interlocks them — the two-PR split still applies when re-cutting
 upstream.

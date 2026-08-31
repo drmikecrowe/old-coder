@@ -804,9 +804,10 @@ neutral note.
 
 The `old-coder-evidence` scribe is the same mechanism pointed at the report: it
 drafts EVIDENCE from artifacts alone, holds no `Bash`, and writes an absent artifact
-as a failing row. Both briefs carry known-bad fixtures at `agents/fixtures/`; a
-change to either brief reruns its fixture and records the observation there
-(CONTRIBUTING § Skill text is behavior).
+as a failing row. In this skill's own repository, both briefs carry known-bad
+fixtures in the demo (`demo-rate-limiter/agent-fixtures/`); a change to either
+brief reruns its fixture and records the observation there (CONTRIBUTING § Skill
+text is behavior).
 
 ## Templates
 
