@@ -781,6 +781,33 @@ keep that true:
   complexity budget where it is a judgement rather than a tool — are marked
   `manual` in the EVIDENCE Log column, never given a log path.
 
+## The final fresh run in a fresh agent
+
+At Tier 3, do not run the final gauntlet yourself. Spawn the `old-coder-gauntlet`
+brief (ships at `agents/old-coder-gauntlet.md`) fresh, with no inherited context, and
+hand it four inputs: the entry-point command, the artifact directory, the expected
+source state, and the layer/gate table transcribed at SPEC time. It runs the entry
+point once, reads the stamp and bounded log slices, and returns a per-layer verdict
+in the closed five-status vocabulary. It fixes nothing and reruns nothing; a red
+verdict is your task, not its.
+
+What the split buys: the run's interpreter did not write the code, so a skipped layer
+or a stale number has no author present to rationalize it, and the raw logs never
+enter the author's context — the author receives a verdict table. What it does not
+buy: the stamp and the exit code remain the gate; the runner reports and decides
+nothing.
+
+Two ways to run it, the same as the adversary: registered agent (the host enforces
+`tools:`) or bundled brief (you honor the list). Record which in EVIDENCE's
+`Gauntlet run by:` field. Author-run is the fallback and a recorded downgrade, not a
+neutral note.
+
+The `old-coder-evidence` scribe is the same mechanism pointed at the report: it
+drafts EVIDENCE from artifacts alone, holds no `Bash`, and writes an absent artifact
+as a failing row. Both briefs carry known-bad fixtures at `agents/fixtures/`; a
+change to either brief reruns its fixture and records the observation there
+(CONTRIBUTING § Skill text is behavior).
+
 ## Templates
 
 The Gherkin scenario template, the SPEC template, the EVIDENCE report
