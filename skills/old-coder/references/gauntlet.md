@@ -756,6 +756,14 @@ layer, the manifest is what proves an *absent* one cannot report green. Keep
 both, and handle the command status explicitly rather than assuming the shell
 did it for you.
 
+**The entry point is itself a home-grown checker: prove it can fail before
+trusting its pass.** One-off negative controls, once per project, then restore:
+comment out one `run_layer` line and watch the closing audit go red naming the
+layer; make one layer's command fail and watch the run exit nonzero with a red
+record. Record both controls in EVIDENCE's honest notes. An orchestration that
+has only ever been green has not been demonstrated to measure anything — the same
+RED principle the tests and the checkers already answer to, applied one level up.
+
 **Write a completion record from the entry point, on every exit path.** EVIDENCE is
 model-written; the record is the completion artifact the harness writes, and it is
 what turns "the checks ran, on this content, after the last change" from a claim
