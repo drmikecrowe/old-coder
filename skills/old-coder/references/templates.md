@@ -267,6 +267,9 @@ summarised away. Per round:
   each either covered by a layer (say which) or standing as a named gap
 - (or "none — the reviewer reported full coverage of its hunt list")
 
+A round with no Coverage block, or a call count over its budget, is a failed
+round: record it as one and rerun — never average it in.
+
 **Two rounds that both exhausted their budgets are not convergence.** Agreement
 between them is worth exactly the ground they both covered. If neither round
 finished early, say that here rather than reporting the agreement as a result.

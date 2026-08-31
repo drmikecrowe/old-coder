@@ -371,7 +371,12 @@ The re-review is usually cheap. Send the follow-up diff back to **the same
 reviewer** — it already holds the context and can answer the one question it is
 best placed to answer: does this fix actually address what I found? Use a
 *fresh* reviewer instead when the fix changed the design rather than patching
-it, because at that point the shipped design is not the one anybody attacked. If
+it, because at that point the shipped design is not the one anybody attacked.
+
+**On the final permitted round, narrow the work to the blocking finding.** Fix
+only it, and brief the reviewer with only it. A last round spent across the whole
+diff can close cosmetics while the blocker stands, and no round remains to catch
+that. If
 EVIDENCE has been drafted by the time a re-review round runs, include it in the
 diff the reviewer sees — the summary-versus-tables check in its brief is
 unreachable otherwise.

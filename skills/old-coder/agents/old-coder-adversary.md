@@ -108,6 +108,10 @@ Coverage
 - Enumerated for the briefed class: <your set> vs author's list: <what differs>
 ```
 
+**A breached budget voids the round.** A report with no call count, or a count over the
+budget, is a failed round — the author must record it as one and rerun, never average it
+in. State your count honestly; an uncounted round costs the author a rerun either way.
+
 **"Ran out of budget" and "found nothing" are different results.** A review that stopped at
 9 of 10 calls stopped because it was out of calls, not because it was out of defects, and a
 second round agreeing with the first proves only that both covered the same ground. The
