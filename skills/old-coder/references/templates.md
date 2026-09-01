@@ -36,6 +36,8 @@ closely, never a substitute for reading them:
   - Merge gate: <path(s) read, e.g. .github/workflows/lint.yml> — <n> checks
     transcribed, <n> with no layer counterpart, <n> that cannot run locally
     (or "none found — no CI config, pre-commit config, or ci target in this repo")
+  - Gauntlet table: see below — one row per layer; approving the spec approves
+    every row not struck
   - Tools to install: <or "none">
   - Git: <init? checkpoint commit cadence? commit flags the repo mandates>
   - Files the gauntlet will add, **by path**: `tools/mutants.py` (mutation
@@ -65,6 +67,26 @@ and say so in `## Revisions`.
 Do not delete it and start clean — what the human turned down, and why, is the
 most useful thing in the file. Nothing is committed until a spec is approved, so
 a rejected spec costs one directory and no history.
+
+### Gauntlet proposal table (inside the SPEC's setup plan)
+
+One row per layer of the layer table, built by the six-step procedure in
+`gauntlet.md` § Building the gauntlet. The human approves or strikes rows in
+the same act as spec approval; a struck row is `UNAVAILABLE` for the task —
+never substituted.
+
+```markdown
+| Layer | Tool (pinned) | Command | Catches | EVIDENCE gets | Status |
+|---|---|---|---|---|---|
+| Tests | pytest 8.3.2 | `pytest -q` | regressions | pass/fail counts | declared |
+| Changed-line coverage | diff-cover 9.1.0 | `diff-cover coverage.xml --fail-under=100` | untested changed lines | covered/total changed lines, nonzero exit below 100 | proposed |
+| Types | — | — | — | — | N-A: untyped codebase, no CI job |
+```
+
+`Status` is `declared` (the project already runs it), `proposed` (add it,
+pinned, on approval), or `N-A` with the reason. Every `EVIDENCE gets` cell
+names a number and the exit behavior — a row that cannot fill that cell fails
+the output contract and is not proposed as written.
 
 ### Gherkin scenario template
 
