@@ -771,17 +771,19 @@ Where the newer layers attach:
 | Isolation (branch or worktree) | Tier 2 up |
 | Intent review of the SPEC (`old-coder-spec-intent`) | Tier 2 up |
 | Adversarial review by an independent agent (`old-coder-adversary`) | Tier 3, **or any change to code you did not write** |
+| Gauntlet commissioning (`old-coder-gauntlet-verifier`) | Tier 3, and whenever the entry point is new or changed |
 | Final fresh run in a fresh agent (`old-coder-gauntlet`) | Tier 3; optional at Tier 2 |
 | EVIDENCE drafted by a fresh scribe (`old-coder-evidence`) | Tier 3; optional at Tier 2 |
 
 ## The bundled agents
 
-Four layers of this loop run as subagents. The briefs ship **inside** the skill, at
+Five roles in this loop run as subagents. The briefs ship **inside** the skill, at
 `agents/` beside `references/`, so they are always present wherever the skill is:
 
 | Agent | Layer | Tools | Budget |
 |---|---|---|---|
 | `old-coder-spec-intent` | Intent review, end of SPEC | `Read` only | ~0 tool calls, one round |
+| `old-coder-gauntlet-verifier` | Gauntlet commissioning, at build and on entry-point change | `Read`, `Grep`, `Glob` | 12 tool calls, one round |
 | `old-coder-adversary` | Adversarial review, in the gauntlet | `Read`, `Bash`, `Grep`, `Glob` | 10 tool calls, one round |
 | `old-coder-gauntlet` | Final fresh run, end of the gauntlet | `Read`, `Bash`, `Grep`, `Glob` | 1 entry-point run + 15 tool calls, one round |
 | `old-coder-evidence` | EVIDENCE draft, step 6 | `Read`, `Grep`, `Glob`, `Write` | 25 tool calls, one round |
