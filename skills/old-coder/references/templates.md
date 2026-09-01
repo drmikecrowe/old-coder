@@ -331,7 +331,11 @@ mechanically, as the report's final act:
 A summary that fails any line is a defect in the summary: fix it, never the table.
 
 Each line is pass/fail, so an agent can execute it and a human can audit that it
-was executed — which is what separates this from "be careful".
+was executed — which is what separates this from "be careful". Execute the lines;
+do not weigh them. Every one is arithmetic over the tables — set membership,
+verbatim string match, exact count — and a decision computed that way is one you
+cannot talk yourself past. Where the project ships the check as a script, the
+script's answer is the answer.
 
 **Scripting it is a Tier 3 option, not a default.** A human can ask for
 `tools/evidence_lint.sh` to run these lines as a gate, and that is the only

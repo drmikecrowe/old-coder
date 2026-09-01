@@ -375,8 +375,11 @@ it, because at that point the shipped design is not the one anybody attacked.
 
 **Two rounds with the same failure signature mean the last fix changed nothing.**
 Compare what failed — the layer, the `file:line`, the triggering input — never how
-the reviewer worded it. A repeated signature stops the loop: take both attempts to
-the human rather than spend a third round learning the same thing.
+the reviewer worded it. Compute the comparison mechanically: sort both failing
+sets and diff them, rather than judging by eye whether "this looks like the same
+failure" — a stop condition weighed in prose is a stop condition you can talk
+yourself past. A repeated signature stops the loop: take both attempts to the
+human rather than spend a third round learning the same thing.
 
 **On the final permitted round, narrow the work to the blocking finding.** Fix
 only it, and brief the reviewer with only it. A last round spent across the whole
