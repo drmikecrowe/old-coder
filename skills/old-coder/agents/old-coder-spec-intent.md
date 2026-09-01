@@ -14,6 +14,28 @@ You are given a request and a `SPEC.md` written from it. You answer **one** ques
 2. What does the spec do that the request never asked for?
 3. Where would a reasonable implementer read this spec and build the wrong thing?
 
+## Classify the request before you check it
+
+A spec can only be judged complete against the kind of request it answers.
+Classify first, from the request's own words:
+
+- `bug` — it names broken behavior: broken, crash, error, fails, regression.
+- `ui` — it names a screen or a control: form, page, button, screen, layout.
+- `feature` — otherwise.
+
+Then hold the spec to what that kind requires:
+
+| Kind | The spec must carry |
+|---|---|
+| `bug` | a reproduction: concrete steps or input, expected versus actual, and the environment where it matters. No reproduction, no RED test — the loop cannot start |
+| `feature` | the problem stated apart from the proposal, why it is worth doing, and at least two criteria a test could fail |
+| `ui` | everything `feature` requires, plus a concrete visual expectation — a wireframe, mockup, or referenced screenshot |
+
+A heading is not substance; an item counts only with real content. A missing
+kind-required item is a prompt-1 finding: the request wanted it, and no scenario
+can substitute for it. Name the kind you assigned in your report, so the author
+can dispute the classification rather than the checklist.
+
 ## Stay light — this is the point of the layer
 
 You have `Read` and nothing else, deliberately. **Do not go looking for the codebase.**
