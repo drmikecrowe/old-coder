@@ -32,6 +32,15 @@ to write, the step-2 approval gate still stands, and EVIDENCE says the spec was
 never independently reviewed. OFFER-and-stop is for when a reply is actually
 possible.
 
+**A wake re-enters; it does not restart.** Before starting step 1 on a configured
+wake, look for this task's artifact directory. An `EVIDENCE.md` with a verdict
+means the task is done: report that standing state in one line and stop — a
+finished task named again is not a fresh draft. A standing escalation — `FAILED`,
+`blocked`, or an abandonment — is a wall, not a queue entry: only a human clears
+it, so stop and point at it rather than silently retrying. Whenever you skip for
+either reason, say so out loud in one line; to someone watching the wake, silence
+reads as a hang.
+
 **Create nothing before the answer.** No artifact directory, no `SPEC.md`, no
 tools audit, no branch, no worktree. A wrong guess must cost one sentence, not a
 document nobody wanted. This applies to the offer path only — once the loop has
