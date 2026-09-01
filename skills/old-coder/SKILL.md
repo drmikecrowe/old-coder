@@ -218,7 +218,12 @@ implementation files:
   reviews after the fact. **Approval recorded in a tracker is the exception** —
   a comment or label from a named human is durable and checkable by someone who
   was not present, so it clears the downgrade where chat approval cannot. Cite
-  it (`references/templates.md`).
+  it (`references/templates.md`). Where the request and the codebase do not
+  settle a value the spec needs, do not leave the field empty and do not guess
+  silently: write the most reasonable value a careful engineer would propose,
+  marked as your proposal, so the after-the-fact reviewer can veto one line
+  instead of discovering a hole mid-build. Investigate before you invent — a
+  value read from the code beats one you composed.
 - The spec is append-only during the task. If implementation reveals the spec was
   wrong, say so explicitly and revise it visibly — never silently drift.
 - Open it with an **Orientation** block: the change, why, what it touches, and the calls you
