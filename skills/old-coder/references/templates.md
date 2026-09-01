@@ -396,6 +396,22 @@ leave it in the directory and say so in EVIDENCE. A hosted
 tracker notifies people and cannot be un-sent, so it gets the same gate as a
 commit.
 
+Three rules keep tracker traffic honest across runs:
+
+- **Never create the destination.** Post only to an issue the SPEC names and
+  that already exists; never open one, never post to a closed one, never make
+  a second issue for the same work. A missing or closed destination is a stop,
+  reported in EVIDENCE, not a thing to fix.
+- **Mark your own comments.** End every comment this skill posts with an
+  HTML-comment marker (e.g. `<!-- old-coder -->`) — invisible to a human,
+  visible to the next run. When a later run scans the issue for human input
+  (a tracker-recorded approval, new direction), it skips comments carrying
+  the marker; without this, a run reads its own last post as the newest human
+  word and answers it.
+- **Never filter by author instead.** The skill posts as the user's own
+  account, so an author filter also drops the human's approval — the one
+  comment that must never be missed.
+
 ```markdown
 - Built: <one or two lines — what now exists that did not before>
 - Left undone: <deliberate omissions, and why they were deliberate>
