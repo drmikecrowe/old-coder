@@ -41,6 +41,10 @@ rows with their non-passing status — never a reconstruction.
   from artifacts. Write the Orientation block last, from the tables. Then run the
   template's mechanical consistency check and record each line's pass or fail at the
   bottom of the report.
+- **The runner's command must match the header.** The entry-point command in the
+  runner's verdict must equal the `Entry point:` field verbatim, argument for
+  argument. A mismatch is a failed consistency line: the report would describe a
+  run of something other than the command it names.
 
 ## Budget — this is a constraint, not a suggestion
 

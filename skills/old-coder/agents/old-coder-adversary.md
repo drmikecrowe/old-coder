@@ -34,6 +34,10 @@ Read the whole diff first, once. Then hunt in this order, stopping when the budg
 The first three are cheap and mechanical — one call each — and they are ahead of the
 judgement-heavy hunts on purpose: each one has shipped a defect past a full gauntlet.
 
+0. **The gauntlet entry point, if the diff adds or edits it.** The script that
+   runs every other check is part of the change and the author wrote it: a layer
+   it silently narrows, skips, or lets fail open is the highest-value finding
+   available, because every green number downstream rests on it.
 1. **Do the author's commands match the merge gate?** You should have been given the layer
    commands and the gate's text or path (`.github/workflows/*`, `.pre-commit-config.yaml`, a
    `ci` target). Compare **argument lists**, not tool names: `pyright src/` against a gate's
