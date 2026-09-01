@@ -65,6 +65,44 @@ This skill never pushes, so CI is never the thing that runs here. The gate's
 *text* is the artifact being used, and it is available from the first minute of
 the task.
 
+## Building the gauntlet for a new project
+
+The layer table says what to test. This is how the apparatus gets built, once
+per project, at SPEC time — six steps, in order:
+
+1. **Inventory.** Read the manifests, lockfiles, and the merge gate (previous
+   section). List what the project already declares, verbatim.
+2. **Map.** One row per layer: the declared tool and its command, or `missing`,
+   or `N-A (<no such surface>)`. A declared tool you would skip is a skipped
+   layer, not a missing one.
+3. **Hold every command to the output contract.** A layer's command is wired in
+   only if it does three things: exit nonzero on violation, write its own log,
+   and emit the number its EVIDENCE row will cite:
+
+   | Layer | The command must emit |
+   |---|---|
+   | Tests | pass/fail counts, so zero NEW failures is decidable from the log |
+   | Types / lint | error and warning counts |
+   | Changed-line coverage | covered/total for the changed lines, and a nonzero exit below threshold (`--cov-fail-under`, `diff-cover --fail-under`) — a global percentage that exits 0 fails the contract |
+   | Mutation | killed/total over the derived scope, per-mutant disposition |
+   | Property-based | properties run, examples per property |
+   | Suite health | the randomization seed and the result |
+   | Real execution | the observed output of the run |
+
+   A tool that cannot be configured to meet the contract is raised with the
+   human in step 4 — never wired in as a report-only step, and never replaced
+   by one you write.
+4. **Propose.** Fill the SPEC setup plan's gauntlet table (`templates.md`) and
+   put it to the human with the spec: they approve or strike per row, in the
+   same act as spec approval. A struck row is `UNAVAILABLE` from then on.
+5. **Build the entry point** from the approved rows only (skeleton in
+   § Gauntlet entry point).
+6. **Commission it.** Run the negative controls (§ Gauntlet entry point), then
+   have `old-coder-gauntlet-verifier` certify the wiring against the approved
+   table (see that brief). Record the outcome in EVIDENCE's
+   `Gauntlet commissioned:` field. Certification binds to the script text —
+   re-commission whenever the entry point changes.
+
 ## Python
 
 | Layer | Tool | Command |
