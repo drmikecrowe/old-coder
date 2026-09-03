@@ -68,3 +68,8 @@ the artifact directory is itself a finding — record it in Honest notes with it
 
 After writing `EVIDENCE.md`: the verdict line, every non-passed row by name, and the
 consistency check's per-line result. Nothing else — the file is the deliverable.
+
+**Write this report-back block to `logs/evidence-report.md` (or the report path your
+prompt names) before returning it.** Your returned text can be lost or truncated in
+transit; the consistency check's per-line result lives nowhere else, and the file is
+the copy the author recovers from. The write is exempt from the tool-call budget.

@@ -402,8 +402,9 @@ produced, and nothing in it says which command it should have been.
 
 **At Tier 3, the final fresh run executes in a fresh agent.** Spawn `old-coder-gauntlet`
 (see "The bundled agents") with four inputs — the entry-point command, the artifact
-directory, the expected source state, and the layer/gate table from SPEC — and take back
-its structured verdict. The run's interpreter then did not write the code, and the raw
+directory, the expected source state, and the layer/gate table from SPEC — plus the
+report path `logs/gauntlet-runner.md`, and take back its structured verdict. The run's
+interpreter then did not write the code, and the raw
 logs never enter your context. The runner fixes nothing and reruns nothing; a red verdict
 comes back to you. Optional at Tier 2. Where no subagent can be spawned, run it yourself
 and record `Gauntlet run by: author` in EVIDENCE — a downgrade, recorded the way the
@@ -613,8 +614,9 @@ End with a report the human can trust without opening a single source file
 
 **At Tier 3, a fresh scribe drafts the report.** Write your claims first — defect-class
 generators, dismissal rationale, honest notes — to `FACTS.md` in the artifact directory,
-then spawn `old-coder-evidence` (see "The bundled agents") with the artifacts and take
-back the drafted report. The scribe copies numbers and cannot run anything, so a row
+then spawn `old-coder-evidence` (see "The bundled agents") with the artifacts and the
+report path `logs/evidence-report.md`, and take back the drafted report. The scribe
+copies numbers and cannot run anything, so a row
 without an artifact comes back failed rather than remembered green; `FACTS.md` enters as
 labeled claims that never upgrade a status. Optional at Tier 2. Where no subagent can be
 spawned, draft it yourself and record `Evidence drafted by: author` — a downgrade,
@@ -788,9 +790,9 @@ Five roles in this loop run as subagents. The briefs ship **inside** the skill, 
 | Agent | Layer | Tools | Budget |
 |---|---|---|---|
 | `old-coder-spec-intent` | Intent review, end of SPEC | `Read`, `Write` (report file only) | the report write, one round |
-| `old-coder-gauntlet-verifier` | Gauntlet commissioning, at build and on entry-point change | `Read`, `Grep`, `Glob` | 12 tool calls, one round |
+| `old-coder-gauntlet-verifier` | Gauntlet commissioning, at build and on entry-point change | `Read`, `Grep`, `Glob`, `Write` (report file only) | 12 tool calls, one round |
 | `old-coder-adversary` | Adversarial review, in the gauntlet | `Read`, `Bash`, `Grep`, `Glob`, `Write` (report file only) | 10 tool calls, one round |
-| `old-coder-gauntlet` | Final fresh run, end of the gauntlet | `Read`, `Bash`, `Grep`, `Glob` | 1 entry-point run + 15 tool calls, one round |
+| `old-coder-gauntlet` | Final fresh run, end of the gauntlet | `Read`, `Bash`, `Grep`, `Glob`, `Write` (report file only) | 1 entry-point run + 15 tool calls, one round |
 | `old-coder-evidence` | EVIDENCE draft, step 6 | `Read`, `Grep`, `Glob`, `Write` | 25 tool calls, one round |
 
 **They are separate agents on purpose.** The spec reviewer must not reach the codebase —
@@ -802,14 +804,23 @@ agent that certifies its own work, which is the failure these splits prevent.
 
 **The report survives the return trip in a file.** A subagent's final response can be
 lost or mangled between the agent and its spawner — observed in practice, not a
-hypothetical. Both reviewing agents (`old-coder-spec-intent`, `old-coder-adversary`)
-therefore take a report path in their prompt — `logs/spec-intent.md` and
-`logs/adversary-round-<n>.md` under the task directory — write the complete report
-there, and then return the same text as their response. On return, read the response as
-usual; if it is empty, truncated, or garbled, recover from the file. The file is the
-authoritative copy, and EVIDENCE cites it either way. The `Write` in their tool lists
-exists for that one file; it is not an editing grant, and for the adversary the write is
-exempt from its call budget.
+hypothetical. Every bundled agent therefore takes a report path in its prompt, under the
+task directory's `logs/`:
+
+| Agent | Report path |
+|---|---|
+| `old-coder-spec-intent` | `logs/spec-intent.md` |
+| `old-coder-gauntlet-verifier` | `logs/gauntlet-verifier.md` |
+| `old-coder-adversary` | `logs/adversary-round-<n>.md` |
+| `old-coder-gauntlet` | `logs/gauntlet-runner.md` |
+| `old-coder-evidence` | `logs/evidence-report.md` (`EVIDENCE.md` itself is already a file) |
+
+Each writes its complete report there, then returns the same text as its response. On
+return, read the response as usual; if it is empty, truncated, or garbled, recover from
+the file. The file is the authoritative copy, and EVIDENCE cites it either way. The
+`Write` in the tool lists exists for that one file — it is not an editing grant — and
+the write is exempt from every call budget, so persisting a report can never void a
+round.
 
 **Why the tool lists and budgets are short.** A subagent re-reads its whole context every
 turn, so its cost is `baseline x turns` and tool schemas sit in the baseline. Give it few

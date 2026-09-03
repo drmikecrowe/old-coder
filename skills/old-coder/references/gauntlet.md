@@ -99,7 +99,8 @@ per project, at SPEC time — six steps, in order:
    § Gauntlet entry point).
 6. **Commission it.** Run the negative controls (§ Gauntlet entry point), then
    have `old-coder-gauntlet-verifier` certify the wiring against the approved
-   table (see that brief). Record the outcome in EVIDENCE's
+   table (see that brief; report path `logs/gauntlet-verifier.md`). Record the
+   outcome in EVIDENCE's
    `Gauntlet commissioned:` field. Certification binds to the script text —
    re-commission whenever the entry point changes.
 
@@ -845,7 +846,8 @@ keep that true:
 At Tier 3, do not run the final gauntlet yourself. Spawn the `old-coder-gauntlet`
 brief (ships at `agents/old-coder-gauntlet.md`) fresh, with no inherited context, and
 hand it four inputs: the entry-point command, the artifact directory, the expected
-source state, and the layer/gate table transcribed at SPEC time. It runs the entry
+source state, and the layer/gate table transcribed at SPEC time — plus the report
+path `logs/gauntlet-runner.md` (SKILL.md § "The bundled agents"). It runs the entry
 point once, reads bounded log slices, and returns a per-layer verdict in the closed
 five-status vocabulary. It fixes nothing and reruns nothing; a red verdict is your
 task, not its.
