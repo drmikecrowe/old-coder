@@ -254,7 +254,7 @@ Tier 3 changes, and **any change to code the author did not write**, get a
 review from an agent that shares none of that reasoning.
 
 This is the bounded, in-gauntlet review: it attacks **the diff**, costs one
-agent and ten tool calls, and returns a verdict bound to a SHA. It is not the
+agent and twelve tool calls, and returns a verdict bound to a SHA. It is not the
 same thing as independent verification (`verifier.md`), which attacks the
 finished work — run, spec, tests, checkers, and mapping — is deliberately not a
 gauntlet layer, and costs orders of magnitude more. Run this one by default;
@@ -279,9 +279,8 @@ from scratch, and do not hand it a wider toolset than it declares.
 4. **the list of functions the diff changed**, so the reviewer can enumerate
    callers rather than spend its budget rediscovering them;
 5. **a report path** — `logs/adversary-round-<n>.md` under the task directory. The
-   reviewer writes its full report there before returning it, so a response the
-   host loses or truncates is recovered from the file rather than re-run
-   (SKILL.md § "The bundled agents").
+   reviewer writes its full report there and returns a path-plus-summary receipt;
+   read the file for the findings (SKILL.md § "The bundled agents").
 
 A reviewer pointed at code cannot audit the evidence about that code unless you
 point it there.
@@ -465,7 +464,7 @@ arrives attached to findings that feel like the result.
 - **Copy it into EVIDENCE verbatim**, under the review row. Each unreached item
   is an open item: either you cover it another way and say which layer did, or it
   stands as a named gap a reader can weigh.
-- **Record the tool calls used.** A reviewer that stopped at 9 of 10 calls stopped
+- **Record the tool calls used.** A reviewer that stopped at 11 of 12 calls stopped
   because it ran out of budget, not because it ran out of defects. **Two rounds
   that both exhausted their budgets are not two rounds converging** — treat the
   agreement between them as worth exactly as much as the ground they both

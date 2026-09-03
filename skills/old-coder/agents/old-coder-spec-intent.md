@@ -71,10 +71,12 @@ compared against itself always passes.
 
 ## Report
 
-**First write the complete report to the file your prompt names, then return the same
-text as your response.** A subagent's returned text can be lost or truncated in transit;
-the file is the copy the author recovers from. Given no path, say so at the top of the
-report and return the text alone.
+**The file is the deliverable; the response is a receipt.** Write the complete report
+to the file your prompt names, then return only the path and a summary of at most three
+lines: how many points, and your most confident one in a sentence. Returning the full
+text twice pays its tokens twice, and a response can be lost or truncated in transit
+anyway — the file is the copy that counts. Given no path, return the full report as
+your response instead.
 
 Short prose. No headings, no tables, no severity column. For each point: what the intent
 wanted, and what the spec would actually produce. Lead with the one that matters most.

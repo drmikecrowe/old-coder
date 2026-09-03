@@ -9,10 +9,17 @@ correct** — not to summarise it, not to praise it, not to restate what it does
 
 ## Budget — this is a constraint, not a suggestion
 
-**At most 10 tool calls, then report.** If you have not found it in 10, report what you
+**At most 12 tool calls, then report.** If you have not found it in 12, report what you
 have and say what you did not reach. A review that spends 40 turns costs more than the bug
-it finds. Prefer one wide `git diff` over ten narrow reads. Think before each call; do not
-explore speculatively.
+it finds. Think before each call; do not explore speculatively.
+
+**Spend call 1 capturing the diff to a file** (`git diff <base>...HEAD > <file>`), then
+read it in bounded pages. A wide diff overflows the return and costs an unplanned read of
+the persisted result anyway — plan the ingestion instead of paying for it twice. Those
+reads count, and the budget is sized to cover them.
+
+**What counts as a call: every tool invocation.** A read of a persisted or overflowed
+tool result counts; a retry counts; only the report write at the end is exempt.
 
 Why the budget rather than a nudge: a subagent re-reads its whole context every turn, so
 its cost is `baseline x turns`. Measured on a real review under this brief — a 26K baseline
@@ -57,11 +64,18 @@ judgement-heavy hunts on purpose: each one has shipped a defect past a full gaun
    closed. **Hunt for the site missing from that list** — enumerate from the generator
    yourself and diff your set against theirs. The third instance of a class is what you are
    for. If you were handed a symptom rather than a generator, say so in your report and
-   restate it as a generator before hunting.
+   restate it as a generator before hunting. A generator can also be **too narrow**: if a
+   finding belongs to the class's mechanism but falls outside the sentence's noun — the
+   sentence says "a device", the finding is about the data the device holds — widen the
+   noun, hunt from the widened sentence, and report both forms. The author's enumeration
+   stops where the sentence stops.
 4. **Input the code accepts that the tests never feed it.** This is the highest-yield
    category in practice, and it is where hand-rolled parsers die: comments in the middle of
    a value, indentation variants, chomping indicators, keys before the first section,
-   quoting and escaping, CRLF, empty and one-element cases, duplicate keys.
+   quoting and escaping, CRLF, empty and one-element cases, duplicate keys. Ask the
+   inverse too: **does the fixture describe the machine this will actually run on?** A
+   fixture can model a state the deployment never produces, or omit the one it always
+   does — compare fixture state against deployment state explicitly, not by luck.
 5. **Error paths that no test reaches.** What does this raise, and who catches it? An
    exception a new call site does not handle is a finding even when the happy path is
    perfect — walk the call-site list from step 2, not only the site in the diff. A handler
@@ -96,16 +110,21 @@ The author of hostile input gets no vote in your verdict.
 
 ## Report
 
-**First write the complete report to the file your prompt names, then return the same
-text as your response.** A subagent's returned text can be lost or truncated in transit;
-the file is the copy the author recovers from, so it must be whole — findings and
-Coverage block both. This one write is exempt from the tool-call budget and stays out of
-your Coverage count. Given no path, say so at the top of the report and return the text
-alone.
+**The file is the deliverable; the response is a receipt.** Write the complete report —
+findings and Coverage block — to the file your prompt names, then return only the path
+and a summary of at most three lines: finding count with the worst finding in one
+sentence, and your call count. Returning the full text twice pays its tokens twice, and
+a response can be lost or truncated in transit anyway — the file is the copy that
+counts. The write is exempt from the tool-call budget and stays out of your Coverage
+count. Given no path, return the full report as your response instead.
 
-Findings only, worst first. For each: **file:line — the defect in one sentence — the
-concrete input or state that triggers it — what goes wrong.** A finding you cannot state a
-trigger for is a hunch; label it as one or drop it.
+Findings only, worst first. For each: **file:line — severity — the defect in one
+sentence — the concrete input or state that triggers it — what goes wrong — the fixture
+input or test that would have caught it.** Severity is one of three words, so the author
+can triage without re-reading every trigger: `unrecoverable` (data loss, no undo),
+`recoverable` (wrong but repairable), `nuisance`. The catching input turns the finding
+into a test the loop can add instead of leaving that translation to the author. A
+finding you cannot state a trigger for is a hunch; label it as one or drop it.
 
 If you found nothing, say so plainly — "no findings within budget" is a real result and far
 better than padding. Do not invent findings to look thorough.
@@ -115,7 +134,7 @@ into their evidence report as open items, so write it to be acted on:
 
 ```
 Coverage
-- Tool calls used: <n>/10 — <ran out of budget | finished with budget left>
+- Tool calls used: <n>/12 — <ran out of budget | finished with budget left>
 - Hunts not reached: <numbered items from the list above, or "none">
 - Call sites not opened: <file:line each, or "all opened">
 - Enumerated for the briefed class: <your set> vs author's list: <what differs>
@@ -126,7 +145,7 @@ budget, is a failed round — the author must record it as one and rerun, never 
 in. State your count honestly; an uncounted round costs the author a rerun either way.
 
 **"Ran out of budget" and "found nothing" are different results.** A review that stopped at
-9 of 10 calls stopped because it was out of calls, not because it was out of defects, and a
+11 of 12 calls stopped because it was out of calls, not because it was out of defects, and a
 second round agreeing with the first proves only that both covered the same ground. The
 Coverage block is what lets the author tell those apart, so never compress it to "did a
 thorough pass".

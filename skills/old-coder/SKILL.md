@@ -267,9 +267,9 @@ human have what they actually asked for?* Three prompts, nothing more:
 3. Where would a reasonable implementer read this spec and build the wrong thing?
 
 Give the reviewer a **report path** — `logs/spec-intent.md` under the task directory —
-along with the two documents. It writes its report there before returning it; if the
-reply arrives empty, truncated, or garbled, read the file instead (see "The bundled
-agents" § the report survives in a file).
+along with the two documents. It writes its report there and returns a path-plus-summary
+receipt; read the file for the points (see "The bundled agents" § the report survives in
+a file).
 
 **This layer is deliberately light, and keeping it light is the point.** It is not the
 gauntlet's adversarial review and must not imitate it: no failure-class hunt, no severity
@@ -436,7 +436,10 @@ any finding is marked fixed:
    already written the way you remember them. **If the only way to reach a sibling is to grep the
    token out of the finding, you have written the symptom. Rewrite it.** Under a symptom, two call
    sites in different files doing different jobs look unrelated; under the generator they are the
-   same line twice.
+   same line twice. Test the width as well as the reach: a finding that belongs to the class's
+   mechanism but falls outside the sentence's noun means the noun is too narrow — "a device"
+   misses the data the device holds, and every enumeration from it stops at the same boundary.
+   Widen the noun until the known instances all fit.
 3. **Produce the enumeration with a command, and put the list in the commit.** One line per site,
    each marked fixed, already-correct, or not-applicable-because — including any site you corrected
    earlier in this branch and have since reintroduced. A list of one site is not an enumeration, it
@@ -722,7 +725,7 @@ when the stakes carry its cost.
 |---|---|---|
 | What it attacks | the diff | the finished work: run, spec, tests, checkers, mapping |
 | When | inside the gauntlet, Tier 3 or any change to code you did not write | after the gauntlet, before EVIDENCE is signed, Tier 3 by choice |
-| Cost | one agent, 10 tool calls, one round | a protocol with a blind phase and a round cap; ~550k tokens in the one recorded case |
+| Cost | one agent, 12 tool calls, one round | a protocol with a blind phase and a round cap; ~550k tokens in the one recorded case |
 | Is it a gauntlet layer? | yes — bounded, and its verdict binds to a SHA | **no** — prose a human must grade |
 | Protocol | `agents/old-coder-adversary.md` (in the skill) | `references/verifier.md` |
 
@@ -791,7 +794,7 @@ Five roles in this loop run as subagents. The briefs ship **inside** the skill, 
 |---|---|---|---|
 | `old-coder-spec-intent` | Intent review, end of SPEC | `Read`, `Write` (report file only) | the report write, one round |
 | `old-coder-gauntlet-verifier` | Gauntlet commissioning, at build and on entry-point change | `Read`, `Grep`, `Glob`, `Write` (report file only) | 12 tool calls, one round |
-| `old-coder-adversary` | Adversarial review, in the gauntlet | `Read`, `Bash`, `Grep`, `Glob`, `Write` (report file only) | 10 tool calls, one round |
+| `old-coder-adversary` | Adversarial review, in the gauntlet | `Read`, `Bash`, `Grep`, `Glob`, `Write` (report file only) | 12 tool calls, one round |
 | `old-coder-gauntlet` | Final fresh run, end of the gauntlet | `Read`, `Bash`, `Grep`, `Glob`, `Write` (report file only) | 1 entry-point run + 15 tool calls, one round |
 | `old-coder-evidence` | EVIDENCE draft, step 6 | `Read`, `Grep`, `Glob`, `Write` | 25 tool calls, one round |
 
@@ -815,12 +818,14 @@ task directory's `logs/`:
 | `old-coder-gauntlet` | `logs/gauntlet-runner.md` |
 | `old-coder-evidence` | `logs/evidence-report.md` (`EVIDENCE.md` itself is already a file) |
 
-Each writes its complete report there, then returns the same text as its response. On
-return, read the response as usual; if it is empty, truncated, or garbled, recover from
-the file. The file is the authoritative copy, and EVIDENCE cites it either way. The
-`Write` in the tool lists exists for that one file — it is not an editing grant — and
-the write is exempt from every call budget, so persisting a report can never void a
-round.
+Each writes its complete report there and returns a **receipt**: the path plus a
+short summary (each brief says which lines). Read the file for the
+content — the report crosses once, as a file, instead of twice; a response lost or
+mangled in transit costs nothing because the file is the authoritative copy, and
+EVIDENCE cites it either way. An agent given no path returns the full report as its
+response instead. The `Write` in the tool lists exists for that one file — it is not an
+editing grant — and the write is exempt from every call budget, so persisting a report
+can never void a round.
 
 **Why the tool lists and budgets are short.** A subagent re-reads its whole context every
 turn, so its cost is `baseline x turns` and tool schemas sit in the baseline. Give it few
