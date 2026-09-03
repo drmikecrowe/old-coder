@@ -266,6 +266,11 @@ human have what they actually asked for?* Three prompts, nothing more:
 2. What does the spec do that the request never asked for?
 3. Where would a reasonable implementer read this spec and build the wrong thing?
 
+Give the reviewer a **report path** — `logs/spec-intent.md` under the task directory —
+along with the two documents. It writes its report there before returning it; if the
+reply arrives empty, truncated, or garbled, read the file instead (see "The bundled
+agents" § the report survives in a file).
+
 **This layer is deliberately light, and keeping it light is the point.** It is not the
 gauntlet's adversarial review and must not imitate it: no failure-class hunt, no severity
 labels, no line-editing, no reading the implementation — there isn't one yet. Give the
@@ -782,9 +787,9 @@ Five roles in this loop run as subagents. The briefs ship **inside** the skill, 
 
 | Agent | Layer | Tools | Budget |
 |---|---|---|---|
-| `old-coder-spec-intent` | Intent review, end of SPEC | `Read` only | ~0 tool calls, one round |
+| `old-coder-spec-intent` | Intent review, end of SPEC | `Read`, `Write` (report file only) | the report write, one round |
 | `old-coder-gauntlet-verifier` | Gauntlet commissioning, at build and on entry-point change | `Read`, `Grep`, `Glob` | 12 tool calls, one round |
-| `old-coder-adversary` | Adversarial review, in the gauntlet | `Read`, `Bash`, `Grep`, `Glob` | 10 tool calls, one round |
+| `old-coder-adversary` | Adversarial review, in the gauntlet | `Read`, `Bash`, `Grep`, `Glob`, `Write` (report file only) | 10 tool calls, one round |
 | `old-coder-gauntlet` | Final fresh run, end of the gauntlet | `Read`, `Bash`, `Grep`, `Glob` | 1 entry-point run + 15 tool calls, one round |
 | `old-coder-evidence` | EVIDENCE draft, step 6 | `Read`, `Grep`, `Glob`, `Write` | 25 tool calls, one round |
 
@@ -794,6 +799,17 @@ always passes. The code reviewer must reach it and nothing else matters. The gau
 can execute and must not fix; the evidence scribe can write and must not execute — a scribe
 with no `Bash` cannot produce a number, only transcribe one. Merging any pair produces one
 agent that certifies its own work, which is the failure these splits prevent.
+
+**The report survives the return trip in a file.** A subagent's final response can be
+lost or mangled between the agent and its spawner — observed in practice, not a
+hypothetical. Both reviewing agents (`old-coder-spec-intent`, `old-coder-adversary`)
+therefore take a report path in their prompt — `logs/spec-intent.md` and
+`logs/adversary-round-<n>.md` under the task directory — write the complete report
+there, and then return the same text as their response. On return, read the response as
+usual; if it is empty, truncated, or garbled, recover from the file. The file is the
+authoritative copy, and EVIDENCE cites it either way. The `Write` in their tool lists
+exists for that one file; it is not an editing grant, and for the adversary the write is
+exempt from its call budget.
 
 **Why the tool lists and budgets are short.** A subagent re-reads its whole context every
 turn, so its cost is `baseline x turns` and tool schemas sit in the baseline. Give it few

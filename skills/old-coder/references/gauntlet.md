@@ -265,7 +265,7 @@ context.** It ships inside this skill at `agents/old-coder-adversary.md` and alr
 the hunting order, the tool restrictions, and the call budget — do not re-brief it
 from scratch, and do not hand it a wider toolset than it declares.
 
-**Four task-specific inputs, and the last two are the ones usually forgotten:**
+**Five task-specific inputs, and 3 and 4 are the ones usually forgotten:**
 
 1. the base SHA of the diff, and the lens;
 2. the failure **class from the previous round, as its generator sentence**, plus
@@ -276,7 +276,11 @@ from scratch, and do not hand it a wider toolset than it declares.
    the reviewer can answer *do these commands match the gate?* Nothing else in
    this skill asks that question of an adversary, and it costs one `Read`;
 4. **the list of functions the diff changed**, so the reviewer can enumerate
-   callers rather than spend its budget rediscovering them.
+   callers rather than spend its budget rediscovering them;
+5. **a report path** — `logs/adversary-round-<n>.md` under the task directory. The
+   reviewer writes its full report there before returning it, so a response the
+   host loses or truncates is recovered from the file rather than re-run
+   (SKILL.md § "The bundled agents").
 
 A reviewer pointed at code cannot audit the evidence about that code unless you
 point it there.
