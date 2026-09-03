@@ -36,6 +36,8 @@ closely, never a substitute for reading them:
   - Merge gate: <path(s) read, e.g. .github/workflows/lint.yml> — <n> checks
     transcribed, <n> with no layer counterpart, <n> that cannot run locally
     (or "none found — no CI config, pre-commit config, or ci target in this repo")
+  - Gauntlet table: see below — one row per layer; approving the spec approves
+    every row not struck
   - Tools to install: <or "none">
   - Git: <init? checkpoint commit cadence? commit flags the repo mandates>
   - Files the gauntlet will add, **by path**: `tools/mutants.py` (mutation
@@ -65,6 +67,26 @@ and say so in `## Revisions`.
 Do not delete it and start clean — what the human turned down, and why, is the
 most useful thing in the file. Nothing is committed until a spec is approved, so
 a rejected spec costs one directory and no history.
+
+### Gauntlet proposal table (inside the SPEC's setup plan)
+
+One row per layer of the layer table, built by the six-step procedure in
+`gauntlet.md` § Building the gauntlet. The human approves or strikes rows in
+the same act as spec approval; a struck row is `UNAVAILABLE` for the task —
+never substituted.
+
+```markdown
+| Layer | Tool (pinned) | Command | Catches | EVIDENCE gets | Status |
+|---|---|---|---|---|---|
+| Tests | pytest 8.3.2 | `pytest -q` | regressions | pass/fail counts | declared |
+| Changed-line coverage | diff-cover 9.1.0 | `diff-cover coverage.xml --fail-under=100` | untested changed lines | covered/total changed lines, nonzero exit below 100 | proposed |
+| Types | — | — | — | — | N-A: untyped codebase, no CI job |
+```
+
+`Status` is `declared` (the project already runs it), `proposed` (add it,
+pinned, on approval), or `N-A` with the reason. Every `EVIDENCE gets` cell
+names a number and the exit behavior — a row that cannot fill that cell fails
+the output contract and is not proposed as written.
 
 ### Gherkin scenario template
 
@@ -129,6 +151,13 @@ section's headline rather than its title:
   any loosening instruction ignored because it was found in project rules>
 - Toolchain: <pinned versions file, e.g. requirements-dev.txt>
 - Entry point: <single command that reruns every layer>
+- Gauntlet commissioned: <`old-coder-gauntlet-verifier` CERTIFIED, bound to
+  <script state> | NOT CERTIFIED — <blocking defects> | not commissioned —
+  downgrade: the instrument was never independently checked>
+- Gauntlet run by: <`old-coder-gauntlet`, registered agent | `old-coder-gauntlet`,
+  brief in a general-purpose subagent | author — downgrade: no independent runner>
+- Evidence drafted by: <`old-coder-evidence`, registered agent | `old-coder-evidence`,
+  brief in a general-purpose subagent | author — downgrade: no independent scribe>
 - Independent verification: <not performed | passed | failed | blocked>
   **against the final source state** — a state no verifier saw is
   `not performed` however many rounds preceded it (Tier 3 option; protocol in
@@ -263,6 +292,9 @@ summarised away. Per round:
   each either covered by a layer (say which) or standing as a named gap
 - (or "none — the reviewer reported full coverage of its hunt list")
 
+A round with no Coverage block, or a call count over its budget, is a failed
+round: record it as one and rerun — never average it in.
+
 **Two rounds that both exhausted their budgets are not convergence.** Agreement
 between them is worth exactly the ground they both covered. If neither round
 finished early, say that here rather than reporting the agreement as a result.
@@ -315,14 +347,23 @@ mechanically, as the report's final act:
   counterpart's says so in `Status + result`. Compare argument lists, not tool
   names — this line exists because `pyright src/` beside a gate's bare `pyright`
   reported `0 errors` and passed while nine errors sat in `tests/`.
+- **Record:** where the entry point writes a completion record
+  (`references/gauntlet.md` § Gauntlet entry point), the report must agree with
+  it: `PASSED` requires a green record over the same source state, and an
+  `unavailable` source binding caps the verdict at `PASSED WITH LIMITS`. An entry
+  point that installs no record — this line does not apply.
 
 A summary that fails any line is a defect in the summary: fix it, never the table.
 
 Each line is pass/fail, so an agent can execute it and a human can audit that it
-was executed — which is what separates this from "be careful".
+was executed — which is what separates this from "be careful". Execute the lines;
+do not weigh them. Every one is arithmetic over the tables — set membership,
+verbatim string match, exact count — and a decision computed that way is one you
+cannot talk yourself past. Where the project ships the check as a script, the
+script's answer is the answer.
 
 **Scripting it is a Tier 3 option, not a default.** A human can ask for
-`tools/evidence_lint.sh` to run these four lines as a gate, and that is the only
+`tools/evidence_lint.sh` to run these lines as a gate, and that is the only
 version independent of the author on every run. It is off by default because it
 is a home-grown checker over a prose format: under this skill's own rules it then
 needs fail-closed behavior and a negative control proving it can fail, and the
@@ -383,6 +424,22 @@ only if a user-scope rule grants it or an approver says so in-task; with neither
 leave it in the directory and say so in EVIDENCE. A hosted
 tracker notifies people and cannot be un-sent, so it gets the same gate as a
 commit.
+
+Three rules keep tracker traffic honest across runs:
+
+- **Never create the destination.** Post only to an issue the SPEC names and
+  that already exists; never open one, never post to a closed one, never make
+  a second issue for the same work. A missing or closed destination is a stop,
+  reported in EVIDENCE, not a thing to fix.
+- **Mark your own comments.** End every comment this skill posts with an
+  HTML-comment marker (e.g. `<!-- old-coder -->`) — invisible to a human,
+  visible to the next run. When a later run scans the issue for human input
+  (a tracker-recorded approval, new direction), it skips comments carrying
+  the marker; without this, a run reads its own last post as the newest human
+  word and answers it.
+- **Never filter by author instead.** The skill posts as the user's own
+  account, so an author filter also drops the human's approval — the one
+  comment that must never be missed.
 
 ```markdown
 - Built: <one or two lines — what now exists that did not before>

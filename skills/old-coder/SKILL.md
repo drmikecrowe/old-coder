@@ -32,6 +32,15 @@ to write, the step-2 approval gate still stands, and EVIDENCE says the spec was
 never independently reviewed. OFFER-and-stop is for when a reply is actually
 possible.
 
+**A wake re-enters; it does not restart.** Before starting step 1 on a configured
+wake, look for this task's artifact directory. An `EVIDENCE.md` with a verdict
+means the task is done: report that standing state in one line and stop — a
+finished task named again is not a fresh draft. A standing escalation — `FAILED`,
+`blocked`, or an abandonment — is a wall, not a queue entry: only a human clears
+it, so stop and point at it rather than silently retrying. Whenever you skip for
+either reason, say so out loud in one line; to someone watching the wake, silence
+reads as a hang.
+
 **Create nothing before the answer.** No artifact directory, no `SPEC.md`, no
 tools audit, no branch, no worktree. A wrong guess must cost one sentence, not a
 document nobody wanted. This applies to the offer path only — once the loop has
@@ -209,7 +218,12 @@ implementation files:
   reviews after the fact. **Approval recorded in a tracker is the exception** —
   a comment or label from a named human is durable and checkable by someone who
   was not present, so it clears the downgrade where chat approval cannot. Cite
-  it (`references/templates.md`).
+  it (`references/templates.md`). Where the request and the codebase do not
+  settle a value the spec needs, do not leave the field empty and do not guess
+  silently: write the most reasonable value a careful engineer would propose,
+  marked as your proposal, so the after-the-fact reviewer can veto one line
+  instead of discovering a hole mid-build. Investigate before you invent — a
+  value read from the code beats one you composed.
 - The spec is append-only during the task. If implementation reveals the spec was
   wrong, say so explicitly and revise it visibly — never silently drift.
 - Open it with an **Orientation** block: the change, why, what it touches, and the calls you
@@ -251,6 +265,11 @@ human have what they actually asked for?* Three prompts, nothing more:
 1. What did the request want that the spec does not cover?
 2. What does the spec do that the request never asked for?
 3. Where would a reasonable implementer read this spec and build the wrong thing?
+
+Give the reviewer a **report path** — `logs/spec-intent.md` under the task directory —
+along with the two documents. It writes its report there and returns a path-plus-summary
+receipt; read the file for the points (see "The bundled agents" § the report survives in
+a file).
 
 **This layer is deliberately light, and keeping it light is the point.** It is not the
 gauntlet's adversarial review and must not imitate it: no failure-class hunt, no severity
@@ -381,6 +400,16 @@ thing that runs; run the gate's own commands locally instead, inside the final f
 makes a scope error survive: at that point the report has already recorded the number your command
 produced, and nothing in it says which command it should have been.
 
+**At Tier 3, the final fresh run executes in a fresh agent.** Spawn `old-coder-gauntlet`
+(see "The bundled agents") with four inputs — the entry-point command, the artifact
+directory, the expected source state, and the layer/gate table from SPEC — plus the
+report path `logs/gauntlet-runner.md`, and take back its structured verdict. The run's
+interpreter then did not write the code, and the raw
+logs never enter your context. The runner fixes nothing and reruns nothing; a red verdict
+comes back to you. Optional at Tier 2. Where no subagent can be spawned, run it yourself
+and record `Gauntlet run by: author` in EVIDENCE — a downgrade, recorded the way the
+brief path is.
+
 **Reuse carries the failure mode, not just the signature.** When you call an existing function from
 a new context, the types lining up is the easy half. Ask what it does when it FAILS, and whether
 that fits where you have just put it. A validator that refuses the whole input is right for a gate
@@ -407,7 +436,10 @@ any finding is marked fixed:
    already written the way you remember them. **If the only way to reach a sibling is to grep the
    token out of the finding, you have written the symptom. Rewrite it.** Under a symptom, two call
    sites in different files doing different jobs look unrelated; under the generator they are the
-   same line twice.
+   same line twice. Test the width as well as the reach: a finding that belongs to the class's
+   mechanism but falls outside the sentence's noun means the noun is too narrow — "a device"
+   misses the data the device holds, and every enumeration from it stops at the same boundary.
+   Widen the noun until the known instances all fit.
 3. **Produce the enumeration with a command, and put the list in the commit.** One line per site,
    each marked fixed, already-correct, or not-applicable-because — including any site you corrected
    earlier in this branch and have since reintroduced. A list of one site is not an enumeration, it
@@ -555,7 +587,9 @@ End with a report the human can trust without opening a single source file
   not in a scratch directory or only in the conversation. Reproducible means:
   dev-tool versions pinned or recorded, one entry-point command that reruns
   every layer, and the source state identified (commit SHA, or a source-tree
-  hash when git is absent).
+  hash when git is absent). Where the entry point writes a completion record
+  (`references/gauntlet.md`), cite it: the narrative interprets the harness's own
+  record of the run, never substitutes for it.
 - Layers not run as specified, grouped by which of the three non-passing
   statuses they carry (`N-A` / `UNAVAILABLE` / `SUBSTITUTED`), and why.
 - **Findings dismissed rather than fixed**, each with the check that disproves
@@ -580,6 +614,16 @@ End with a report the human can trust without opening a single source file
 - Anything that failed and how it was resolved, honestly. A gauntlet you passed
   on the first try and a gauntlet you fixed your way through are equally fine;
   a gauntlet you quietly weakened is the only failure.
+
+**At Tier 3, a fresh scribe drafts the report.** Write your claims first — defect-class
+generators, dismissal rationale, honest notes — to `FACTS.md` in the artifact directory,
+then spawn `old-coder-evidence` (see "The bundled agents") with the artifacts and the
+report path `logs/evidence-report.md`, and take back the drafted report. The scribe
+copies numbers and cannot run anything, so a row
+without an artifact comes back failed rather than remembered green; `FACTS.md` enters as
+labeled claims that never upgrade a status. Optional at Tier 2. Where no subagent can be
+spawned, draft it yourself and record `Evidence drafted by: author` — a downgrade,
+recorded the way the brief path is.
 
 Write it to `EVIDENCE.md` in the task artifact directory beside `SPEC.md`, show
 it to the human, and stop — see "Where this skill stops". Give the absolute path
@@ -681,7 +725,7 @@ when the stakes carry its cost.
 |---|---|---|
 | What it attacks | the diff | the finished work: run, spec, tests, checkers, mapping |
 | When | inside the gauntlet, Tier 3 or any change to code you did not write | after the gauntlet, before EVIDENCE is signed, Tier 3 by choice |
-| Cost | one agent, 10 tool calls, one round | a protocol with a blind phase and a round cap; ~550k tokens in the one recorded case |
+| Cost | one agent, 12 tool calls, one round | a protocol with a blind phase and a round cap; ~550k tokens in the one recorded case |
 | Is it a gauntlet layer? | yes — bounded, and its verdict binds to a SHA | **no** — prose a human must grade |
 | Protocol | `agents/old-coder-adversary.md` (in the skill) | `references/verifier.md` |
 
@@ -737,21 +781,51 @@ Where the newer layers attach:
 | Isolation (branch or worktree) | Tier 2 up |
 | Intent review of the SPEC (`old-coder-spec-intent`) | Tier 2 up |
 | Adversarial review by an independent agent (`old-coder-adversary`) | Tier 3, **or any change to code you did not write** |
+| Gauntlet commissioning (`old-coder-gauntlet-verifier`) | Tier 3, and whenever the entry point is new or changed |
+| Final fresh run in a fresh agent (`old-coder-gauntlet`) | Tier 3; optional at Tier 2 |
+| EVIDENCE drafted by a fresh scribe (`old-coder-evidence`) | Tier 3; optional at Tier 2 |
 
 ## The bundled agents
 
-Two review layers in this loop run as subagents. Both briefs ship **inside** the skill, at
+Five roles in this loop run as subagents. The briefs ship **inside** the skill, at
 `agents/` beside `references/`, so they are always present wherever the skill is:
 
 | Agent | Layer | Tools | Budget |
 |---|---|---|---|
-| `old-coder-spec-intent` | Intent review, end of SPEC | `Read` only | ~0 tool calls, one round |
-| `old-coder-adversary` | Adversarial review, in the gauntlet | `Read`, `Bash`, `Grep`, `Glob` | 10 tool calls, one round |
+| `old-coder-spec-intent` | Intent review, end of SPEC | `Read`, `Write` (report file only) | the report write, one round |
+| `old-coder-gauntlet-verifier` | Gauntlet commissioning, at build and on entry-point change | `Read`, `Grep`, `Glob`, `Write` (report file only) | 12 tool calls, one round |
+| `old-coder-adversary` | Adversarial review, in the gauntlet | `Read`, `Bash`, `Grep`, `Glob`, `Write` (report file only) | 12 tool calls, one round |
+| `old-coder-gauntlet` | Final fresh run, end of the gauntlet | `Read`, `Bash`, `Grep`, `Glob`, `Write` (report file only) | 1 entry-point run + 15 tool calls, one round |
+| `old-coder-evidence` | EVIDENCE draft, step 6 | `Read`, `Grep`, `Glob`, `Write` | 25 tool calls, one round |
 
-**They are two agents on purpose.** The spec reviewer must not reach the codebase — there is
-no implementation yet, and a spec compared against the source instead of the intent always
-passes. The code reviewer must reach it and nothing else matters. Merging them produces one
-agent that does the heavy review at both stages, which is the failure this split prevents.
+**They are separate agents on purpose.** The spec reviewer must not reach the codebase —
+there is no implementation yet, and a spec compared against the source instead of the intent
+always passes. The code reviewer must reach it and nothing else matters. The gauntlet runner
+can execute and must not fix; the evidence scribe can write and must not execute — a scribe
+with no `Bash` cannot produce a number, only transcribe one. Merging any pair produces one
+agent that certifies its own work, which is the failure these splits prevent.
+
+**The report survives the return trip in a file.** A subagent's final response can be
+lost or mangled between the agent and its spawner — observed in practice, not a
+hypothetical. Every bundled agent therefore takes a report path in its prompt, under the
+task directory's `logs/`:
+
+| Agent | Report path |
+|---|---|
+| `old-coder-spec-intent` | `logs/spec-intent.md` |
+| `old-coder-gauntlet-verifier` | `logs/gauntlet-verifier.md` |
+| `old-coder-adversary` | `logs/adversary-round-<n>.md` |
+| `old-coder-gauntlet` | `logs/gauntlet-runner.md` |
+| `old-coder-evidence` | `logs/evidence-report.md` (`EVIDENCE.md` itself is already a file) |
+
+Each writes its complete report there and returns a **receipt**: the path plus a
+short summary (each brief says which lines). Read the file for the
+content — the report crosses once, as a file, instead of twice; a response lost or
+mangled in transit costs nothing because the file is the authoritative copy, and
+EVIDENCE cites it either way. An agent given no path returns the full report as its
+response instead. The `Write` in the tool lists exists for that one file — it is not an
+editing grant — and the write is exempt from every call budget, so persisting a report
+can never void a round.
 
 **Why the tool lists and budgets are short.** A subagent re-reads its whole context every
 turn, so its cost is `baseline x turns` and tool schemas sit in the baseline. Give it few

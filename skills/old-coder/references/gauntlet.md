@@ -65,6 +65,45 @@ This skill never pushes, so CI is never the thing that runs here. The gate's
 *text* is the artifact being used, and it is available from the first minute of
 the task.
 
+## Building the gauntlet for a new project
+
+The layer table says what to test. This is how the apparatus gets built, once
+per project, at SPEC time — six steps, in order:
+
+1. **Inventory.** Read the manifests, lockfiles, and the merge gate (previous
+   section). List what the project already declares, verbatim.
+2. **Map.** One row per layer: the declared tool and its command, or `missing`,
+   or `N-A (<no such surface>)`. A declared tool you would skip is a skipped
+   layer, not a missing one.
+3. **Hold every command to the output contract.** A layer's command is wired in
+   only if it does three things: exit nonzero on violation, write its own log,
+   and emit the number its EVIDENCE row will cite:
+
+   | Layer | The command must emit |
+   |---|---|
+   | Tests | pass/fail counts, so zero NEW failures is decidable from the log |
+   | Types / lint | error and warning counts |
+   | Changed-line coverage | covered/total for the changed lines, and a nonzero exit below threshold (`--cov-fail-under`, `diff-cover --fail-under`) — a global percentage that exits 0 fails the contract |
+   | Mutation | killed/total over the derived scope, per-mutant disposition |
+   | Property-based | properties run, examples per property |
+   | Suite health | the randomization seed and the result |
+   | Real execution | the observed output of the run |
+
+   A tool that cannot be configured to meet the contract is raised with the
+   human in step 4 — never wired in as a report-only step, and never replaced
+   by one you write.
+4. **Propose.** Fill the SPEC setup plan's gauntlet table (`templates.md`) and
+   put it to the human with the spec: they approve or strike per row, in the
+   same act as spec approval. A struck row is `UNAVAILABLE` from then on.
+5. **Build the entry point** from the approved rows only (skeleton in
+   § Gauntlet entry point).
+6. **Commission it.** Run the negative controls (§ Gauntlet entry point), then
+   have `old-coder-gauntlet-verifier` certify the wiring against the approved
+   table (see that brief; report path `logs/gauntlet-verifier.md`). Record the
+   outcome in EVIDENCE's
+   `Gauntlet commissioned:` field. Certification binds to the script text —
+   re-commission whenever the entry point changes.
+
 ## Python
 
 | Layer | Tool | Command |
@@ -215,7 +254,7 @@ Tier 3 changes, and **any change to code the author did not write**, get a
 review from an agent that shares none of that reasoning.
 
 This is the bounded, in-gauntlet review: it attacks **the diff**, costs one
-agent and ten tool calls, and returns a verdict bound to a SHA. It is not the
+agent and twelve tool calls, and returns a verdict bound to a SHA. It is not the
 same thing as independent verification (`verifier.md`), which attacks the
 finished work — run, spec, tests, checkers, and mapping — is deliberately not a
 gauntlet layer, and costs orders of magnitude more. Run this one by default;
@@ -227,7 +266,7 @@ context.** It ships inside this skill at `agents/old-coder-adversary.md` and alr
 the hunting order, the tool restrictions, and the call budget — do not re-brief it
 from scratch, and do not hand it a wider toolset than it declares.
 
-**Four task-specific inputs, and the last two are the ones usually forgotten:**
+**Five task-specific inputs, and 3 and 4 are the ones usually forgotten:**
 
 1. the base SHA of the diff, and the lens;
 2. the failure **class from the previous round, as its generator sentence**, plus
@@ -238,7 +277,10 @@ from scratch, and do not hand it a wider toolset than it declares.
    the reviewer can answer *do these commands match the gate?* Nothing else in
    this skill asks that question of an adversary, and it costs one `Read`;
 4. **the list of functions the diff changed**, so the reviewer can enumerate
-   callers rather than spend its budget rediscovering them.
+   callers rather than spend its budget rediscovering them;
+5. **a report path** — `logs/adversary-round-<n>.md` under the task directory. The
+   reviewer writes its full report there and returns a path-plus-summary receipt;
+   read the file for the findings (SKILL.md § "The bundled agents").
 
 A reviewer pointed at code cannot audit the evidence about that code unless you
 point it there.
@@ -371,7 +413,20 @@ The re-review is usually cheap. Send the follow-up diff back to **the same
 reviewer** — it already holds the context and can answer the one question it is
 best placed to answer: does this fix actually address what I found? Use a
 *fresh* reviewer instead when the fix changed the design rather than patching
-it, because at that point the shipped design is not the one anybody attacked. If
+it, because at that point the shipped design is not the one anybody attacked.
+
+**Two rounds with the same failure signature mean the last fix changed nothing.**
+Compare what failed — the layer, the `file:line`, the triggering input — never how
+the reviewer worded it. Compute the comparison mechanically: sort both failing
+sets and diff them, rather than judging by eye whether "this looks like the same
+failure" — a stop condition weighed in prose is a stop condition you can talk
+yourself past. A repeated signature stops the loop: take both attempts to the
+human rather than spend a third round learning the same thing.
+
+**On the final permitted round, narrow the work to the blocking finding.** Fix
+only it, and brief the reviewer with only it. A last round spent across the whole
+diff can close cosmetics while the blocker stands, and no round remains to catch
+that. If
 EVIDENCE has been drafted by the time a re-review round runs, include it in the
 diff the reviewer sees — the summary-versus-tables check in its brief is
 unreachable otherwise.
@@ -409,7 +464,7 @@ arrives attached to findings that feel like the result.
 - **Copy it into EVIDENCE verbatim**, under the review row. Each unreached item
   is an open item: either you cover it another way and say which layer did, or it
   stands as a named gap a reader can weigh.
-- **Record the tool calls used.** A reviewer that stopped at 9 of 10 calls stopped
+- **Record the tool calls used.** A reviewer that stopped at 11 of 12 calls stopped
   because it ran out of budget, not because it ran out of defects. **Two rounds
   that both exhausted their budgets are not two rounds converging** — treat the
   agreement between them as worth exactly as much as the ground they both
@@ -751,6 +806,29 @@ layer, the manifest is what proves an *absent* one cannot report green. Keep
 both, and handle the command status explicitly rather than assuming the shell
 did it for you.
 
+**The entry point is itself a home-grown checker: prove it can fail before
+trusting its pass.** One-off negative controls, once per project, then restore:
+comment out one `run_layer` line and watch the closing audit go red naming the
+layer; make one layer's command fail and watch the run exit nonzero with a red
+record. Record both controls in EVIDENCE's honest notes. An orchestration that
+has only ever been green has not been demonstrated to measure anything — the same
+RED principle the tests and the checkers already answer to, applied one level up.
+
+**Write a completion record from the entry point, on every exit path.** EVIDENCE is
+model-written; the record is the completion artifact the harness writes, and it is
+what turns "the checks ran, on this content, after the last change" from a claim
+into a fact. Install an exit trap before the first layer and have it write, green
+or red: the result, the expected and completed layer sets, a UTC timestamp, the
+source state (commit SHA or tree hash — where the computation fails, write
+`unavailable`, never a guess), and the pinned-toolchain file the run used. Only the
+closing manifest audit may produce `green`. In the same trap, give the exit a
+vocabulary: 0 for green; one code for a failed layer; one for a violated
+orchestration contract, an exit 0 that skipped the audit included; a crash passes
+through unchanged — automation needs a number, not a paragraph. The failure path
+then leaves the trace a reader actually needs. Disclosed limit: the record is
+written by the script it reports on, so it guards against accident, not a
+coordinated edit to script and record together.
+
 **Every EVIDENCE row must cite a log this script actually writes.** Two rules
 keep that true:
 
@@ -761,6 +839,32 @@ keep that true:
 - Layers no script can run — adversarial review, independent verification, and
   complexity budget where it is a judgement rather than a tool — are marked
   `manual` in the EVIDENCE Log column, never given a log path.
+
+## The final fresh run in a fresh agent
+
+At Tier 3, do not run the final gauntlet yourself. Spawn the `old-coder-gauntlet`
+brief (ships at `agents/old-coder-gauntlet.md`) fresh, with no inherited context, and
+hand it four inputs: the entry-point command, the artifact directory, the expected
+source state, and the layer/gate table transcribed at SPEC time — plus the report
+path `logs/gauntlet-runner.md` (SKILL.md § "The bundled agents"). It runs the entry
+point once, reads bounded log slices, and returns a per-layer verdict in the closed
+five-status vocabulary. It fixes nothing and reruns nothing; a red verdict is your
+task, not its.
+
+What the split buys: the run's interpreter did not write the code, so a skipped layer
+or a stale number has no author present to rationalize it, and the raw logs never
+enter the author's context — the author receives a verdict table. What it does not
+buy: the entry point's own exit remains the gate; the runner reports and decides
+nothing.
+
+Two ways to run it, the same as the adversary: registered agent (the host enforces
+`tools:`) or bundled brief (you honor the list). Record which in EVIDENCE's
+`Gauntlet run by:` field. Author-run is the fallback and a recorded downgrade, not a
+neutral note.
+
+The `old-coder-evidence` scribe is the same mechanism pointed at the report: it
+drafts EVIDENCE from artifacts alone, holds no `Bash`, and writes an absent artifact
+as a failing row.
 
 ## Templates
 
