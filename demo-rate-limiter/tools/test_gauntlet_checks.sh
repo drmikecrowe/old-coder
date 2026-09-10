@@ -4,7 +4,7 @@
 # It sources the real helper rather than copying it: a copy would keep passing
 # after must_not_match itself regressed, which is the exact failure mode this
 # check exists to prevent.
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || { echo "FAIL: cannot enter demo root" >&2; exit 2; }
 . tools/must_not_match.sh
 
 failures=0

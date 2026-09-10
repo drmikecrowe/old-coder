@@ -409,7 +409,11 @@ arrives attached to findings that feel like the result.
 - **Copy it into EVIDENCE verbatim**, under the review row. Each unreached item
   is an open item: either you cover it another way and say which layer did, or it
   stands as a named gap a reader can weigh.
-- **Record the tool calls used.** A reviewer that stopped at 9 of 10 calls stopped
+- **Record the tool calls used.** A report with no Coverage block, or one that
+  spent more calls than its budget, is a failed round, not a thorough one: the
+  budget lives in the brief precisely because nothing else enforces it, so a
+  breach voids the round — rerun with a fresh reviewer rather than averaging it
+  in. A reviewer that stopped at 9 of 10 calls stopped
   because it ran out of budget, not because it ran out of defects. **Two rounds
   that both exhausted their budgets are not two rounds converging** — treat the
   agreement between them as worth exactly as much as the ground they both
@@ -750,6 +754,21 @@ expected-layer manifest above is for: `set -e` bounds the damage of a *failing*
 layer, the manifest is what proves an *absent* one cannot report green. Keep
 both, and handle the command status explicitly rather than assuming the shell
 did it for you.
+
+**Write a completion stamp from the entry point, on every exit path.**
+EVIDENCE is model-written; the stamp is the completion artifact the harness
+writes. Record the result, the expected and completed layer sets, a UTC
+timestamp, and the source binding. Two rules: only the final audit produces
+`green`, and only the source-state command produces the binding — if it
+fails, write `unavailable`, never a guess. Cite the stamp in EVIDENCE, and
+the failure path now leaves the trace a reader actually needs. In the same
+trap, give the exit a vocabulary: 0 green; one code for a failed layer; one
+for a violated orchestration contract (an exit 0 that skipped the audit
+included); pass crashes through — automation needs a number, not a
+paragraph. The demo's `tools/gauntlet_layers.sh` implements both, one
+negative control per exit path. Limit: the stamp is written by the helper it
+reports on, so it guards against accident, not a coordinated edit to helper
+and controls together.
 
 **Every EVIDENCE row must cite a log this script actually writes.** Two rules
 keep that true:

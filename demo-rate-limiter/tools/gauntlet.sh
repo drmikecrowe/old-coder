@@ -2,7 +2,7 @@
 # Gauntlet entry point: run every layer; fail on the first broken one.
 set -e
 cd "$(dirname "$0")/.."
-rm -f .coverage coverage.xml   # stale artifacts from previous runs
+rm -f .coverage coverage.xml gauntlet-stamp.txt   # stale artifacts from previous runs
 # Bytecode caches are both a correctness hazard for the mutation layer and
 # binary noise the must-not scans would grep through.
 find . -name __pycache__ -type d -prune -exec rm -rf {} +
@@ -10,6 +10,7 @@ PY=.venv/bin
 
 . tools/must_not_match.sh
 . tools/gauntlet_layers.sh
+install_gauntlet_exit_trap
 
 run_layer orchestration-self-test sh tools/test_gauntlet_orchestration.sh
 
@@ -30,6 +31,18 @@ layer_lint_format() {
   "$PY/ruff" format --check . || return $?
 }
 run_layer lint-format layer_lint_format
+
+# Half the gates are implemented in shell, and every Python file gets three
+# static layers. Fail closed when shellcheck is absent: a missing linter must
+# be a red layer someone reads, never a silent skip. ubuntu-latest ships it.
+layer_shell_lint() {
+  command -v shellcheck >/dev/null 2>&1 || {
+    echo "FAIL: shellcheck not installed; shell layers are unproven" >&2
+    return 2
+  }
+  shellcheck tools/*.sh || return $?
+}
+run_layer shell-lint layer_shell_lint
 
 run_layer supply-chain "$PY/pip-audit" -r requirements-dev.txt
 

@@ -263,6 +263,9 @@ summarised away. Per round:
   each either covered by a layer (say which) or standing as a named gap
 - (or "none — the reviewer reported full coverage of its hunt list")
 
+A round with no Coverage block, or a call count over its budget, is a failed
+round: record it as one and rerun — never average it in (`gauntlet.md`).
+
 **Two rounds that both exhausted their budgets are not convergence.** Agreement
 between them is worth exactly the ground they both covered. If neither round
 finished early, say that here rather than reporting the agreement as a result.
@@ -315,6 +318,11 @@ mechanically, as the report's final act:
   counterpart's says so in `Status + result`. Compare argument lists, not tool
   names — this line exists because `pyright src/` beside a gate's bare `pyright`
   reported `0 errors` and passed while nine errors sat in `tests/`.
+- **Stamp:** where the entry point writes a completion stamp
+  (`references/gauntlet.md` § Gauntlet entry point), the report must agree
+  with it: `PASSED` requires a green stamp over the same source state; an
+  unavailable binding caps the verdict at `PASSED WITH LIMITS`. No stamp
+  mechanism in the project — this line does not apply.
 
 A summary that fails any line is a defect in the summary: fix it, never the table.
 
@@ -322,7 +330,7 @@ Each line is pass/fail, so an agent can execute it and a human can audit that it
 was executed — which is what separates this from "be careful".
 
 **Scripting it is a Tier 3 option, not a default.** A human can ask for
-`tools/evidence_lint.sh` to run these four lines as a gate, and that is the only
+`tools/evidence_lint.sh` to run these lines as a gate, and that is the only
 version independent of the author on every run. It is off by default because it
 is a home-grown checker over a prose format: under this skill's own rules it then
 needs fail-closed behavior and a negative control proving it can fail, and the
