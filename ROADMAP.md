@@ -2,8 +2,8 @@
 
 The plan for moving this fork's work into
 [AmazingAng/old-coder](https://github.com/AmazingAng/old-coder), one proposal at
-a time. Written for the agent executing it. Companion to `UPSTREAM-AUDIT.md`
-(what diverged and why) and `ATTRIBUTION.md` (provenance and PR history).
+a time. Written for the agent executing it. Companion to `ATTRIBUTION.md`
+(provenance and PR history).
 
 ## Status
 
@@ -244,8 +244,10 @@ is the F3 defect class, in public.
 comments on the PRs themselves — read them before cutting, do not work from
 this file's summary alone:
 `gh api repos/AmazingAng/old-coder/issues/<n>/comments --jq '.[].body'`
-for n = 7, 9, 10. Their two doctrine statements (the "reports success" test on
-#6, the field bar on #10) are quoted in `UPSTREAM-AUDIT.md`'s preamble.
+for n = 7, 9, 10. Two doctrine statements govern every proposal: a step that
+produces a claim must fail visibly when broken, never report success (#6); and
+an EVIDENCE field earns its place only if its absence would let a reader
+believe something false (#10).
 
 **Before any push:** the pre-publish review applies — read every line of the
 branch diff, check for fork-only references and personal paths, and get Mike's
@@ -494,7 +496,7 @@ defense already stated:
 - **Artifact layout, durable-root split, absolute-path option**
   (setup.md) — same dependency.
 - **CUSTOMIZATION.md** — the fork's user doc for the fork's model.
-- **README fork framing, ATTRIBUTION.md, UPSTREAM-AUDIT.md, this file.**
+- **README fork framing, ATTRIBUTION.md, this file.**
 
 ## Bookkeeping after each merge
 
@@ -503,5 +505,5 @@ defense already stated:
 2. Update ATTRIBUTION.md's PR table and "what this fork changed."
 3. Re-check the "Stays fork-local" list — anything upstream absorbed comes off
    the divergence ledger.
-4. Rerun the sweep from UPSTREAM-AUDIT F2: a merge is exactly when stale
-   vocabulary reappears.
+4. Rerun the vocabulary sweep in step 7 of the re-cut procedure: a merge is
+   exactly when stale vocabulary reappears.
