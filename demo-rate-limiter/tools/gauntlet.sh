@@ -75,6 +75,14 @@ run_layer mutation "$PY/python" tools/mutants.py
 
 run_layer real-execution "$PY/python" examples/demo.py
 
+# Repository-level checks, before source-state on purpose: they grade documents
+# outside the source manifest, so a failure in them says nothing about the
+# binding. They live at the repository root because they are about the
+# repository; they run here because this gauntlet is the only runner there is.
+# REVISION 10 records that as debt, not as a design.
+run_layer audit-sweep "$PY/python" ../tools/audit_sweep.py
+run_layer ceiling-ids "$PY/python" ../tools/ceiling_ids.py
+
 run_layer source-state tools/source_state.sh
 
 # Last, and after source-state on purpose: it grades evidence.md against the
