@@ -77,4 +77,10 @@ run_layer real-execution "$PY/python" examples/demo.py
 
 run_layer source-state tools/source_state.sh
 
+# Last, and after source-state on purpose: it grades evidence.md against the
+# binding that command derives. Not against gauntlet-stamp.txt, which the exit
+# trap writes after every layer, so a layer reading it would grade the run
+# before this one.
+run_layer evidence-binding "$PY/python" tools/evidence_binding.py
+
 finish_gauntlet
