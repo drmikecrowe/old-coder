@@ -323,8 +323,18 @@ then run the normal loop on the behavior change.
 
 ### 3. GREEN — minimal implementation
 
-Write the least code that makes the failing test pass. Run the full suite, not
-just the new test.
+**Open by restating the approved verification contract**: the layers that will
+run with their thresholds, the review layers with their powers and binding, and
+what each exit status means (`references/templates.md` § Verification
+contract). Restate it, do not re-derive it — if what you write differs from
+what was approved, that is a finding, not an update. A handoff whose GREEN
+never states the contract is incomplete, because the reader cannot tell a layer
+that failed from one that was never wired up. Publish the thresholds and the
+reviewers' powers; never publish a list of findings to look for, which only
+tells the work how to pass.
+
+Then write the least code that makes the failing test pass. Run the full suite,
+not just the new test.
 
 ### 4. REFACTOR — clean up under green, assertions frozen
 

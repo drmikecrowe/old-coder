@@ -281,6 +281,48 @@ table. A row whose catcher cannot be shown to fail is a defect, not a mapping.
   the gap is visible rather than absent.
 - **Distributed / multi-process limiting.** In-process state only.
 
+## Verification contract
+
+What green will mean, stated before any of it runs. Every layer the entry point
+invokes appears here, and `tools/contract_ids.py` fails when this list and
+`tools/gauntlet.sh` disagree in either direction. A reader holding this table
+can tell a layer that failed from a layer that was never wired up.
+
+| Layer | What it gates | Threshold |
+|---|---|---|
+| `orchestration-self-test` | a harness that reports green while skipping a layer | every expectation holds; exit 0 |
+| `checker-self-test` | a must-not scan that cannot distinguish "no matches" from "the check broke" | every expectation holds; exit 0 |
+| `source-state-self-test` | a binding that survives a dirty or truncated tree | every control passes |
+| `tests-coverage` | untested changed lines | 0 failures and 100% of changed lines and branches, gated by `--cov-fail-under=100` |
+| `types` | contract drift the suite does not reach | 0 errors under `mypy` strict over `src tests examples tools` |
+| `lint-format` | style drift and dead constructs | 0 findings from `ruff check` and `ruff format --check` |
+| `shell-lint` | defects in the half of the harness written in shell | 0 findings from `shellcheck tools/*.sh`; a missing `shellcheck` is a red layer, never a skip |
+| `supply-chain` | known-vulnerable dependencies | 0 advisories from `pip-audit` |
+| `must-not-scans` | real clocks in tests, and credentials anywhere | 0 matches; a broken scan exits 2 and is distinguishable from a clean one |
+| `mutation-control` | a mutation runner that reports kills it never ran | the killer mutant is killed and the equivalent mutant survives |
+| `mutation` | tests that assert nothing | every mutant in the committed table is killed |
+| `real-execution` | a suite that passes against a fake clock only | `examples/demo.py` runs against the real clock and exits 0 |
+| `audit-sweep` | an audit row crediting a bound its agent's tools cannot hold | 0 unsupported claims |
+| `ceiling-ids` | a published ceiling that has drifted from the audit | 0 disagreements in either direction |
+| `contract-ids` | this contract drifting from the harness it describes | 0 disagreements in either direction |
+| `source-state` | a report bound to a state nobody can return to | a binding is produced, or a named reason why it is not |
+| `evidence-binding` | a report whose numbers came from a different tree | the report's tree hash equals the derived one, and a stale review round does not sit under a bare `PASSED` |
+
+Review layers, which are graded rather than computed. Their powers and binding
+are published; the findings they should look for are not, because a reviewer
+whose questions are known in advance grades work optimised for those questions:
+
+| Layer | Powers | Binding |
+|---|---|---|
+| Spec intent (`old-coder-spec-intent`) | `Read`; one round; expected to use no tools at all | the SPEC text as approved. It has no codebase access by instruction, which `docs/loop-alignment.md` EX-1 records as instruction rather than capability |
+| Adversarial review (`old-coder-adversary`) | `Read`, `Bash`, `Grep`, `Glob`; one round; at most 10 tool calls | the source-state tree hash the reviewed diff was taken from. Any later change to the source manifest returns this layer to not-run |
+| Independent verification | a fresh context at a named state, no inherited reasoning | the state it actually saw. Its status for this report is recorded in `evidence.md`, not promised here |
+
+Exit vocabulary for `tools/gauntlet.sh`: `0` every layer green; `2` a layer ran
+and failed, with its own status preserved in the stamp; `3` the orchestration
+contract was violated, including an exit 0 that never reached the completion
+audit; any other status is a crash, passed through unchanged.
+
 ## REVISION 5 — reproducible source-state binding (Tier 3)
 
 Approved 2026-08-18. This revision repairs the evidence mechanism; it does
@@ -621,6 +663,63 @@ revision buys the checks a runner today and records the debt.
 - Commit cadence: this approved SPEC first; the registration second; evidence
   rebinding third. Independent verification remains `not performed` unless a
   separate verifier inspects the final state.
+
+## REVISION 11 — the verification contract is published and checked (Tier 3)
+
+Approved 2026-09-10 in the instruction that opened track-A object A7. Track-A
+object A7. This revision adds a contract section and one layer that checks it;
+it does not change rate-limiter runtime behaviour or its public API.
+
+Until now this spec described the gauntlet only through its revisions, each
+adding a layer in passing. A reader could not get the layer list from the
+contract, only from the entry point, which means the contract was a record of
+what had been built rather than a promise made before building. The difference
+matters at exactly one moment: when a layer is missing. With a published list
+the reader tells a layer that failed from a layer nobody wired up. Without one
+those look identical.
+
+### Behaviour
+
+- `## Verification contract` names every layer the entry point invokes, with
+  the number or state that makes it pass, and separately names the review
+  layers with their powers and their binding.
+- A new layer, `contract-ids`, runs `../tools/contract_ids.py`. It compares the
+  contract's layer names against the `run_layer` calls in `tools/gauntlet.sh`
+  in both directions, and is a manifest member like any other layer.
+- The contract publishes thresholds for artifact-computed rows and powers plus
+  binding for review rows. It does not publish, and must never publish, the
+  findings a reviewer should look for.
+- The checker fails closed: a missing contract section, a contract naming no
+  layers, an unreadable file, and a gauntlet with no `run_layer` calls are each
+  a failure naming the reason.
+
+### Must NOT do
+
+- Do not list findings, defect classes, or review categories to hunt in the
+  contract. A reviewer whose questions are known in advance grades work
+  optimised for exactly those questions, and the categories left off the list
+  are the ones the author already feared least. Powers and binding are the
+  published half; the questions are not.
+- Do not let the checker read layer names from anywhere but the contract
+  section. A spec is full of tables whose first cell looks like a layer name,
+  and grading a row that was never in the contract is the same defect as
+  missing one.
+- Do not let an absent or empty contract pass. A check that compares nothing
+  agrees with everything.
+- Do not add a runtime or development dependency for this layer.
+
+### Setup plan
+
+- Add `tools/contract_ids.py` at the repository root, in the mould of
+  `ceiling_ids.py`, and register `contract-ids` in `tools/gauntlet.sh` and the
+  manifest in `tools/gauntlet_layers.sh`. Add the contract section to this
+  file. Add the layer's row to `evidence.md`'s gauntlet table, update the layer
+  count, and rebind.
+- No new dependency and no new test file: the checker's controls are its four
+  arms, each exercised against a copy, plus one run through the real harness
+  with the failure read back from `gauntlet-stamp.txt`.
+- Commit cadence: this approved SPEC with the contract first; the checker and
+  its registration second; evidence rebinding third.
 
 ## Revision history
 

@@ -49,9 +49,37 @@ closely, never a substitute for reading them:
 ## Must NOT
 - <negative constraint / invariant that must survive>
 
+## Verification contract
+<Every layer that will run, with the number or state that makes it pass.
+Filled at approval, before any of them has run.>
+
+| Layer | What it gates | Threshold |
+|---|---|---|
+| <layer name, exactly as the entry point invokes it> | <the defect class it catches> | <the number or state that passes; "0 findings", "100% branch", "all mutants killed"> |
+
+Review layers, which are graded rather than computed:
+
+| Layer | Powers | Binding |
+|---|---|---|
+| <spec intent / adversarial / independent verification> | <tools it holds, rounds, call budget> | <what state its verdict attaches to> |
+
+Exit vocabulary: <what each exit status of the entry point means>
+
 ## Revisions
 - <appended only; each entry says what changed and why>
 ```
+
+**Publish the contract, not the grader's discretion.** The rows above are the
+whole of what "green" will mean, written down before anything runs. A reader
+who has them can tell a layer that failed from a layer that was never wired up,
+which is the difference a report written afterwards cannot show them.
+
+Two halves, and they are published differently on purpose. Artifact-computed
+rows carry their thresholds, because a number is checkable and hiding it only
+protects the author. Review layers carry their **powers and binding** and never
+a list of findings to look for: a reviewer whose questions are known in advance
+grades a ticket optimised for exactly those questions, and the categories it
+was not given are the ones the author already feared least.
 
 **Orientation is not the contract; the scenarios are.** A human who approves the
 summary has approved nothing — the four bullets are there to tell them which
