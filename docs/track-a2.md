@@ -279,7 +279,7 @@ ceiling exists to prevent, now in the ceiling itself.
 | Object | State |
 |---|---|
 | H1 amend the freeze | landed 2026-09-10 at `8e9c2d4`, repaired at `0f5d8df` after one adversarial round; three findings upheld |
-| H2 spec reviewer read scope | mechanism landed 2026-09-10 at `6930f38`, hardened at `4559a7c` after one adversarial round; four findings upheld. EX-1 held at `accepted` pending the recorded host probes, which the lift now requires mechanically |
+| H2 spec reviewer read scope | **not met.** Mechanism landed at `6930f38`, hardened at `4559a7c`; CI half green. Host probe run 2026-09-10 at tree `d31377f2d4077fe9` and FAILED: the reviewer read the source file, so the handler was not called. Two rounds spent, so this is an escalate rather than a third attempt. EX-1 stays `accepted` on evidence |
 | H3 adversary shell grammar | not started, blocked on step zero |
 | H4 budget counted | not started, blocked on step zero |
 | H5 runner and scribe roles | not started, blocked on step zero |
