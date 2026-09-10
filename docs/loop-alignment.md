@@ -4,7 +4,9 @@ A rule-by-rule audit of this repo against a private design document for
 autonomous agent loops ("Loop engineering" v0.1: intent, execution,
 verification, control, drift — stable rule ids). Reported the document's own
 way: by id, with evidence, no aggregate score. Each rule is restated in one
-line because the source is not committed. Audited at fork `main` `78187f9`.
+line because the source is not committed. First audited at fork `main`
+`78187f9`; refreshed at `e226c7b`, when Phases B through E landed on `main`
+and the rows they governed stopped being gaps.
 
 Status vocabulary, closed:
 
@@ -37,14 +39,14 @@ to an end state and records which object resolved it.
 
 | Id | Rule, in one line | Status | Evidence / gap |
 |---|---|---|---|
-| EX-1 | scope is absent capability, not instruction | partial | registered agents get host-enforced `tools:`; the bundled-brief path is a promise the author keeps. EVIDENCE records which ran; **Phase C** adds the explicit confidence downgrade for the brief path |
+| EX-1 | scope is absent capability, not instruction | partial | registered agents get host-enforced `tools:`; the bundled-brief path is a promise the author keeps. EVIDENCE records which ran, and Phase C (landed) makes the brief path an explicit confidence downgrade. Still `partial`: honoring a tool list is not being bounded by one. See VE-1 |
 | EX-2 | deny beats allow; empty allow list permits nothing | enforced | grants honored only from user scope; "no rule visible means the restrictive default" (`SKILL.md` §Setup) |
 | EX-3 | the check's author is not the implementation's author | enforced | human approves the spec; adversary and spec-intent reviewers spawn fresh; the merge gate's text is the scope authority |
 | EX-4 | split the doer before adding a tool | enforced | two agents on purpose; the spec reviewer must not reach the codebase (`SKILL.md` §The bundled agents) |
 | EX-5 | irreversible actions are missing capabilities, not policy | enforced | push and PR-open are "not gated, absent"; never grantable |
 | EX-6 | containment first, path scoping as defense in depth | enforced | worktree/branch isolation from Tier 2; checkpoint restores verified by `git diff --exit-code` |
 | EX-7 | tools are narrow and verb-specific | enforced | adversary holds `Read, Bash, Grep, Glob` and is told not to work around their absence |
-| EX-8 | tool output is untrusted input | gap → **Phase C** | the adversary reads potentially hostile repo content with a live tool set and its brief says nothing about directives found in that content |
+| EX-8 | tool output is untrusted input | enforced | Phase C (landed): the adversary brief makes a comment, docstring, commit message, or file that directs the reviewer a finding in its own right, reported with `file:line` (`agents/old-coder-adversary.md`) |
 | EX-9 | authorization enforced at the tool boundary, per-tool credentials | n-a | no tool in this skill holds credentials |
 | EX-10 | large output goes to a file and is summarized back | enforced | every layer redirects to `logs/`, "redirect, don't tee", bounded reads (`gauntlet.md` §Capturing command output) |
 
@@ -60,9 +62,9 @@ to an end state and records which object resolved it.
 | VE-6 | deterministic checks gate; model judgment advises | enforced | adversary findings are triaged against the code; the human grades verifier findings; layers gate |
 | VE-7 | deterministic ≠ correct; add substance checks | enforced | "a negative control proves one known-bad case", the grep-gate-guards-a-spelling caveat, human spec approval |
 | VE-8 | verdicts are structured, not prose | enforced | closed five-status vocabulary per layer, four verifier states, mechanical consistency check |
-| VE-9 | completion is proven by a harness-written artifact: checks passed, on this content, after the last change | gap → **Phase B** | EVIDENCE is model-written. The demo's entry point exits 0/nonzero but persists nothing; the three-part conjunction lives only in prose discipline |
+| VE-9 | completion is proven by a harness-written artifact: checks passed, on this content, after the last change | enforced | Phase B/D (landed): `gauntlet-stamp.txt`, written by the exit trap on every path, carries the result, both layer sets, a UTC timestamp, and the source binding. Six controls in `test_gauntlet_orchestration.sh` prove each path. Limit, stated in the skill: the stamp is written by the helper it reports on |
 | VE-10 | content identity by hashing content, not by asking git what changed | enforced | `tools/source_state.py`: tracked-manifest hashing, fail-closed on staged/unstaged/untracked/deleted, no-git fallback |
-| VE-11 | the evidence artifact records run provenance | partial | source commit + tree hash + pinned toolchain are recorded; recorded by the model, not emitted by the harness — **Phase B** moves the mechanical part into the stamp |
+| VE-11 | the evidence artifact records run provenance | enforced | Phase B (landed): the stamp emits source commit, tree hash, layer sets and UTC time from the harness. EVIDENCE cites the stamp rather than restating it (`SKILL.md` §EVIDENCE) |
 | VE-12 | each failure to prove gets a distinct reason | enforced | `N-A` / `UNAVAILABLE` / `SUBSTITUTED` split; source_state pins reasons per error path |
 | VE-13 | the verification layer is tested against known-bad inputs | enforced | orchestration/checker/source-state self-tests run as layers; the negative-control mutant; controls proven non-vacuous |
 
@@ -73,13 +75,13 @@ to an end state and records which object resolved it.
 | CO-1 | iteration counted by calling code | n-a by scope | no outer loop is built here; the human is the loop |
 | CO-2 | three exits: pass, retry, escalate — plus stable failure | partial | abandon-after-round-2 is the stable-failure exit, and it is defined; nothing counts in code. Accepted with CO-1 |
 | CO-3 | stagnation detected by failure signature | n-a by scope | with CO-1 |
-| CO-4 | budgets raise when exhausted | partial | the adversary's 10-call budget and the verifier's 2-round cap are enforced by the author and the human, not by a type. **Phase C** makes an uncounted or over-budget round a failed round rather than a nudge |
+| CO-4 | budgets raise when exhausted | partial | the adversary's 10-call budget and the verifier's 2-round cap are enforced by the author and the human, not by a type. Phase C (landed) makes an uncounted or over-budget round a failed round rather than a nudge (`gauntlet.md`, `templates.md`). The counting itself is still prose |
 | CO-5 | escalation names a visible destination | enforced | the skill ends at EVIDENCE shown to the human; blocked operations are recorded there, never silently dropped |
 | CO-6 | stopping carries gate, reason, and evidence | enforced | `FAILED` requires the verbatim failure; abandonment reports the findings that drove it |
 | CO-7 | state survives the process, written atomically, locked | n-a by scope | single-run artifacts; no concurrent scheduled runs exist to protect against |
 | CO-8 | corrupt state is a stop, not a fresh start | enforced (where state exists) | a rejected spec keeps its directory and history; corrupt source-state inputs fail closed with no partial hash |
-| CO-9 | the trace is written on the exception path too | gap → **Phase D** | the demo gauntlet writes nothing on failure; the stamp must be written red as well as green |
-| CO-10 | exit codes distinguish a decision from a crash | gap → **Phase D** | the demo gauntlet exits with whatever the failing tool exited with; a layer verdict and a broken script are indistinguishable to automation |
+| CO-9 | the trace is written on the exception path too | enforced | Phase D (landed): the exit trap stamps the failed-layer, orchestration-error, incomplete and crash paths, each with its own control. A failed source-state command is stamped `unavailable`, never guessed |
+| CO-10 | exit codes distinguish a decision from a crash | enforced | Phase D (landed): 0 green, 2 a layer ran and failed, 3 the orchestration contract was violated (an exit 0 that skipped the audit included), anything else a crash passed through. One control per code |
 | CO-11 | the trigger lives outside the loop | enforced | the offer gate: a configured wake IS the ask; the trigger never changes an exit |
 | CO-12 | never destroy human work to simplify the task | enforced | isolation invariant; the worktree trap; "never report green from a tree that never ran the suite" |
 | CO-13 | the final attempt narrows to the blocking row | gap, accepted | no rule narrows the last verifier round to the blocking finding. Left open: rounds are graded by the human, who can direct this |
@@ -91,13 +93,16 @@ to an end state and records which object resolved it.
 | DR-1 | gates and evaluations are different instruments | partial | gates are strong; the only evaluation is CI running the demo on every PR |
 | DR-2 | a fixed corpus of known-good inputs, run on a schedule | partial | the demo is the corpus and CI is the trigger; there is no schedule independent of traffic. Accepted for a prose skill |
 | DR-3 | evaluate weekly | n-a | no production traffic; the failure this catches does not accrue here |
-| DR-4 | instructions and skills are behavior: versioned, reviewed, tested | partial | versioned and reviewed, yes (this repo, CONTRIBUTING's bar); tested only where the demo exercises the changed rule. **Phase E** states the expectation in CONTRIBUTING |
+| DR-4 | instructions and skills are behavior: versioned, reviewed, tested | partial | versioned and reviewed, yes (this repo, CONTRIBUTING's bar). Phase E (landed): CONTRIBUTING now requires that a skill-text change altering what the gauntlet accepts ships with the fixture that fails without it. Still `partial`: the requirement is stated, and nothing rejects a PR that ignores it |
 | DR-5 | track cost and step count per unit of work | enforced | per-layer wall-clock and per-layer yield are EVIDENCE fields, kept to tune the tier map (fork-local; rejected upstream on #10) |
 
 ## The gaps, as work
 
 In land order. Upstream tags follow `ROADMAP.md`'s conventions; everything
 here diffs against fork `main` first and is re-cut upstream later, if at all.
+
+All four phases landed on fork `main` at `8e2b2c2` (2026-09-09), track-A
+object A1. The Upstream column is unchanged: landing here is not landing there.
 
 | Phase | Rules | Change | Where | Upstream |
 |---|---|---|---|---|

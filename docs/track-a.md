@@ -233,6 +233,14 @@ Criteria, one by one:
   did, and evidence.md already said HEAD is reported separately. Recorded that
   rerun rather than rewriting a binding that did not change.
 
+Tail of A1, because the merge caused it: `docs/loop-alignment.md` still read
+`gap` for the four phases the merge landed. Refreshed and rebound to `e226c7b`.
+EX-8, VE-9, VE-11, CO-9 and CO-10 move to `enforced` with the mechanism named.
+EX-1, CO-4 and DR-4 stay `partial` with the phase marked landed and the
+residue stated, because a landed mechanism is not the same as a closed row:
+those three resolve under A2, A5 and A6. `The gaps, as work` records that
+landing here is not landing upstream.
+
 Out of band, authorized in session: `UPSTREAM-AUDIT.md` was staged for deletion
 with four live references to it in `ROADMAP.md`. Deleted it and closed all four
 by inlining what each reference needed. `rg UPSTREAM-AUDIT` is now empty
