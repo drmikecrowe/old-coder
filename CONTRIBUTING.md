@@ -152,19 +152,19 @@ reads the CI half as the proof. A hook without a control that proves it denies
 is a bound that reports success while measuring nothing, which is this project's
 oldest failure mode wearing a new hat.
 
-**A hook lives in the repository, and nowhere else.** The handler goes in
-`hooks/`, and the frontmatter reaches it through `${CLAUDE_PROJECT_DIR}`.
-Cloning is the whole of the install. Nothing in this tier may put a file on a
-contributor's machine outside the checkout, because a repository that installs
-things globally is a repository you cannot evaluate by reading it.
+**The repository is the source of truth; the install is a documented step.**
+The handler is written and edited in `hooks/`. It is installed beside the
+agents, under the same config directory they are copied to, because the address
+has to follow the agent rather than the project: these agents review other
+people's repositories, so a project-relative path would resolve only when the
+skill runs against this one.
 
-Address it through `${CLAUDE_PROJECT_DIR}`. That is one of three placeholders
-the hooks reference guarantees Claude Code substitutes into a hook command, the
-others being `CLAUDE_PLUGIN_ROOT` and `CLAUDE_PLUGIN_DATA`. Any other variable
-depends on what the host happens to export, and on a file the reader was
-supposed to install by hand. Both of those fail the same way when they fail: an
-unresolved hook path does not error, it does nothing, and the tool call
-proceeds. That is what "on by default in
+**A hook that ships must ship with its install step in the README**, and the
+step must be checkable. Skipping it is silent: an unresolved hook path does not
+error, it does nothing, and the tool call proceeds while every other check
+stays green. `tools/hooks_registered.py` therefore reports the install state
+and prints the exact command that fixes it. A tier whose setup a careful reader
+cannot complete is a tier that ships instructions, not bounds. That is what "on by default in
 this fork's own deployment" costs, and it is why the paragraph above still
 governs a portable reader: what is a default here is a documented artifact they
 apply deliberately, or do not.

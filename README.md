@@ -40,6 +40,16 @@ Or manually:
   ```sh
   cp skills/old-coder/agents/*.md ~/.claude/agents/
   ```
+  The spec reviewer's agent file declares a `PreToolUse` hook that bounds its `Read` to the SPEC's own directory. **The hook is a second install step, and skipping it is silent**: an unresolved hook path does not error, so the reviewer simply reads whatever it likes and nothing says so. Install the handler beside the agents:
+  ```sh
+  mkdir -p ~/.claude/hooks
+  ln -s "$PWD/hooks/spec-intent-scope.sh" ~/.claude/hooks/spec-intent-scope.sh
+  ```
+  Then confirm it, because "I copied the files" is not the same as "the hook runs":
+  ```sh
+  python3 tools/hooks_registered.py   # prints the exact fix if it is not installed
+  ```
+  Two things to know before you rely on it. The bound needs `OLD_CODER_SPEC_DIR` set to the task's artifact directory in the environment of the `claude` process itself, and nothing sets that for you yet; unset, the handler denies every `Read`. And a green check here still does not prove the runtime calls the handler. Only a recorded probe does, and `hooks/README.md` has the procedure. Skip the hook entirely and the reviewer's "do not go looking for the codebase" stays what it has always been, an instruction.
 - **Other agents** — add `skills/old-coder/SKILL.md` to your `AGENTS.md`, rules file, or system prompt, and keep its `references/` directory alongside it. The two review passes are spawned as subagents briefed from `skills/old-coder/agents/old-coder-spec-intent.md` and `old-coder-adversary.md`; no agent-definition support is required.
 
 ### Optional companion: `old-coder-api`

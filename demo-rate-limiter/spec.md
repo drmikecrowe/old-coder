@@ -795,24 +795,27 @@ Four findings, all upheld. The two that changed mechanisms:
   non-vacuity for three checks while citing controls for two.
   `tools/test_hooks_registered.sh` is that control, and the layer above runs it.
 
-### Amendment, same day: the handler lives in the repository
+### Amendment, same day: the install is a step, and it is checkable
 
-The handler is addressed as `${CLAUDE_PROJECT_DIR}/hooks/spec-intent-scope.sh`
-and lives only in this repository. There is no symlink into a config directory
-and no `settings.json` entry, because a repository that installs files outside
-its own checkout cannot be evaluated by reading it, and because a bound that
-depends on a hand-run install step is a bound that is absent whenever the step
-was skipped.
+The handler is written and edited in `hooks/`, and installed beside the agents
+under the config directory they are copied to. The address follows the agent
+rather than the project, because these agents review other people's
+repositories: a project-relative address resolves only when the skill runs
+against this one, which is close to never.
 
-- `hooks_registered.py` fails any hook command interpolating a variable outside
-  the set the hooks reference guarantees. The failure mode is the reason it is
-  a hard failure: an unresolved hook path does not error, the tool call
-  proceeds, and every other check stays green because they grade the handler
-  and the repository rather than what the runtime did with the address.
-- The bound holds where `CLAUDE_PROJECT_DIR` is a checkout carrying `hooks/`,
-  and not elsewhere. Running the reviewer against another repository leaves it
-  unbounded and nothing announces that. Written into `hooks/README.md` as the
-  tier's boundary rather than left to be discovered.
+- `hooks_registered.py` reports the install state and, when the handler is not
+  linked, prints the `mkdir` and `ln -s` that fix it. Two controls cover both
+  directions, because a note that is always printed says nothing.
+- The install state is a note rather than a failure. CI never installs the
+  handler, so failing on it would redden every push and train people to ignore
+  the layer.
+- `README.md` carries the install step next to the line that copies the agents,
+  with the reason it matters: skipping it is silent, since an unresolved hook
+  path does not error and the tool call proceeds.
+- Recorded as unresolved rather than fixed: nothing sets `OLD_CODER_SPEC_DIR`
+  when the skill spawns the reviewer, so the bound is not yet wired into the
+  workflow that creates the artifact directory. Unset, the handler denies every
+  read, including the SPEC.
 
 ## Revision history
 

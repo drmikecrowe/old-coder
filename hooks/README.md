@@ -93,12 +93,24 @@ unreadable stdin, an empty payload, a payload that is not a JSON object. An
 ordinary nonzero exit would be a non-blocking error and the call would proceed,
 so nothing here is allowed to exit nonzero by accident.
 
-**Registration.** The frontmatter in
-`skills/old-coder/agents/old-coder-spec-intent.md` points at
-`${CLAUDE_PROJECT_DIR}/hooks/spec-intent-scope.sh`. The handler lives in the
-repository and nowhere else: cloning the repository is the whole of the
-install, and there is no global step that puts a file on a machine as a side
-effect of a checkout.
+**Registration, and it is two steps, not one.** The repository is the source of
+truth: the handler lives at `hooks/spec-intent-scope.sh` and is edited there.
+The frontmatter in `skills/old-coder/agents/old-coder-spec-intent.md` points at
+`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/spec-intent-scope.sh`, which is the
+same place the agents themselves are installed, so the handler is linked there
+beside them:
+
+```sh
+mkdir -p "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks"
+ln -s "$PWD/hooks/spec-intent-scope.sh" \
+  "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/spec-intent-scope.sh"
+```
+
+The address follows the agent, not the project. `old-coder` reviews other
+people's repositories, so a project-relative address would resolve only when it
+runs against this one. That is why the install is a real step rather than a
+side effect of cloning, and why `tools/hooks_registered.py` prints the exact
+`ln` command when the step has not been done.
 
 `CLAUDE_PROJECT_DIR` is deliberate and it is not interchangeable. The hooks
 reference guarantees three placeholders in a hook command:
@@ -116,14 +128,21 @@ nothing announces that. To carry the bound into another project, copy `hooks/`
 into it and copy the `hooks:` block into your own agent file. That is the tier
 being opt-in, and it is the cost of not installing anything globally.
 
-#### There is no install step
+#### Not `settings.json`
 
-Cloning the repository is the install. Do not create symlinks into a config
-directory for this hook, and do not add it to `settings.json`. If the reviewer
-is running with `CLAUDE_PROJECT_DIR` set to a checkout that contains this
-`hooks/` directory, the handler is reachable; if it is not, the bound is
-absent, and that is the documented boundary rather than a bug to work around
-with a global install.
+A hook in `settings.json` is session-wide: it fires for every agent's tool
+calls, including the main session. The documented `PreToolUse` input fields
+carry nothing identifying which subagent is calling, so a settings-based hook
+could not tell the spec reviewer apart from anyone else and would bound every
+`Read` in the session. Scoping a bound to one subagent is what frontmatter
+hooks are for, and the cost is that they do not appear in `/hooks`.
+
+**The unresolved piece.** The handler denies every `Read` unless
+`OLD_CODER_SPEC_DIR` names the task's artifact directory, and nothing in the
+skill sets it when it spawns the reviewer. Today that is the operator's job,
+set in the environment of the `claude` process before the session starts. Until
+something owns it, this bound is not wired into the workflow that creates the
+dated artifact directory, and a run that forgets it will fail the allow half.
 
 #### Running the controls
 

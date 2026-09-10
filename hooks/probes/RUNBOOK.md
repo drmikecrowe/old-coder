@@ -22,15 +22,13 @@ three first:
 
 ```sh
 cd /home/mcrowe/Programming/AI/old-coder
-python3 tools/hooks_registered.py          # handler present and executable
-rg -o 'command: .*' skills/old-coder/agents/old-coder-spec-intent.md
-ls -l hooks/spec-intent-scope.sh
+python3 tools/hooks_registered.py
 ```
 
-There is no install step and there must not be one. The handler is addressed
-through `${CLAUDE_PROJECT_DIR}`, so it resolves inside this checkout and
-nowhere else. Do not create a symlink into a config directory, and do not add
-the hook to `settings.json`.
+Read its note. `is installed at ...` means the handler is linked where the
+frontmatter points. `NOT installed` means it is not, and the note prints the two
+commands that fix it. The first round of this probe was lost to exactly that
+state, so do not skip this.
 
 ### Step 1. Set the scope in the environment of the `claude` process
 

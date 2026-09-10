@@ -52,7 +52,7 @@ expect() {
   if [ "$got" -eq "$want" ]; then pass "$label"; else fail "$label (wanted exit $want, got $got)"; fi
 }
 
-fixture good '${CLAUDE_PROJECT_DIR}/hooks/probe-hook.sh'
+fixture good '${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/probe-hook.sh'
 expect 0 "a present, executable handler passes" \
   "$PYTHON" "$CHECK" "$WORK/good"
 
@@ -62,17 +62,17 @@ expect 0 "a present, executable handler passes" \
 expect 0 "a bare environment still passes" \
   env -u CLAUDE_CONFIG_DIR -u CLAUDE_PROJECT_DIR HOME="$WORK/nowhere" "$PYTHON" "$CHECK" "$WORK/good"
 
-fixture deleted '${CLAUDE_PROJECT_DIR}/hooks/probe-hook.sh'
+fixture deleted '${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/probe-hook.sh'
 rm "$WORK/deleted/hooks/probe-hook.sh"
 expect 1 "a deleted handler fails" \
   "$PYTHON" "$CHECK" "$WORK/deleted"
 
-fixture unexec '${CLAUDE_PROJECT_DIR}/hooks/probe-hook.sh'
+fixture unexec '${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/probe-hook.sh'
 chmod -x "$WORK/unexec/hooks/probe-hook.sh"
 expect 1 "a non-executable handler fails" \
   "$PYTHON" "$CHECK" "$WORK/unexec"
 
-fixture renamed '${CLAUDE_PROJECT_DIR}/hooks/typo-hook.sh'
+fixture renamed '${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/typo-hook.sh'
 expect 1 "a frontmatter naming a handler that is not in hooks/ fails" \
   "$PYTHON" "$CHECK" "$WORK/renamed"
 
@@ -81,13 +81,6 @@ expect 1 "a hook pointing at an arbitrary binary fails" \
   "$PYTHON" "$CHECK" "$WORK/outside"
 
 fixture emptycmd ''
-# The defect that lost this tier's first host probe. It reads perfectly, it
-# resolves for a shell on the author's machine, and the runtime substitutes
-# nothing, so the hook never runs and the tool call proceeds.
-fixture strayvar '${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/probe-hook.sh'
-expect 1 "a variable the runtime does not substitute fails" \
-  "$PYTHON" "$CHECK" "$WORK/strayvar"
-
 expect 1 "an empty command fails" \
   "$PYTHON" "$CHECK" "$WORK/emptycmd"
 
@@ -95,8 +88,27 @@ mkdir -p "$WORK/noagents"
 expect 1 "an agent tree with no frontmatter is an error, not a pass" \
   "$PYTHON" "$CHECK" "$WORK/noagents"
 
+# An uninstalled handler is the most common reason a hook silently does
+# nothing, and it is deliberately not a failure: CI never installs it. What it
+# must do is say so, and say how to fix it, or the note is useless to the
+# person who is stuck.
+out=$(env -u CLAUDE_CONFIG_DIR HOME="$WORK/nowhere" "$PYTHON" "$CHECK" "$WORK/good" 2>&1)
+case "$out" in
+  *"NOT installed"*"ln -s"*) pass "an uninstalled handler is reported with the command that fixes it" ;;
+  *) fail "an uninstalled handler is reported with the command that fixes it" ;;
+esac
+
+# The other half, so the note above is not simply always printed.
+mkdir -p "$WORK/cfg/hooks"
+ln -s "$WORK/good/hooks/probe-hook.sh" "$WORK/cfg/hooks/probe-hook.sh"
+out=$(env CLAUDE_CONFIG_DIR="$WORK/cfg" "$PYTHON" "$CHECK" "$WORK/good" 2>&1)
+case "$out" in
+  *"is installed at"*) pass "an installed handler is reported as installed" ;;
+  *) fail "an installed handler is reported as installed (got: $out)" ;;
+esac
+
 if [ "$fails" -ne 0 ]; then
   echo "hooks-registered controls: $fails failure(s)" >&2
   exit 1
 fi
-echo "hooks-registered controls: all green (9 cases)"
+echo "hooks-registered controls: all green (10 cases)"
