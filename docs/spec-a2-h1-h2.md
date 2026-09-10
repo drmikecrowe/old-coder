@@ -458,6 +458,31 @@ Nothing in this SPEC lets a green gauntlet stand in for a recorded denial.
 
 - Initial draft, 2026-09-10, from `docs/track-a2.md` H2's acceptance
   criteria.
+- 2026-09-10, during GREEN. Three files were added that the setup plan did not
+  name by path, and an unnamed script is the thing `setup.md` warns about, so
+  they are named here instead of silently: `hooks/test_spec_intent_scope.sh`
+  (the handler's twelve controls), `tools/agent_frontmatter.py` (one frontmatter
+  reader, so `audit_sweep.py` and `hooks_registered.py` do not grow two), and
+  `hooks/probes/README.md` (the format for the recorded host probes).
+  `tools/hooks_registered.py` was named in Decide 4 but not in the setup plan.
+- 2026-09-10, during GREEN. Decide 1 is resolved a third way, better than the
+  three the SPEC listed. `$HOME/.claude` is wrong under this harness:
+  `CLAUDE_CONFIG_DIR` is set to a different path entirely. The frontmatter uses
+  `${CLAUDE_CONFIG_DIR:-$HOME/.claude}`, which is correct here and on a stock
+  install, with the symlink as the SPEC recommended.
+- 2026-09-10, during GREEN. Two layers were added beyond Decide 4's single
+  `hooks-registered`: `hook-controls` and `audit-sweep-controls`. A control
+  script nothing runs is the F3 defect class, and both were written to satisfy
+  acceptance criteria that already existed. `shell-lint` widened to cover them.
+  Demo `spec.md` REVISION 12 carries all of it; the contract now names 20
+  layers.
+- 2026-09-10, during GREEN. **H2 splits into two commits.** The SPEC assumed
+  one commit carrying both the mechanism and EX-1's move to `enforced`. That
+  ordering writes the claim before the proof exists: the evidence column would
+  cite host probes that had not been run. Commit one lands the mechanism with
+  EX-1 held at `accepted`, the reason stated in the row itself. Commit two
+  moves EX-1 after the recorded probes land in `hooks/probes/`. The acceptance
+  criteria are unchanged; only their order is.
 
 ---
 

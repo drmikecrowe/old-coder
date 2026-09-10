@@ -279,7 +279,7 @@ ceiling exists to prevent, now in the ceiling itself.
 | Object | State |
 |---|---|
 | H1 amend the freeze | landed 2026-09-10; SPEC at `docs/spec-a2-h1-h2.md` |
-| H2 spec reviewer read scope | not started |
+| H2 spec reviewer read scope | mechanism landed 2026-09-10; EX-1 held at `accepted` pending the recorded host probes |
 | H3 adversary shell grammar | not started, blocked on step zero |
 | H4 budget counted | not started, blocked on step zero |
 | H5 runner and scribe roles | not started, blocked on step zero |

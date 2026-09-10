@@ -296,15 +296,18 @@ can tell a layer that failed from a layer that was never wired up.
 | `tests-coverage` | untested changed lines | 0 failures and 100% of changed lines and branches, gated by `--cov-fail-under=100` |
 | `types` | contract drift the suite does not reach | 0 errors under `mypy` strict over `src tests examples tools` |
 | `lint-format` | style drift and dead constructs | 0 findings from `ruff check` and `ruff format --check` |
-| `shell-lint` | defects in the half of the harness written in shell | 0 findings from `shellcheck tools/*.sh`; a missing `shellcheck` is a red layer, never a skip |
+| `shell-lint` | defects in the half of the harness written in shell | 0 findings from `shellcheck` over `tools/*.sh`, `../hooks/*.sh` and `../tools/*.sh`; a missing `shellcheck` is a red layer, never a skip |
 | `supply-chain` | known-vulnerable dependencies | 0 advisories from `pip-audit` |
 | `must-not-scans` | real clocks in tests, and credentials anywhere | 0 matches; a broken scan exits 2 and is distinguishable from a clean one |
 | `mutation-control` | a mutation runner that reports kills it never ran | the killer mutant is killed and the equivalent mutant survives |
 | `mutation` | tests that assert nothing | every mutant in the committed table is killed |
 | `real-execution` | a suite that passes against a fake clock only | `examples/demo.py` runs against the real clock and exits 0 |
 | `audit-sweep` | an audit row crediting a bound its agent's tools cannot hold | 0 unsupported claims |
+| `audit-sweep-controls` | a sweep whose hooks-tier lift credits any agent that mentions hooks | 9 cases pass, including a hook on the wrong tool and a hook covering only one of two defeating tools |
 | `ceiling-ids` | a published ceiling that has drifted from the audit | 0 disagreements in either direction |
 | `contract-ids` | this contract drifting from the harness it describes | 0 disagreements in either direction |
+| `hooks-registered` | a frontmatter hook whose handler was renamed, deleted, or left non-executable, which fails open silently | 0 unusable hooks; this is the CI half and is not the proof that the host calls them |
+| `hook-controls` | a hook handler that allows what it claims to deny | 12 cases pass, symlink escape and empty payload included |
 | `source-state` | a report bound to a state nobody can return to | a binding is produced, or a named reason why it is not |
 | `evidence-binding` | a report whose numbers came from a different tree | the report's tree hash equals the derived one, and a stale review round does not sit under a bare `PASSED` |
 
@@ -314,7 +317,7 @@ whose questions are known in advance grades work optimised for those questions:
 
 | Layer | Powers | Binding |
 |---|---|---|
-| Spec intent (`old-coder-spec-intent`) | `Read`; one round; expected to use no tools at all | the SPEC text as approved. It has no codebase access by instruction, which `docs/loop-alignment.md` EX-1 records as instruction rather than capability |
+| Spec intent (`old-coder-spec-intent`) | `Read`; one round; expected to use no tools at all | the SPEC text as approved. Its `Read` is bounded to the SPEC's own directory by a frontmatter `PreToolUse` hook (`hooks/spec-intent-scope.sh`), which `docs/loop-alignment.md` EX-1 keeps at `accepted` until the host probes for that hook are recorded |
 | Adversarial review (`old-coder-adversary`) | `Read`, `Bash`, `Grep`, `Glob`; one round; at most 10 tool calls | the source-state tree hash the reviewed diff was taken from. Any later change to the source manifest returns this layer to not-run |
 | Independent verification | a fresh context at a named state, no inherited reasoning | the state it actually saw. Its status for this report is recorded in `evidence.md`, not promised here |
 
@@ -724,6 +727,47 @@ those look identical.
   with the failure read back from `gauntlet-stamp.txt`.
 - Commit cadence: this approved SPEC with the contract first; the checker and
   its registration second; evidence rebinding third.
+
+## REVISION 12: the hooks tier's CI half runs as layers (Tier 3)
+
+Approved 2026-09-10 in the SPEC for track-A2 objects H1 and H2
+(`docs/spec-a2-h1-h2.md`, Decide 4). This revision registers three checks over
+repository-level artifacts; it does not change rate-limiter runtime behaviour
+or its public API.
+
+A2 gives the repository a `hooks/` directory of host-specific bounds, and its
+first hook bounds `old-coder-spec-intent`'s `Read`. A hook has a failure mode
+no other layer has: delete its handler and Claude Code logs the failure and
+carries on, so the bound disappears while every document still claims it. That
+is silent from inside the run and needs a check outside it.
+
+These layers are the CI half and nothing more. They prove the handler decides
+correctly and that the frontmatter points at a file that exists and runs.
+**Neither proves Claude Code calls it.** Only a recorded host probe does, and
+it cannot run in CI, which is why `hooks/README.md` carries the procedure and
+why the split is named in the layer names rather than left to a reader.
+
+They live here for the same reason `audit-sweep` and `ceiling-ids` do: the
+demo's gauntlet is the only runner this repository has. REVISION 10 recorded
+that as debt. A2 object H6 pays it, and moves these out with the others.
+
+### Behaviour
+
+- `audit-sweep-controls` runs `../tools/test_audit_sweep.sh`, nine cases over
+  fixture agent trees. The sweep's new hooks-tier lift is proven to refuse a
+  hook on the wrong tool and a hook covering only one of two defeating tools.
+- `hooks-registered` runs `../tools/hooks_registered.py`, which fails when a
+  frontmatter names a handler that does not resolve, is not a file, or is not
+  executable.
+- `hook-controls` runs `../hooks/test_spec_intent_scope.sh`, twelve cases over
+  the handler, including a symlink inside the scope pointing out of it and an
+  empty payload. Both of those were open in the first draft and were found by
+  these controls rather than by review.
+- `shell-lint` widens to `../hooks/*.sh` and `../tools/*.sh`. A hook handler is
+  the last place to leave a quoting bug unlinted: its failure mode is a tool
+  call that proceeds.
+- `tools/audit_sweep.py` takes an optional second argument, an agent root, so
+  its controls can point it at fixtures. Nothing else should pass it.
 
 ## Revision history
 

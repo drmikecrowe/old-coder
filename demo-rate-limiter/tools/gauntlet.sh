@@ -41,6 +41,9 @@ layer_shell_lint() {
     return 2
   }
   shellcheck tools/*.sh || return $?
+  # The hooks tier ships shell, and a hook handler is the last place to want an
+  # unlinted quoting bug: its failure mode is a tool call that proceeds.
+  shellcheck ../hooks/*.sh ../tools/*.sh || return $?
 }
 run_layer shell-lint layer_shell_lint
 
@@ -81,8 +84,16 @@ run_layer real-execution "$PY/python" examples/demo.py
 # repository; they run here because this gauntlet is the only runner there is.
 # REVISION 10 records that as debt, not as a design.
 run_layer audit-sweep "$PY/python" ../tools/audit_sweep.py
+run_layer audit-sweep-controls env PYTHON="$(pwd)/$PY/python" sh ../tools/test_audit_sweep.sh
 run_layer ceiling-ids "$PY/python" ../tools/ceiling_ids.py
 run_layer contract-ids "$PY/python" ../tools/contract_ids.py
+
+# The hooks tier's CI half, and only that half. These prove the handler decides
+# correctly and that the frontmatter points at a file that exists and runs.
+# Neither proves Claude Code calls it. The host probes in hooks/README.md are
+# the proof, and they cannot run here. REVISION 12.
+run_layer hooks-registered "$PY/python" ../tools/hooks_registered.py
+run_layer hook-controls sh ../hooks/test_spec_intent_scope.sh
 
 run_layer source-state tools/source_state.sh
 

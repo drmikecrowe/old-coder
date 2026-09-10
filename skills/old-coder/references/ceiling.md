@@ -27,7 +27,7 @@ hand, so without that check the drift would be invisible.
 | Id | Rule, in one line | End state | Where it goes |
 |---|---|---|---|
 | IN-4 | a plan missing validation statements is rejected before execution | accepted | a human approver shown a plan with no validation statements is a better rejector than a parser |
-| EX-1 | scope is absent capability, not instruction | accepted | `old-coder-spec-intent` holds `tools: Read`, the host's floor, and `Read` opens any file, so its "do not go looking for the codebase" is instruction. One host can close this; see "One limit you can close yourself" below |
+| EX-1 | scope is absent capability, not instruction | accepted | `old-coder-spec-intent` holds `tools: Read`, the host's floor, and `Read` opens any file. This fork has landed the hook that bounds it; the row moves when the host probes are recorded, not before. See "One limit closed by a hook" below |
 | EX-5 | irreversible actions are missing capabilities, not policy | delegated | the runtime repo, VE-1. True of the workflow, false of the adversary, whose `Bash` reaches `git push`. Same capability as VE-1, same id |
 | EX-7 | tools are narrow and verb-specific | delegated | the runtime repo, VE-1. Three of the adversary's four tools are verb-specific; `Bash` is a shell |
 | EX-9 | authorization enforced at the tool boundary, per-tool credentials | n-a | no tool in this skill holds credentials |
@@ -43,45 +43,52 @@ hand, so without that check the drift would be invisible.
 | DR-3 | evaluate weekly | n-a | no production traffic; the failure this catches does not accrue here |
 | DR-4 | instructions and skills are behavior: versioned, reviewed, tested | accepted | `CONTRIBUTING.md` requires the fixture; nothing rejects a PR that ignores it |
 
-## One limit you can close yourself
+## One limit closed by a hook, and what that costs you
 
-EX-1 is `accepted` because this skill runs wherever a skill can be read, and
-the mechanism that would close it does not. On Claude Code it does. A
+EX-1 is `accepted` in the table above, and this fork has built the mechanism
+that would move it. The row has not moved yet, on purpose: what is green is
+the CI half, and the CI half is not the proof. When the host probes are
+recorded the row becomes `enforced`, one word, with the scoping in the
+audit's evidence column rather than in the status cell.
+
+The honest version of that future sentence keeps its qualifier: **enforced on
+Claude Code, an instruction everywhere else.**
+
+The mechanism is `hooks/spec-intent-scope.sh` in this repository. A
 `PreToolUse` hook declared in a subagent's own frontmatter is registered only
 while that subagent runs, fires on its tool calls, and can return
-`permissionDecision: "deny"`, which prevents the call. That is a per-agent,
-path-scoped bound on `Read`, which is exactly what the spec reviewer's brief
-asks for in prose.
+`permissionDecision: "deny"`, which prevents the call. The handler denies
+`Read` by default and allows only inside the directory the SPEC lives in, which
+is exactly what the spec reviewer's brief asks for in prose.
 
-It is not in the shipped agent file, on purpose: a reader on another host would
-inherit a mechanism their host ignores, and a constraint that silently does
-nothing is worse than a stated instruction. Take it deliberately, on a host
-that honors it:
+Read the handler rather than a copy of it. It is a real file with real
+controls, and a snippet reproduced here would drift from it silently, which is
+the failure this whole file is about. `hooks/README.md` says how to take it on
+another host: one symlink, and the `hooks:` block copied out of
+`skills/old-coder/agents/old-coder-spec-intent.md`.
 
-```yaml
-# In your copy of agents/old-coder-spec-intent.md, alongside `tools: Read`.
-# Point the handler at a script that denies any Read outside the artifact
-# directory the SPEC lives in, and returns permissionDecision "deny" with a
-# reason the reviewer will see.
-hooks:
-  PreToolUse:
-    - matcher: Read
-      hooks:
-        - type: command
-          command: ${CLAUDE_PROJECT_DIR}/.claude/hooks/spec-intent-scope.sh
-```
+Three things to get right, and the third is the one people miss.
 
-Two things to get right if you do. The handler must **deny by default and allow
-by path**, not the reverse: a blocklist of directories you thought of is not a
-bound. And it must fail closed, because a handler that errors and returns
-nothing leaves the normal permission flow running, which is the same as no hook
-at all. Prove both with a run where the reviewer tries to open a source file
-and says it could not.
+1. **Deny by default and allow by path**, never the reverse. A blocklist of
+   directories you thought of is not a bound.
+2. **Fail closed.** A handler that errors and returns nothing leaves the normal
+   permission flow running, which is the same as no hook at all. On
+   `PreToolUse`, exit 2 is a blocking error, so every unexpected path exits 2.
+3. **A hook cannot fail closed on its own absence.** Delete the handler and
+   Claude Code logs the failure and carries on. A parse-and-registration check
+   in CI catches the deletion; nothing catches a runtime that quietly stops
+   honouring frontmatter hooks. That is why the proof is a recorded host probe,
+   rerun on every hook change, and never the CI check on its own.
+
+Prove it both ways or you have proven nothing: a run where the reviewer tries
+to open a source file and reports that it could not, **and** a run where it
+reads the SPEC in its own directory and succeeds. A handler that denies
+everything passes the first test perfectly.
 
 This works for `Read` because a path is a decidable thing. It does not
 generalise to VE-1: bounding `old-coder-adversary`'s `Bash` would mean deciding
 whether an arbitrary shell string writes, and a blocklist over shell syntax is
-not a bound. That is why VE-1 is `delegated` and this one is not.
+not a bound. That is why VE-1 is `delegated` and this row is not.
 
 ## Two limits worth more than a row
 
