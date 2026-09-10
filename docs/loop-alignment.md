@@ -16,6 +16,13 @@ Status vocabulary, closed:
 | `partial` | intent present, part unmet; the gap is named |
 | `gap` | not done; the phase column says where it lands |
 | `n-a` | does not apply; the reason is named |
+| `accepted` | prose is the enforcement; the reason is written down |
+| `delegated` | it needs a capability this repo cannot supply; the destination repo and rule id are named |
+
+`accepted` and `delegated` are `docs/track-a.md`'s end states. A row reaches
+one of them when its `partial` is resolved rather than restated. `delegated`
+rows carry the same rule id in `drmikecrowe/old-coder-runtime`, so the two
+backlogs can be diffed.
 
 The skill is a human-gated methodology, not a scheduled loop. Outer-loop
 iteration and durable-state rules are `n-a` by scope: this audit does not
@@ -43,9 +50,9 @@ to an end state and records which object resolved it.
 | EX-2 | deny beats allow; empty allow list permits nothing | enforced | grants honored only from user scope; "no rule visible means the restrictive default" (`SKILL.md` §Setup) |
 | EX-3 | the check's author is not the implementation's author | enforced | human approves the spec; adversary and spec-intent reviewers spawn fresh; the merge gate's text is the scope authority |
 | EX-4 | split the doer before adding a tool | enforced | two agents on purpose; the spec reviewer must not reach the codebase (`SKILL.md` §The bundled agents) |
-| EX-5 | irreversible actions are missing capabilities, not policy | enforced | push and PR-open are "not gated, absent"; never grantable |
+| EX-5 | irreversible actions are missing capabilities, not policy | partial | true of the skill's own workflow: push and PR-open are "not gated, absent", never grantable. Not true of the adversary, whose `Bash` reaches `git push` like any other command. The gap is VE-1's, not a separate one |
 | EX-6 | containment first, path scoping as defense in depth | enforced | worktree/branch isolation from Tier 2; checkpoint restores verified by `git diff --exit-code` |
-| EX-7 | tools are narrow and verb-specific | enforced | adversary holds `Read, Bash, Grep, Glob` and is told not to work around their absence |
+| EX-7 | tools are narrow and verb-specific | delegated → `drmikecrowe/old-coder-runtime` VE-1 | three of the four are verb-specific; `Bash` is a general-purpose shell, so the list is not narrow and the row cannot read `enforced`. Same capability closes it. See VE-1, which is where the write path is stated |
 | EX-8 | tool output is untrusted input | enforced | Phase C (landed): the adversary brief makes a comment, docstring, commit message, or file that directs the reviewer a finding in its own right, reported with `file:line` (`agents/old-coder-adversary.md`) |
 | EX-9 | authorization enforced at the tool boundary, per-tool credentials | n-a | no tool in this skill holds credentials |
 | EX-10 | large output goes to a file and is summarized back | enforced | every layer redirects to `logs/`, "redirect, don't tee", bounded reads (`gauntlet.md` §Capturing command output) |
@@ -54,7 +61,7 @@ to an end state and records which object resolved it.
 
 | Id | Rule, in one line | Status | Evidence / gap |
 |---|---|---|---|
-| VE-1 | the verifier holds no write capability | enforced | adversary tools are read/inspect only; the independent verifier "fixes nothing" (`verifier.md`) |
+| VE-1 | the verifier holds no write capability | delegated → `drmikecrowe/old-coder-runtime` VE-1 | **This row read `enforced` and was wrong.** `agents/old-coder-adversary.md` declares `tools: Read, Bash, Grep, Glob`. `Bash` is a general write path: `rm`, `sed -i`, `git checkout`, `git commit`, `git push`. The brief's "reach for `Bash` only for git" is an instruction, and EX-1 in this same table says scope is absent capability, not instruction. The prose enforcement stays; what closes the row is a capability: a git surface narrow enough to read a diff without writing, or a read-only source view. Neither is buildable in a skill file |
 | VE-2 | a check must be shown able to fail before its pass counts | enforced | RED-first; throwaway mutant for immediately-passing tests; negative controls for home-grown checkers |
 | VE-3 | distinguish newly failing from already failing | enforced | baseline note: record pre-existing failures verbatim, hold zero NEW failures |
 | VE-4 | verification is multi-row, not one check | enforced | the layer table; a substitute is never a pass |
@@ -90,8 +97,8 @@ to an end state and records which object resolved it.
 
 | Id | Rule, in one line | Status | Evidence / gap |
 |---|---|---|---|
-| DR-1 | gates and evaluations are different instruments | partial | gates are strong; the only evaluation is CI running the demo on every PR |
-| DR-2 | a fixed corpus of known-good inputs, run on a schedule | partial | the demo is the corpus and CI is the trigger; there is no schedule independent of traffic. Accepted for a prose skill |
+| DR-1 | gates and evaluations are different instruments | partial | gates are strong. The only evaluation was CI running the demo on every PR, and on this fork it does not run: `drmikecrowe/old-coder` has zero workflow runs. Upstream runs it; the fork's own changes are evaluated by nothing |
+| DR-2 | a fixed corpus of known-good inputs, run on a schedule | partial | the demo is the corpus; the trigger is a human running `tools/gauntlet.sh`, because the fork's CI does not fire (see DR-1). No schedule independent of traffic either. Accepted for a prose skill; the missing trigger is not accepted, it is escalated |
 | DR-3 | evaluate weekly | n-a | no production traffic; the failure this catches does not accrue here |
 | DR-4 | instructions and skills are behavior: versioned, reviewed, tested | partial | versioned and reviewed, yes (this repo, CONTRIBUTING's bar). Phase E (landed): CONTRIBUTING now requires that a skill-text change altering what the gauntlet accepts ships with the fixture that fails without it. Still `partial`: the requirement is stated, and nothing rejects a PR that ignores it |
 | DR-5 | track cost and step count per unit of work | enforced | per-layer wall-clock and per-layer yield are EVIDENCE fields, kept to tune the tier map (fork-local; rejected upstream on #10) |

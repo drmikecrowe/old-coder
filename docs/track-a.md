@@ -198,12 +198,34 @@ Docs changes still run the stack. The rows that actually bite:
 
 | Object | State |
 |---|---|
-| A1 merge loop-alignment | landed at `8e2b2c2`, 2026-09-09 |
-| A2 VE-1 correction | not started |
+| A1 merge loop-alignment | landed at `8e2b2c2`, 2026-09-09; one criterion blocked, see below |
+| A2 VE-1 correction | landed 2026-09-09, `delegated` |
 | A3 spec reviewer tools | not started, blocked on step zero |
 | A4 one identity function | not started |
 | A5 publish the ceiling | not started |
 | A6 freeze and hand off | not started |
+
+## Findings
+
+### The fork's CI is a claim, not a mechanism
+
+`drmikecrowe/old-coder` has zero workflow runs. Every green CI run this repo's
+documents cite is `AmazingAng/old-coder`'s, and those are real: the demo, the
+workflow and the provenance history in `evidence.md` all belong to upstream,
+where PR #12 and the post-merge `main` runs it names did execute. Nothing in
+the historical record is wrong.
+
+What is wrong is the present tense. `evidence.md` says "CI runs the same
+gauntlet on 3.12 via `.github/workflows/gauntlet.yml`", and
+`docs/loop-alignment.md` DR-1 and DR-2 name CI as this repo's only evaluation
+instrument. Neither is true of the fork. Every fork-only change since
+2026-08-18, the completion stamp and exit vocabulary included, has been proven
+on one machine on Python 3.14.7 and never on the 3.12 the workflow pins.
+
+That is this repo's own defect class in this repo's own documents: a mechanism
+credited for work it is not doing. Resolution is one human action, enabling
+Actions on the fork, then one push. Until then the affected claims are
+narrowed to what is true rather than left standing.
 
 ## Log
 
@@ -215,9 +237,16 @@ merge over one intervening commit.
 Criteria, one by one:
 
 - **Branch content on `main`.** 16 files, `+509/-39`, including the new
-  `docs/loop-alignment.md`. CI already carried `fetch-depth: 0`, added when
-  `source_state.sh` learned to withhold provenance on a truncated history; no
-  workflow change was needed.
+  `docs/loop-alignment.md`. The workflow already carried `fetch-depth: 0`,
+  added when `source_state.sh` learned to withhold provenance on a truncated
+  history; no workflow change was needed.
+- **CI green on `main`: BLOCKED.** `gh api
+  repos/drmikecrowe/old-coder/actions/runs` returns `total_count: 0`. The fork
+  has never run a workflow, on any branch or event, against a `gauntlet`
+  workflow created 2026-08-05. Enabling Actions on a fork is a one-time click
+  in repository settings with no API behind it, so this criterion is escalated
+  to the human rather than retried. What was proven instead: the full gauntlet,
+  green locally at `e226c7b` on Python 3.14.7. See Findings.
 - **The stamp fixture is non-vacuous.** Replaced the `write_gauntlet_stamp
   "$result"` call in `tools/gauntlet_layers.sh` with a no-op and reran
   `tools/test_gauntlet_orchestration.sh`: 8 expectations violated, exit 1.
@@ -245,6 +274,39 @@ Out of band, authorized in session: `UPSTREAM-AUDIT.md` was staged for deletion
 with four live references to it in `ROADMAP.md`. Deleted it and closed all four
 by inlining what each reference needed. `rg UPSTREAM-AUDIT` is now empty
 repo-wide.
+
+### A2, 2026-09-09
+
+VE-1 read `enforced` on the strength of "adversary tools are read/inspect
+only". `agents/old-coder-adversary.md` declares `tools: Read, Bash, Grep,
+Glob`. `Bash` is a general write path, and the brief's "reach for `Bash` only
+for git" is an instruction, which EX-1 in the same table already says does not
+count as scope.
+
+Resolved to `delegated → drmikecrowe/old-coder-runtime VE-1`. The capability
+that closes it is a git surface narrow enough to read a diff without writing,
+or a read-only source view. Neither is expressible in a skill file, which is
+why the row leaves this repo instead of getting another paragraph.
+
+The sweep the object asked for found two more rows resting on the same fact:
+
+- **EX-7** ("tools are narrow and verb-specific") read `enforced` while
+  quoting a list containing a general-purpose shell. Same destination, same
+  rule id.
+- **EX-5** ("irreversible actions are missing capabilities") is true of the
+  skill's workflow, where push and PR-open are absent, and false of the
+  adversary, whose `Bash` reaches `git push`. Marked `partial` pointing at
+  VE-1 rather than opening a second delegation for one fact.
+
+The audit's status vocabulary was closed at four values and now carries six:
+`accepted` and `delegated` are added, defined, and bound to this file.
+
+RED before GREEN, on a docs change: the sweep is a script that reads every
+agent's frontmatter, finds the ones holding a shell, and fails on any audit row
+that claims a read-only constraint for one while reading `enforced`. Against
+the pre-A2 audit it exits 1 naming VE-1; against the post-A2 audit it exits 0.
+The script is not yet a gauntlet layer. A5 is the object that gives checks over
+the audit a durable home, and this one lands with it.
 
 Observation for A4, not acted on. `evidence.md` line 154 records the source
 binding as "source commit, tree hash, current HEAD reported separately," while

@@ -74,8 +74,12 @@ The writeup below, in brief:
   touch only this report or other out-of-scope paths preserve the source
   commit and tree hash. The manifest includes `.github/workflows`, which
   decides whether the gauntlet runs in CI at all.
-- Toolchain: pinned in `requirements-dev.txt` (local run: Python 3.14.7;
-  CI runs the same gauntlet on 3.12 via `.github/workflows/gauntlet.yml`).
+- Toolchain: pinned in `requirements-dev.txt` (local run: Python 3.14.7).
+  `.github/workflows/gauntlet.yml` pins 3.12 and is the second Python this
+  report has ever claimed, but **it has not run against this state.** The
+  workflow executes on `AmazingAng/old-coder`, where this demo originated;
+  `drmikecrowe/old-coder` has zero workflow runs, so every fork-only change
+  since 2026-08-18 is proven on 3.14.7 on one machine and on nothing else.
 - Entry point: `./tools/gauntlet.sh` reruns every layer below and writes
   `gauntlet-stamp.txt`: the result, the layer sets, a UTC timestamp, and the
   source binding — on the failure path too, with the exit status
@@ -424,9 +428,9 @@ independently verified**:
 - **Known gaps left open**: the memory bound is temporal, not cardinal —
   unbounded distinct keys *within* one window is accepted residual risk;
   forward clock skew, NaN clock readings and reentrant clocks are caller
-  obligations, not defended in code; there is no `Retry-After` accessor; the
-  shell scripts have no lint layer; and evidence is generated on Python 3.14
-  while CI gates on 3.12.
+  obligations, not defended in code; there is no `Retry-After` accessor; and
+  evidence is generated on Python 3.14 while the workflow pins 3.12, which on
+  this fork means the 3.12 leg is unproven rather than merely different.
 - **Spec revisions 2026-07-25 and 2026-07-27 remain unapproved**, and the
   revision-3 failure model was a retrofit reconstructed after implementation
   rather than written before it.
