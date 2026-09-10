@@ -56,21 +56,21 @@ The writeup below, in brief:
   Earlier revisions (2026-07-25, 2026-07-27) were autonomous and are still
   unapproved; treat them as the weaker part of the spec.
 - Independent verification: **not performed against the final source state
-  `8ecf38b`.** Six earlier rounds were performed; the last verified state
+  `6930f38`.** Six earlier rounds were performed; the last verified state
   `d0b506c` returned `failed`, and the fixes made since — one of them
   behavioural — are disclosed below as unverified. This report is finalized as
   a **declared downgrade**, not on the strength of a passing verdict. A
   verdict attaches to the state a verifier actually saw, and no verifier has
   seen this one.
-- Source state: source commit `8ecf38b`; sha256 tree hash
-  `7bc4352ff62e5e3e` — reproduce both with `./tools/source_state.sh` from any
+- Source state: source commit `6930f38`; sha256 tree hash
+  `cad3731ce3693e2a` — reproduce both with `./tools/source_state.sh` from any
   directory, or read them from `gauntlet-stamp.txt`, which the entry point
   writes on every exit path. When a binding is produced the tree hash is the required content
   identity; the source commit is provenance and is supplied only where
   complete history is available, so a shallow checkout reports
   `(unavailable: shallow history)` and a no-Git archive reports `(no git)`,
   both alongside this same tree hash. No error path emits a binding at all.
-  The script separately reports current HEAD; commits after `8ecf38b` that
+  The script separately reports current HEAD; commits after `6930f38` that
   touch only this report or other out-of-scope paths preserve the source
   commit and tree hash. The manifest includes `.github/workflows`, which
   decides whether the gauntlet runs in CI at all.
@@ -80,14 +80,17 @@ The writeup below, in brief:
   SHAs, so none of them can be checked against the current state. The
   `evidence-binding` layer therefore holds this report below a bare `PASSED`
   mechanically, which is the verdict it already declared for its own reasons.
-- Toolchain: pinned in `requirements-dev.txt`. Two Pythons, both run against
-  this state: locally on 3.14.7, and on 3.12.14 in CI via
-  `.github/workflows/gauntlet.yml`. The CI run derived this report's exact
-  binding, source commit `8ecf38b` and tree `7bc4352ff62e5e3e`, and reported
-  every layer green:
-  <https://github.com/drmikecrowe/old-coder/actions/runs/34468087528>. Its
-  HEAD was `24dd097`, a later commit touching only out-of-scope paths, which
-  is the manifest behaving as this section describes.
+- Toolchain: pinned in `requirements-dev.txt`. Locally on 3.14.7 against this
+  state. **CI has not run on this state**, and this report does not credit it
+  as though it had. The last CI run bound to the previous source state,
+  `8ecf38b` and tree `7bc4352ff62e5e3e`, reported every layer green
+  (<https://github.com/drmikecrowe/old-coder/actions/runs/34468087528>, HEAD
+  `24dd097`), and REVISION 12 has moved the tree since. That run is provenance
+  for the state it saw and says nothing about this one. This repository is the
+  worked example of the failure that rule exists to prevent, so the second
+  interpreter is recorded here as outstanding rather than assumed:
+  `.github/workflows/gauntlet.yml` fires on push, and the claim can be made
+  again once it has.
 - Entry point: `./tools/gauntlet.sh` reruns every layer below and writes
   `gauntlet-stamp.txt`: the result, the layer sets, a UTC timestamp, and the
   source binding — on the failure path too, with the exit status
@@ -95,7 +98,7 @@ The writeup below, in brief:
   crash (passed through).
 
 All numbers are from one final fresh run of the entry point, executed
-2026-09-10 at source commit `8ecf38b` after the last code edit; the stamp
+2026-09-10 at source commit `6930f38` after the last code edit; the stamp
 from that run reads `result: green` over the binding above.
 
 The branch carrying that state was merged to fork `main` as `8e2b2c2` on
@@ -152,6 +155,7 @@ Status legend: pass / fail / unverified / n-a.
 | REVISION 7: omitted or failed gauntlet work cannot report green | test_gauntlet_orchestration.sh (omitted layer, failing command with exact rc and stopped sentinel, unknown layer, duplicate layer, complete-manifest positive control) | pass |
 | REVISION 11: the contract and the harness name the same layers | contract_ids.py, five arms against copies (contract promises an unrun layer, gauntlet runs an unnamed one, contract section absent, no `run_layer` calls, a review row reformatted to a bare lowercase name) plus one run through the real harness reading `layer-failed (contract-ids, rc=1)` back from the stamp | pass |
 | REVISION 9: the report's binding is graded against the derived one | test_evidence_binding.py (15 controls: stale report binding, bare `PASSED` over a stale review, bare `PASSED` over an unavailable one, each of three fields absent, each of three fields duplicated, absent report, source-state command exiting nonzero, and exiting zero with no tree line) | pass |
+| REVISION 12: the hooks tier's CI half is non-vacuous | test_audit_sweep.sh (9 arms over fixture agent trees: no hook, a hook on the wrong tool, a hook covering one of two defeating tools, a non-enforced row, an unattributed row, a missing audit, an agent tree with no frontmatter) and test_spec_intent_scope.sh (12 arms over the handler, including a symlink inside the scope pointing out and an empty payload) | pass |
 | REVISION 8: every exit path is stamped and classified | test_gauntlet_orchestration.sh scenarios 6–11 (green stamp with binding, failed-layer stamp and exit 2, orchestration stamp and exit 3, crash passthrough, exit-0-before-audit remap, unavailable binding never guessed) | pass |
 
 ## Gauntlet (final fresh run: `./tools/gauntlet.sh`)
@@ -165,20 +169,23 @@ Status legend: pass / fail / unverified / n-a.
 | Tests | `pytest -q --cov=ratelimiter` | 65 passed, 0 failed |
 | Types | `mypy src tests examples tools` (strict) | 0 errors in 8 files |
 | Lint + format + complexity | `ruff check . && ruff format --check .` (mccabe ≤ 8) | 0 warnings, 10 files formatted |
-| Shell lint | `shellcheck tools/*.sh` (0.11.0); fails closed with rc 2 when shellcheck is absent, so a missing linter is a red layer rather than a silent skip | 0 findings across 6 scripts |
+| Shell lint | `shellcheck tools/*.sh ../hooks/*.sh ../tools/*.sh` (0.11.0); fails closed with rc 2 when shellcheck is absent, so a missing linter is a red layer rather than a silent skip | 0 findings across 8 scripts |
 | Changed-line coverage | `pytest --cov … --cov-fail-under=100` | 49/49 statements, 20/20 branches (100%). **This layer is a gate**; before 2026-08-09 it printed a percentage and exited 0 no matter how far coverage fell |
 | Mutation | `python tools/mutants.py` (manual, scripted; only pytest exit 1 counts as a kill; `__pycache__` cleared and `PYTHONDONTWRITEBYTECODE` set per mutant) | 22/22 killed |
 | Property-based | hypothesis, 2 properties | 100 examples each, 0 falsified |
 | Real execution | `python examples/demo.py` (real `time.monotonic`) | burst of 5 → `[True, True, True, False, False]`; other key unaffected; allowed again after window |
 | Supply chain | `pip-audit -r requirements-dev.txt` | no known vulnerabilities; runtime dependencies: **none** (stdlib only; `threading` is stdlib) |
 | Secret scan | must-not scan in `tools/gauntlet.sh` over src, tests, tools, examples, spec.md, pyproject.toml, requirements-dev.txt and `../.github` | clean, no matches |
-| Audit sweep | `../tools/audit_sweep.py` (REVISION 10; grades `docs/loop-alignment.md`, outside the source manifest) | pass: no audit row credits a capability bound its agent's tool list cannot hold |
+| Audit sweep | `../tools/audit_sweep.py` (REVISION 10; grades `docs/loop-alignment.md`, outside the source manifest. REVISION 12 widened it: a `PreToolUse` hook matching a defeating tool lifts the overclaim, and nothing weaker does) | pass: no audit row credits a capability bound its agent cannot hold |
+| Audit-sweep controls | `sh ../tools/test_audit_sweep.sh` (REVISION 12; fixture agent trees, so the lift is graded against agents that do and do not declare a matching hook) | 9/9 cases ok |
 | Ceiling ids | `../tools/ceiling_ids.py` (REVISION 10; grades the audit against `skills/old-coder/references/ceiling.md`) | pass: same rule ids in both directions, same end state for each |
 | Contract ids | `../tools/contract_ids.py` (REVISION 11; grades `spec.md`'s Verification contract against the `run_layer` calls in `tools/gauntlet.sh`) | pass: 17 layers named and run, no disagreement in either direction |
-| Source binding | `tools/source_state.sh` (and captured again into `gauntlet-stamp.txt` at exit) | source commit `8ecf38b`; tree `7bc4352ff62e5e3e`; current HEAD is reported separately |
+| Hooks registered | `../tools/hooks_registered.py` (REVISION 12; every frontmatter hook resolves to a file that exists and is executable) | pass: 1 hook across 2 agents. **This is the CI half.** It does not prove Claude Code calls the handler; only a recorded host probe does, and none has been run |
+| Hook controls | `sh ../hooks/test_spec_intent_scope.sh` (REVISION 12) | 12/12 cases ok. Two defects were found here rather than by review: a symlink inside the scope was allowed, and an empty payload failed open |
+| Source binding | `tools/source_state.sh` (and captured again into `gauntlet-stamp.txt` at exit) | source commit `6930f38`; tree `cad3731ce3693e2a`; current HEAD is reported separately |
 | Evidence binding | `tools/evidence_binding.py` (last gauntlet layer; REVISION 9) | pass: this report's cited tree hash equals the derived one, and its review binding is `unavailable`, which the layer holds below a bare `PASSED` |
 | License check | — | n-a: zero runtime dependencies, nothing redistributed beyond this repo's own MIT code |
-| Suite health | pytest-randomly (order shuffled every run) | 65 passed in randomized order, 10/10 consecutive runs (rerun at `8ecf38b`) |
+| Suite health | pytest-randomly (order shuffled every run) | 65 passed in randomized order, 10/10 consecutive runs (rerun at `8ecf38b`; REVISION 12 added no test and changed no runtime code) |
 
 ## Layer attribution
 
