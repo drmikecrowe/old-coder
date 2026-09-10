@@ -111,6 +111,45 @@ shipped agent or config file. The `PreToolUse` snippet in `ceiling.md` is the
 pattern. A default that silently does nothing on the reader's host is worse
 than a stated instruction.
 
+### The hooks tier
+
+That exception is now a tier, and it has a directory: `hooks/`. It carries
+host-specific bounds for Claude Code, opt-in for a portable reader and on by
+default in this fork's own deployment. `docs/track-a2.md` is the plan that
+builds it.
+
+The two halves are never blended. The skill text keeps its claim that any agent
+able to read it can honour it. A hook is where that claim stops and enforcement
+starts, and a hook is the only thing entitled to say "cannot".
+
+**The tier's test, both clauses required.** A hook ships with a control that
+proves it denies. And the skill text never claims what only a hook enforces, so
+a reader on another host can tell from the text alone which sentences are bounds
+for them and which are instructions.
+
+The first clause is not satisfied by CI. A hook control needs the host: a probe
+script plus a recorded denial, rerun and rebound on every hook change. CI can
+verify that hook files parse and that a frontmatter references them. Only the
+host can verify that they deny. State both halves inside the control, so nobody
+reads the CI half as the proof. A hook without a control that proves it denies
+is a bound that reports success while measuring nothing, which is this project's
+oldest failure mode wearing a new hat.
+
+**In this fork, shipped and deployed are the same file.** `~/.claude/agents/`
+symlinks at `skills/old-coder/agents/`, so a hook registered in a tracked
+agent's frontmatter is live here on the next run. That is what "on by default in
+this fork's own deployment" costs, and it is why the paragraph above still
+governs a portable reader: what is a default here is a documented artifact they
+apply deliberately, or do not.
+
+**The boundary the tier does not move.** Anything belonging to the unattended
+outer loop stays out: triggers, budgets held by calling code, durable state
+across runs, derived rubrics, anything that runs with nobody at the keyboard.
+Those go to the runtime repo carrying their rule ids, which is the join between
+the two backlogs, and a hook is not a way to smuggle one back here. An object
+that fails twice for want of that scope moves, with its failure signature
+recorded.
+
 ## Practical notes
 
 - Drafts are welcome, and a series of small independent PRs beats one large

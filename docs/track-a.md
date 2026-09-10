@@ -542,6 +542,11 @@ agent that can only read the text can honour the change. A PR that would move a
 row from `delegated` to `enforced` is out of scope no matter how good it is.
 The one exception is the opt-in shape EX-1 just established.
 
+That exception was widened into a tier the same day, in `docs/track-a2.md`: a
+`hooks/` directory of host-specific bounds, opt-in for a portable reader and on
+by default in this fork's deployment. Recorded here rather than edited above,
+so the record shows an amendment and not a contradiction.
+
 `ROADMAP.md` says plainly that it is not a closure dependency and never was.
 Track A closed without a single upstream merge, because publishing runs at the
 maintainer's review latency and closure cannot.
