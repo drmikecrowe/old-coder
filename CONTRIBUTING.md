@@ -152,11 +152,19 @@ reads the CI half as the proof. A hook without a control that proves it denies
 is a bound that reports success while measuring nothing, which is this project's
 oldest failure mode wearing a new hat.
 
-**In this fork, shipped and deployed are the same file.** The agents directory
-under `CLAUDE_CONFIG_DIR` symlinks at `skills/old-coder/agents/`, so a hook
-registered in a tracked agent's frontmatter is live here on the next run. Read
-that variable rather than assuming `~/.claude`: it is set to a different path on
-this host, and a hook command that hardcodes the guess resolves to nothing. That is what "on by default in
+**A hook lives in the repository, and nowhere else.** The handler goes in
+`hooks/`, and the frontmatter reaches it through `${CLAUDE_PROJECT_DIR}`.
+Cloning is the whole of the install. Nothing in this tier may put a file on a
+contributor's machine outside the checkout, because a repository that installs
+things globally is a repository you cannot evaluate by reading it.
+
+Address it through `${CLAUDE_PROJECT_DIR}`. That is one of three placeholders
+the hooks reference guarantees Claude Code substitutes into a hook command, the
+others being `CLAUDE_PLUGIN_ROOT` and `CLAUDE_PLUGIN_DATA`. Any other variable
+depends on what the host happens to export, and on a file the reader was
+supposed to install by hand. Both of those fail the same way when they fail: an
+unresolved hook path does not error, it does nothing, and the tool call
+proceeds. That is what "on by default in
 this fork's own deployment" costs, and it is why the paragraph above still
 governs a portable reader: what is a default here is a documented artifact they
 apply deliberately, or do not.

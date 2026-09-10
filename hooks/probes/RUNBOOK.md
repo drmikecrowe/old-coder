@@ -14,11 +14,30 @@ Claude Code pipes anything at it. Only spawning the real subagent does.
 
 ## `spec-intent-scope.sh`
 
+### Step 0. Confirm the setup before measuring anything
+
+A probe whose negative control fails for want of setup measures the setup, not
+the mechanism, and must not be recorded as a result about the hook. Check all
+three first:
+
+```sh
+cd /home/mcrowe/Programming/AI/old-coder
+python3 tools/hooks_registered.py          # handler present and executable
+rg -o 'command: .*' skills/old-coder/agents/old-coder-spec-intent.md
+ls -l hooks/spec-intent-scope.sh
+```
+
+There is no install step and there must not be one. The handler is addressed
+through `${CLAUDE_PROJECT_DIR}`, so it resolves inside this checkout and
+nowhere else. Do not create a symlink into a config directory, and do not add
+the hook to `settings.json`.
+
 ### Step 1. Set the scope in the environment of the `claude` process
 
 The hook is spawned by `claude` and inherits its environment. Exporting the
 variable inside a Bash tool call happens in a child process and never reaches
-the hook, so it must be set before the session starts.
+the hook, so it must be set before the session starts. `CLAUDE_PROJECT_DIR`
+must be this repository, which launching from here gives you.
 
 ```sh
 cd /home/mcrowe/Programming/AI/old-coder
@@ -54,7 +73,7 @@ Paste this as one prompt:
 | Negative control | Positive control | Verdict |
 |---|---|---|
 | reviewer reports it could not read the source file | reviewer quotes `PROBE-ALLOW-OK-8831` | the hook holds. Record it |
-| reviewer quotes the source file | anything | **the bound is absent.** The handler was not called. Do not record a pass |
+| reviewer quotes the source file | anything | **the bound is absent.** Go back to step 0. If the setup was wrong, fix it and rerun; that attempt measured the harness and is not a result about the hook, so it is not recorded. If the setup was right, this is a real failure and it is recorded |
 | reviewer reports it could not read | reviewer also cannot read the fixture | the handler denies everything. Record it as a failure: a hook that refuses the allow half is not proven, it is broken |
 
 The second row is the one to watch for. It is the failure the whole tier

@@ -307,7 +307,7 @@ can tell a layer that failed from a layer that was never wired up.
 | `ceiling-ids` | a published ceiling that has drifted from the audit | 0 disagreements in either direction |
 | `contract-ids` | this contract drifting from the harness it describes | 0 disagreements in either direction |
 | `hooks-registered` | a frontmatter hook whose handler was renamed, deleted, or left non-executable, which fails open silently | 0 unusable hooks; this is the CI half and is not the proof that the host calls them |
-| `hooks-registered-controls` | a registration check that reddens because a host declined an opt-in tier, or that misses a deleted handler | 8 cases pass, including a host with no `CLAUDE_CONFIG_DIR` and no symlink |
+| `hooks-registered-controls` | a registration check that reddens because a host declined an opt-in tier, or that misses a deleted handler | 9 cases pass, including a bare environment and a command interpolating a variable the runtime does not substitute |
 | `hook-controls` | a hook handler that allows what it claims to deny | 12 cases pass, symlink escape and empty payload included |
 | `source-state` | a report bound to a state nobody can return to | a binding is produced, or a named reason why it is not |
 | `evidence-binding` | a report whose numbers came from a different tree | the report's tree hash equals the derived one, and a stale review round does not sit under a bare `PASSED` |
@@ -794,6 +794,25 @@ Four findings, all upheld. The two that changed mechanisms:
 - `hooks-registered` had no negative control, so the evidence row credited
   non-vacuity for three checks while citing controls for two.
   `tools/test_hooks_registered.sh` is that control, and the layer above runs it.
+
+### Amendment, same day: the handler lives in the repository
+
+The handler is addressed as `${CLAUDE_PROJECT_DIR}/hooks/spec-intent-scope.sh`
+and lives only in this repository. There is no symlink into a config directory
+and no `settings.json` entry, because a repository that installs files outside
+its own checkout cannot be evaluated by reading it, and because a bound that
+depends on a hand-run install step is a bound that is absent whenever the step
+was skipped.
+
+- `hooks_registered.py` fails any hook command interpolating a variable outside
+  the set the hooks reference guarantees. The failure mode is the reason it is
+  a hard failure: an unresolved hook path does not error, the tool call
+  proceeds, and every other check stays green because they grade the handler
+  and the repository rather than what the runtime did with the address.
+- The bound holds where `CLAUDE_PROJECT_DIR` is a checkout carrying `hooks/`,
+  and not elsewhere. Running the reviewer against another repository leaves it
+  unbounded and nothing announces that. Written into `hooks/README.md` as the
+  tier's boundary rather than left to be discovered.
 
 ## Revision history
 

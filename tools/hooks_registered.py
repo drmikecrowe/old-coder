@@ -48,6 +48,17 @@ from agent_frontmatter import read_agents  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 AGENT_GLOB = "skills/*/agents/*.md"
 
+# The variables the hooks reference guarantees Claude Code substitutes into a
+# hook command. Any other name rests on what the host happens to export, and
+# usually on a file hand-installed outside the checkout, which is what this
+# tier's rule against global installs exists to prevent.
+#
+# The failure mode is why this is a hard failure rather than a warning: an
+# unresolved hook path does not error. It does nothing, the tool call proceeds,
+# and every other check here stays green, because they grade the handler and
+# the repository rather than what the runtime did with the address.
+SUBSTITUTED = frozenset({"CLAUDE_PROJECT_DIR", "CLAUDE_PLUGIN_ROOT", "CLAUDE_PLUGIN_DATA"})
+
 # `${NAME:-fallback}` and `${NAME}` and `$NAME`, which is the whole of what a
 # hook command path is allowed to interpolate here. Anything else is reported
 # rather than guessed at: a path this cannot resolve is a path this cannot
@@ -73,6 +84,26 @@ def expand(command: str, root: Path) -> str:
     return PLACEHOLDER.sub(one, command)
 
 
+def unsubstituted(command: str) -> list[str]:
+    """Variable names the runtime will not fill in for this command."""
+    names = []
+    for match in PLACEHOLDER.finditer(command):
+        name = match.group(1) or match.group(3)
+        if name not in SUBSTITUTED:
+            names.append(name)
+        # A fallback is shell syntax, not a placeholder the runtime honours, so
+        # the names inside it are unsubstituted too.
+        for inner in PLACEHOLDER.finditer(match.group(2) or ""):
+            inner_name = inner.group(1) or inner.group(3)
+            if inner_name not in SUBSTITUTED:
+                names.append(inner_name)
+        if match.group(2):
+            for bare in re.finditer(r"\$([A-Za-z_][A-Za-z0-9_]*)", match.group(2)):
+                if bare.group(1) not in SUBSTITUTED:
+                    names.append(bare.group(1))
+    return sorted(set(names))
+
+
 def handler_path(root: Path, command: str) -> Path:
     """The tier-local handler a hook command names, by basename.
 
@@ -95,6 +126,16 @@ def check(root: Path) -> tuple[list[str], list[str]]:
             where = f"{agent.path.name}: {name} PreToolUse[{hook.matcher}]"
             if not hook.command:
                 failures.append(f"{where} declares an empty command")
+                continue
+
+            stray = unsubstituted(hook.command)
+            if stray:
+                failures.append(
+                    f"{where} command interpolates {stray}, which Claude Code "
+                    f"does not substitute into a hook command. Use one of "
+                    f"{sorted(SUBSTITUTED)}. An unresolved hook path does not "
+                    f"error; the tool call simply proceeds"
+                )
                 continue
 
             handler = handler_path(root, hook.command)

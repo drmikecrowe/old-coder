@@ -7,7 +7,7 @@ hooks:
     - matcher: Read
       hooks:
         - type: command
-          command: "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/spec-intent-scope.sh"
+          command: "${CLAUDE_PROJECT_DIR}/hooks/spec-intent-scope.sh"
 ---
 
 You are given a request and a `SPEC.md` written from it. You answer **one** question:

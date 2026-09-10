@@ -52,26 +52,27 @@ expect() {
   if [ "$got" -eq "$want" ]; then pass "$label"; else fail "$label (wanted exit $want, got $got)"; fi
 }
 
-fixture good '${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/probe-hook.sh'
+fixture good '${CLAUDE_PROJECT_DIR}/hooks/probe-hook.sh'
 expect 0 "a present, executable handler passes" \
   "$PYTHON" "$CHECK" "$WORK/good"
 
-# The property the earlier version broke. No CLAUDE_CONFIG_DIR, no symlink:
-# exactly this repository's CI.
-expect 0 "a host that never opted in still passes" \
-  env -u CLAUDE_CONFIG_DIR HOME="$WORK/nowhere" "$PYTHON" "$CHECK" "$WORK/good"
+# The property an earlier version broke: it resolved the frontmatter path
+# against the running environment and reddened wherever that path was absent,
+# including this repository's own CI.
+expect 0 "a bare environment still passes" \
+  env -u CLAUDE_CONFIG_DIR -u CLAUDE_PROJECT_DIR HOME="$WORK/nowhere" "$PYTHON" "$CHECK" "$WORK/good"
 
-fixture deleted '${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/probe-hook.sh'
+fixture deleted '${CLAUDE_PROJECT_DIR}/hooks/probe-hook.sh'
 rm "$WORK/deleted/hooks/probe-hook.sh"
 expect 1 "a deleted handler fails" \
   "$PYTHON" "$CHECK" "$WORK/deleted"
 
-fixture unexec '${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/probe-hook.sh'
+fixture unexec '${CLAUDE_PROJECT_DIR}/hooks/probe-hook.sh'
 chmod -x "$WORK/unexec/hooks/probe-hook.sh"
 expect 1 "a non-executable handler fails" \
   "$PYTHON" "$CHECK" "$WORK/unexec"
 
-fixture renamed '${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/typo-hook.sh'
+fixture renamed '${CLAUDE_PROJECT_DIR}/hooks/typo-hook.sh'
 expect 1 "a frontmatter naming a handler that is not in hooks/ fails" \
   "$PYTHON" "$CHECK" "$WORK/renamed"
 
@@ -80,6 +81,13 @@ expect 1 "a hook pointing at an arbitrary binary fails" \
   "$PYTHON" "$CHECK" "$WORK/outside"
 
 fixture emptycmd ''
+# The defect that lost this tier's first host probe. It reads perfectly, it
+# resolves for a shell on the author's machine, and the runtime substitutes
+# nothing, so the hook never runs and the tool call proceeds.
+fixture strayvar '${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/probe-hook.sh'
+expect 1 "a variable the runtime does not substitute fails" \
+  "$PYTHON" "$CHECK" "$WORK/strayvar"
+
 expect 1 "an empty command fails" \
   "$PYTHON" "$CHECK" "$WORK/emptycmd"
 
@@ -91,4 +99,4 @@ if [ "$fails" -ne 0 ]; then
   echo "hooks-registered controls: $fails failure(s)" >&2
   exit 1
 fi
-echo "hooks-registered controls: all green (8 cases)"
+echo "hooks-registered controls: all green (9 cases)"

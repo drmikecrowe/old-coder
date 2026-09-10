@@ -93,23 +93,37 @@ unreadable stdin, an empty payload, a payload that is not a JSON object. An
 ordinary nonzero exit would be a non-blocking error and the call would proceed,
 so nothing here is allowed to exit nonzero by accident.
 
-**Registration.** In this fork the shipped agent file and the deployed agent
-file are one file, reached by symlink, so the frontmatter in
-`skills/old-coder/agents/old-coder-spec-intent.md` is live. It points at
-`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/spec-intent-scope.sh`. Deliberately
-not `${CLAUDE_PROJECT_DIR}`: that is the project being reviewed, not this
-checkout, so on every run except old-coder-on-old-coder the path would not
-exist and the hook would not run at all.
+**Registration.** The frontmatter in
+`skills/old-coder/agents/old-coder-spec-intent.md` points at
+`${CLAUDE_PROJECT_DIR}/hooks/spec-intent-scope.sh`. The handler lives in the
+repository and nowhere else: cloning the repository is the whole of the
+install, and there is no global step that puts a file on a machine as a side
+effect of a checkout.
 
-To take it on another host:
+`CLAUDE_PROJECT_DIR` is deliberate and it is not interchangeable. The hooks
+reference guarantees three placeholders in a hook command:
+`CLAUDE_PROJECT_DIR`, `CLAUDE_PLUGIN_ROOT` and `CLAUDE_PLUGIN_DATA`. Anything
+else rests on what the host exports and on a hand-installed file somewhere
+outside the checkout. Two things can then be wrong at once, the variable and
+the install, and neither announces itself: an unresolved hook path does not
+error, it does nothing, and the tool call proceeds.
 
-```sh
-mkdir -p "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks"
-ln -s "$PWD/hooks/spec-intent-scope.sh" \
-  "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/spec-intent-scope.sh"
-```
+**The consequence, stated rather than discovered.** `CLAUDE_PROJECT_DIR` is the
+project being worked on. The bound therefore holds when the spec reviewer runs
+inside a checkout that has this `hooks/` directory, and not otherwise. Running
+`old-coder` against some other repository leaves the reviewer unbounded, and
+nothing announces that. To carry the bound into another project, copy `hooks/`
+into it and copy the `hooks:` block into your own agent file. That is the tier
+being opt-in, and it is the cost of not installing anything globally.
 
-Then copy the `hooks:` block from this fork's agent frontmatter into yours.
+#### There is no install step
+
+Cloning the repository is the install. Do not create symlinks into a config
+directory for this hook, and do not add it to `settings.json`. If the reviewer
+is running with `CLAUDE_PROJECT_DIR` set to a checkout that contains this
+`hooks/` directory, the handler is reachable; if it is not, the bound is
+absent, and that is the documented boundary rather than a bug to work around
+with a global install.
 
 #### Running the controls
 

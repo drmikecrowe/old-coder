@@ -27,7 +27,7 @@ hand, so without that check the drift would be invisible.
 | Id | Rule, in one line | End state | Where it goes |
 |---|---|---|---|
 | IN-4 | a plan missing validation statements is rejected before execution | accepted | a human approver shown a plan with no validation statements is a better rejector than a parser |
-| EX-1 | scope is absent capability, not instruction | accepted | `old-coder-spec-intent` holds `tools: Read`, the host's floor, and `Read` opens any file. This fork built a hook to bound it and the host probe failed: the handler was not called. See "One limit a hook did not close" below |
+| EX-1 | scope is absent capability, not instruction | accepted | `old-coder-spec-intent` holds `tools: Read`, the host's floor, and `Read` opens any file. This fork ships a hook that bounds it, and no recorded host probe stands against the current address, so the row does not move. See "One limit a hook can close, on terms" below |
 | EX-5 | irreversible actions are missing capabilities, not policy | delegated | the runtime repo, VE-1. True of the workflow, false of the adversary, whose `Bash` reaches `git push`. Same capability as VE-1, same id |
 | EX-7 | tools are narrow and verb-specific | delegated | the runtime repo, VE-1. Three of the adversary's four tools are verb-specific; `Bash` is a shell |
 | EX-9 | authorization enforced at the tool boundary, per-tool credentials | n-a | no tool in this skill holds credentials |
@@ -43,21 +43,22 @@ hand, so without that check the drift would be invisible.
 | DR-3 | evaluate weekly | n-a | no production traffic; the failure this catches does not accrue here |
 | DR-4 | instructions and skills are behavior: versioned, reviewed, tested | accepted | `CONTRIBUTING.md` requires the fixture; nothing rejects a PR that ignores it |
 
-## One limit a hook did not close, and what that taught
+## One limit a hook can close, on terms
 
-EX-1 is `accepted` in the table above, and this fork built the mechanism that
-was supposed to move it. It did not move. The mechanism is real, its unit
-controls are green, its registration check is green, and **the host probe
-failed**: the reviewer was asked to read a source file and read it. The
-handler was never called.
+EX-1 is `accepted` in the table above, and this fork ships the mechanism that
+would move it. The row has not moved, and the reason is the useful part.
 
-That is worth more to a reader than the success would have been, so it is
-published rather than quietly retried. Everything except the last step
-reported success. A handler that decides correctly, a frontmatter that names
-it, and a check confirming the file is present and executable together produce
-a green pipeline and no bound at all. The one step none of them covers is
-whether the runtime invokes the handler, and that step is the whole of the
-guarantee.
+The handler's unit controls are green, twelve of them. The registration check
+is green. The frontmatter names the hook. That combination has already, once,
+coexisted with the bound being entirely absent, because the one step none of
+those cover is whether the runtime invokes the handler. A green pipeline is
+consistent with a hook nothing calls, and the gap does not announce itself
+from inside a run.
+
+So the rule here is not a preference. **A recorded host probe moves this row,
+and nothing else does.** `tools/audit_sweep.py` enforces it rather than asking
+for it: the row cannot read `enforced` while `hooks/probes/` holds no record
+for the handler.
 
 The mechanism is `hooks/spec-intent-scope.sh` in this repository. A
 `PreToolUse` hook declared in a subagent's own frontmatter is registered only
@@ -84,8 +85,8 @@ Three things to get right, and the third is the one people miss.
    and carries on. A parse-and-registration check in CI catches the deletion;
    nothing catches a runtime that never invoked the hook. That is why the proof
    is a recorded host probe, rerun on every hook change, and never the CI check
-   on its own. **This is not hypothetical here.** It is what happened, and the
-   record is in `hooks/probes/`.
+   on its own. **This is not hypothetical.** This tier has already had a run in
+   which every check was green and the handler was never called.
 
 Prove it both ways or you have proven nothing: a run where the reviewer tries
 to open a source file and reports that it could not, **and** a run where it

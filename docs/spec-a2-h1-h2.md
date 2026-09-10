@@ -504,6 +504,21 @@ Nothing in this SPEC lets a green gauntlet stand in for a recorded denial.
   acceptance criteria that already existed. `shell-lint` widened to cover them.
   Demo `spec.md` REVISION 12 carries all of it; the contract now names 20
   layers.
+- 2026-09-10, on Mike's direction: **hooks belong in the repository.** Decide
+  1 is answered a fourth way and my recommendation in it was wrong. I rejected
+  `${CLAUDE_PROJECT_DIR}` and chose `${CLAUDE_CONFIG_DIR:-$HOME/.claude}` plus a
+  symlink into the config directory, which made the bound depend on an install
+  step performed outside the checkout. The handler is now addressed through
+  `${CLAUDE_PROJECT_DIR}` and lives only in `hooks/`; the symlink is removed.
+  The trade Decide 1 described is real and is now written into
+  `hooks/README.md` rather than traded away silently: the bound holds inside a
+  checkout carrying `hooks/` and nowhere else. `hooks_registered.py` rejects any
+  hook command interpolating a variable outside the guaranteed set.
+  An earlier probe attempt against the config-directory address is not recorded
+  anywhere, deliberately and on Mike's instruction: its negative control failed
+  for want of the install step, which measures the setup rather than the
+  mechanism. A result that grades the harness is not evidence about the hook.
+  The clean run against the repository-local address is outstanding.
 - 2026-09-10, H2 adversarial round one, bound to `8e9c2d4...6930f38` at tree
   `cad3731ce3693e2a`, which unlike H1's did move. Four findings and one hunch;
   all four upheld, both mechanical attacks reproduced before repair.
