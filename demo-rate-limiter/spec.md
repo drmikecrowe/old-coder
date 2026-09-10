@@ -489,6 +489,89 @@ layer verdict from a broken script.
   remains `not performed` unless a separate verifier inspects the final
   state.
 
+## REVISION 9 — one identity function for evidence and review (Tier 3)
+
+Approved 2026-09-10, after an intent review that found the spec shipped
+detection while leaving the authoring guidance that causes the defect. Track-A
+object A4. This revision adds a gauntlet layer over `evidence.md`; it does not
+change rate-limiter runtime behaviour or its public API.
+
+Two identities are in use and only one is enforced. `tools/source_state.py`
+hashes the tracked source manifest and fails closed, and the completion stamp
+carries what it produced. Everything else in the report is a SHA a human typed:
+the state the gauntlet ran at, and the state each verification round bound to.
+Nothing compares the typed values against the derived one. A report can
+therefore cite a clean commit while the tree that produced its numbers was
+dirty, or keep citing a binding three source commits stale, and every layer
+stays green. That is the failure `source_state.py` exists to prevent, still
+open on the reporting path.
+
+### Behaviour
+
+- A new layer, `evidence-binding`, runs `tools/evidence_binding.py`. It derives
+  the current binding by calling the same function the stamp calls, reads the
+  bindings `evidence.md` states, and compares them.
+- **Comparing against the derived binding is comparing against the stamp's.**
+  The stamp's `source_state` section is the output of that same command and
+  nothing else: REVISION 8 forbids a stamp carrying a binding the command did
+  not produce, and the orchestration controls prove it. So the two comparisons
+  cannot disagree, and the derived one is available at layer time while the
+  stamp is not.
+- **The report's own binding must be current.** The tree hash `evidence.md`
+  gives as the source state of its gauntlet run must equal the derived tree
+  hash. A mismatch is a failing row naming both values.
+- **A verification round's binding is checked against the verdict, not against
+  the present.** A round may legitimately bind to an earlier state; that is
+  what a declared downgrade is. So: where the report's headline verdict is bare
+  `PASSED`, every verification round it counts must bind to the current tree
+  hash. Where any round binds to an older state, the verdict must be
+  `PASSED WITH LIMITS` or `FAILED`. `PASSED` over a stale review is the
+  failing row.
+- The layer fails closed. An `evidence.md` it cannot parse a binding from, an
+  absent report, and a source-state command that fails are each a failure
+  naming the reason, never a pass.
+- `evidence.md` is outside the source manifest, so editing the report does not
+  move the binding it cites. Editing source does, which is the point: source
+  changes turn this layer red until the report is rebound.
+
+### Must NOT do
+
+- Do not compare a verification round's binding against the present state and
+  fail on difference alone. An older round is legal; an older round under a
+  bare `PASSED` is not.
+- Do not derive the binding by any route other than the source-state command.
+  A second implementation of the identity function is the defect this revision
+  closes, reintroduced.
+- Do not let an unparseable report pass. A checker that cannot find the field
+  it grades reports nothing found, never nothing wrong.
+- Do not read `gauntlet-stamp.txt` for the comparison. The stamp is written by
+  the exit trap after every layer has run, so a layer reading it would grade
+  the previous run.
+- Do not add a runtime or development dependency for this layer.
+
+### Out of scope here, and where it is tracked
+
+This revision is the demo's contract, so it governs the checker only. The
+authoring side of the same defect lives in the skill: `SKILL.md` and
+`references/templates.md` still tell an author to bind a review to a
+`<base>...HEAD` SHA they type. A checker that catches a stale binding while the
+template keeps asking for the value that goes stale is half the fix. That
+change ships with this one under track-A object A4 (`docs/track-a.md`), and
+neither half closes the object alone.
+
+### Setup plan
+
+- Add `tools/evidence_binding.py` and register `evidence-binding` in
+  `tools/gauntlet.sh` and the expected-layer manifest in
+  `tools/gauntlet_layers.sh`. Add `tests/test_evidence_binding.py` with a
+  negative control per failure: a stale report binding, a bare `PASSED` over a
+  stale round, an unparseable report, an absent report, and a failing
+  source-state command. Add the layer's row to `evidence.md`'s gauntlet table
+  and rebind the report, since `tests/` and `tools/` are inside the manifest.
+- No new dependency. Commit cadence: this approved SPEC first; tests plus
+  implementation second; evidence rebinding third. Independent verification
+  remains `not performed` unless a separate verifier inspects the final state.
+
 ## Revision history
 
 Revisions 1–3 (2026-07-25 → 07-27) were made autonomously during the original
