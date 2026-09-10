@@ -349,6 +349,40 @@ with an evidence edit.
 Full gauntlet green at `716028a`, twenty-one rows, `audit-sweep`, `ceiling-ids`
 and `contract-ids` among them.
 
+**Adversarial round, one round, findings graded.** Fresh context, no inherited
+reasoning, ten calls available and six used. Binding, in the form
+`references/templates.md` § Review binding asks for: `tree 1f85ffb6ed06f504` at
+source commit `716028a`. The reviewer was told that hash covers
+`.github/workflows` and the demo's directories and not `skills/` or `docs/`, so
+the prose half of the diff was reviewed unbound. Its brief named categories and
+no findings, which is the object's own rule applied to the object.
+
+| Finding | Grade |
+|---|---|
+| no false pass found in `contract_ids.py` | recorded, not a finding |
+| `contract_layers` reads both tables in the contract section and keeps review rows out only by their formatting; reformatting one to a bare lowercase name would report drift that does not exist | upheld and fixed |
+| the factual claims check out: 17 layers both sides, 35/35 scenario rows, 65 tests | recorded |
+
+The fragility fails in the safe direction, a false FAIL and never a false PASS,
+which is why it is a fragility rather than a defect. Fixed anyway: a gate that
+breaks on an innocuous edit teaches people to distrust it, and a red layer
+nobody believes is worth less than no layer. Extraction now stops at the end of
+the first contiguous table, and REVISION 11's Must NOT says first table and
+says why the weaker rule was rejected, so the reasoning outlives the next
+reader who finds the guard redundant.
+
+Proven both ways against a copy: under the old rule a review row reformatted to
+`` `spec-intent` `` produces "the contract promises `spec-intent` and the
+gauntlet never runs it"; under the new rule the same input is green. The four
+original arms still fire. That makes five.
+
+**One thing the round did not have to catch, and I did.** Rebinding after the
+repair, a blanket replace of the old commit hash rewrote a historical line in
+`evidence.md`'s disclosure list, turning "REVISION 11 in commits `ba3ded9` and
+`716028a`" into the new hash and erasing the middle of its own history. Caught
+by reading back what the replace touched rather than trusting it. The entry now
+names all three commits and what the third one repaired.
+
 ### The three leftovers, 2026-09-10
 
 **Fork CI: still escalated, thread stopped.**
