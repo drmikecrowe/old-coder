@@ -119,7 +119,7 @@ skills/old-coder-api/     HTTP/JSON API 设计与评审（SKILL.md + references/
 demo-rate-limiter/        按 old-coder 端到端做出来的限流器示例
 ```
 
-demo 的 `evidence.md` 就是重点：41 个测试、100% 覆盖率（49/49 个语句、20/20 个分支），22/22 个埋入的 bug 全部被抓。更重要的是，对此前绿色状态进行的 fresh-context verification 仍发现了真实的行为缺陷和一个不可靠的 mutation runner——这恰好说明，关卡全绿并不能自证其可信。当前报告同时披露了修复情况和最终源码状态的验证状态。整份报告可以重跑：
+demo 的 `evidence.md` 就是重点：65 个测试、100% 覆盖率（49/49 个语句、20/20 个分支），22/22 个埋入的 bug 全部被抓。更重要的是，对此前绿色状态进行的 fresh-context verification 仍发现了真实的行为缺陷和一个不可靠的 mutation runner——这恰好说明，关卡全绿并不能自证其可信。当前报告同时披露了修复情况和最终源码状态的验证状态。整份报告可以重跑：
 
 ```sh
 cd demo-rate-limiter

@@ -124,7 +124,7 @@ CUSTOMIZATION.md          how to configure the skill with rules
 ATTRIBUTION.md            provenance, upstream credits, what this fork changed
 ```
 
-The demo's `evidence.md` is the point of the exercise: 41 tests, 100% coverage (49/49 statements and 20/20 branches), and 22/22 planted bugs caught. More importantly, fresh-context verification of earlier green states still found real behavioral defects and an unsound mutation runner — evidence that a green gauntlet is not self-authenticating. The current report discloses both the fixes and the final state's verification status. Rerun the whole report:
+The demo's `evidence.md` is the point of the exercise: 65 tests, 100% coverage (49/49 statements and 20/20 branches), and 22/22 planted bugs caught. More importantly, fresh-context verification of earlier green states still found real behavioral defects and an unsound mutation runner — evidence that a green gauntlet is not self-authenticating. The current report discloses both the fixes and the final state's verification status. Rerun the whole report:
 
 ```sh
 cd demo-rate-limiter
