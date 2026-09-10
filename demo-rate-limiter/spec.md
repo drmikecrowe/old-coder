@@ -303,10 +303,11 @@ can tell a layer that failed from a layer that was never wired up.
 | `mutation` | tests that assert nothing | every mutant in the committed table is killed |
 | `real-execution` | a suite that passes against a fake clock only | `examples/demo.py` runs against the real clock and exits 0 |
 | `audit-sweep` | an audit row crediting a bound its agent's tools cannot hold | 0 unsupported claims |
-| `audit-sweep-controls` | a sweep whose hooks-tier lift credits any agent that mentions hooks | 9 cases pass, including a hook on the wrong tool and a hook covering only one of two defeating tools |
+| `audit-sweep-controls` | a sweep whose hooks-tier lift credits any agent that mentions hooks | 12 cases pass, including a wildcard matcher, a shell tool, and an exact hook with no recorded probe |
 | `ceiling-ids` | a published ceiling that has drifted from the audit | 0 disagreements in either direction |
 | `contract-ids` | this contract drifting from the harness it describes | 0 disagreements in either direction |
 | `hooks-registered` | a frontmatter hook whose handler was renamed, deleted, or left non-executable, which fails open silently | 0 unusable hooks; this is the CI half and is not the proof that the host calls them |
+| `hooks-registered-controls` | a registration check that reddens because a host declined an opt-in tier, or that misses a deleted handler | 8 cases pass, including a host with no `CLAUDE_CONFIG_DIR` and no symlink |
 | `hook-controls` | a hook handler that allows what it claims to deny | 12 cases pass, symlink escape and empty payload included |
 | `source-state` | a report bound to a state nobody can return to | a binding is produced, or a named reason why it is not |
 | `evidence-binding` | a report whose numbers came from a different tree | the report's tree hash equals the derived one, and a stale review round does not sit under a bare `PASSED` |
@@ -768,6 +769,31 @@ that as debt. A2 object H6 pays it, and moves these out with the others.
   call that proceeds.
 - `tools/audit_sweep.py` takes an optional second argument, an agent root, so
   its controls can point it at fixtures. Nothing else should pass it.
+
+### Amendment, same day, after the adversarial round
+
+Four findings, all upheld. The two that changed mechanisms:
+
+- **The lift credited a declaration, not a behaviour.** A `matcher: .*` with a
+  handler that did nothing but `exit 0` silenced the sweep for VE-1 and EX-7,
+  the two rows this repository says a hook cannot close at all. The lift is now
+  narrow on three axes, and each closes that independently: the matcher must
+  *name* the tool exactly (per the reference, a matcher is match-all, an exact
+  string or list, or an unanchored regex, and only the exact form asserts
+  anything about a specific tool); a hook never lifts a shell tool, because
+  `ceiling.md` says a blocklist over shell syntax is not a bound; and a
+  recorded host probe must exist for the handler, because only a probe proves
+  denial. `tools/agent_frontmatter.py` now implements the reference's three
+  matcher cases rather than a single `fullmatch`.
+- **`hooks-registered` would have gone red on every host but this one**,
+  including this repository's own CI, where `CLAUDE_CONFIG_DIR` is unset and
+  nobody creates the symlink. It resolved the frontmatter path against the
+  running environment and treated "this host declined an opt-in tier" as "the
+  handler was deleted". It now grades `hooks/<handler>` in the tree, which
+  every clone has, and reports the local deployment as a note.
+- `hooks-registered` had no negative control, so the evidence row credited
+  non-vacuity for three checks while citing controls for two.
+  `tools/test_hooks_registered.sh` is that control, and the layer above runs it.
 
 ## Revision history
 

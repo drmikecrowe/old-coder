@@ -21,6 +21,12 @@ fails=0
 pass() { echo "  ok   $1"; }
 fail() { echo "  FAIL $1" >&2; fails=$((fails + 1)); }
 
+# probe <dir> <handler-stem>: record a host probe for that handler
+probe() {
+  mkdir -p "$WORK/$1/hooks/probes"
+  echo "recorded" > "$WORK/$1/hooks/probes/$2-deadbeef.md"
+}
+
 # agent <dir> <name> <tools> [matcher]
 agent() {
   mkdir -p "$WORK/$1/skills/old-coder/agents"
@@ -34,7 +40,7 @@ agent() {
       echo "    - matcher: $4"
       echo "      hooks:"
       echo "        - type: command"
-      echo "          command: /bin/true"
+      echo "          command: probe-hook.sh"
     fi
     echo "---"
     echo "body"
@@ -72,6 +78,8 @@ agent bash-hook probe-agent Read Bash
 agent multi probe-agent "Read, Grep" Read
 agent multi-both probe-agent "Read, Grep" "Read|Grep"
 
+for d in read-hook multi-both; do probe "$d" probe-hook; done
+
 expect 1 "no hook: enforced is still an overclaim" \
   "$WORK/enforced.md" "$WORK/no-hook"
 
@@ -86,6 +94,24 @@ expect 1 "a hook covering only one of two defeating tools does not lift it" \
 
 expect 0 "a hook covering both defeating tools lifts it" \
   "$WORK/enforced.md" "$WORK/multi-both"
+
+# The attack that defeated the first version of the lift: a matcher that fires
+# for every tool, plus a handler that does nothing, silencing the rows this
+# repository says a hook cannot close at all.
+agent wildcard probe-agent "Read, Bash" ".*"
+probe wildcard probe-hook
+expect 1 "a wildcard matcher does not lift anything" \
+  "$WORK/enforced.md" "$WORK/wildcard"
+
+agent shell-hook probe-agent "Read, Bash" "Read|Bash"
+probe shell-hook probe-hook
+audit shellrow enforced "cannot reach the codebase"
+expect 1 "a hook never lifts a shell tool, whatever it matches" \
+  "$WORK/shellrow" "$WORK/shell-hook"
+
+agent unprobed probe-agent Read Read
+expect 1 "an exact hook with no recorded probe does not lift" \
+  "$WORK/enforced.md" "$WORK/unprobed"
 
 expect 0 "a row that does not read enforced is not graded on tools" \
   "$WORK/accepted.md" "$WORK/no-hook"
@@ -105,4 +131,4 @@ if [ "$fails" -ne 0 ]; then
   echo "audit-sweep controls: $fails failure(s)" >&2
   exit 1
 fi
-echo "audit-sweep controls: all green (9 cases)"
+echo "audit-sweep controls: all green (12 cases)"

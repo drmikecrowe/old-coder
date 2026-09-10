@@ -93,6 +93,7 @@ run_layer contract-ids "$PY/python" ../tools/contract_ids.py
 # Neither proves Claude Code calls it. The host probes in hooks/README.md are
 # the proof, and they cannot run here. REVISION 12.
 run_layer hooks-registered "$PY/python" ../tools/hooks_registered.py
+run_layer hooks-registered-controls env PYTHON="$(pwd)/$PY/python" sh ../tools/test_hooks_registered.sh
 run_layer hook-controls sh ../hooks/test_spec_intent_scope.sh
 
 run_layer source-state tools/source_state.sh

@@ -10,6 +10,16 @@ logs the failure and the normal permission flow continues, which is the same as
 no hook at all. That failure is silent from inside the run, so it needs a check
 outside the run.
 
+**It grades the repository's copy, not the deployment.** An earlier version
+resolved the frontmatter path against the running environment and demanded it
+exist. That is red on every host that has not opted in, including this
+repository's own CI, where `CLAUDE_CONFIG_DIR` is unset and nobody creates the
+symlink. It conflated "the handler was deleted" with "this host declined an
+opt-in tier", and reported the second as the first, which would have made the
+layer a thing people learn to ignore. The tier is opt-in by design, so the
+check grades `hooks/<handler>` in the tree, which every host has, and reports
+the local deployment as a note rather than a verdict.
+
 **What it does not catch, and never will.** Whether Claude Code actually calls
 the handler. Only a recorded host probe closes that, and `hooks/README.md`
 carries the procedure. A green run here means the wiring is present, not that
@@ -63,9 +73,19 @@ def expand(command: str, root: Path) -> str:
     return PLACEHOLDER.sub(one, command)
 
 
-def check(root: Path) -> list[str]:
-    """Report every frontmatter hook that would not run."""
+def handler_path(root: Path, command: str) -> Path:
+    """The tier-local handler a hook command names, by basename.
+
+    Deliberately basename-only. The frontmatter path is host-specific by
+    design; what must exist in every clone is the file in `hooks/`.
+    """
+    return root / "hooks" / Path(command.split()[0]).name
+
+
+def check(root: Path) -> tuple[list[str], list[str]]:
+    """Return (failures, notes) for every frontmatter hook."""
     failures: list[str] = []
+    notes: list[str] = []
     agents = read_agents(root, AGENT_GLOB)
     if not agents:
         raise SystemExit(f"FAIL: no agent frontmatter under {root / AGENT_GLOB}")
@@ -76,27 +96,38 @@ def check(root: Path) -> list[str]:
             if not hook.command:
                 failures.append(f"{where} declares an empty command")
                 continue
-            resolved = expand(hook.command, root)
-            if "$" in resolved:
+
+            handler = handler_path(root, hook.command)
+            if not handler.exists():
                 failures.append(
-                    f"{where} command has an unresolved placeholder: {resolved}"
+                    f"{where} names {handler.name}, which is not in hooks/. "
+                    f"A hook in this tier lives in hooks/ and is graded there"
                 )
                 continue
-            path = Path(resolved.split()[0])
-            if not path.exists():
-                failures.append(f"{where} points at {path}, which does not exist")
+            if not handler.is_file():
+                failures.append(f"{where} points at {handler}, which is not a file")
                 continue
-            if not path.is_file():
-                failures.append(f"{where} points at {path}, which is not a file")
+            if not os.access(handler, os.X_OK):
+                failures.append(f"{where} points at {handler}, which is not executable")
                 continue
-            if not os.access(path, os.X_OK):
-                failures.append(f"{where} points at {path}, which is not executable")
-    return failures
+
+            # The deployment is a note. It is host-specific and opt-in, so its
+            # absence is a reader's choice, never this check's failure.
+            resolved = expand(hook.command, root)
+            deployed = Path(resolved.split()[0]) if "$" not in resolved else None
+            if deployed is not None and deployed.exists():
+                notes.append(f"{where} is deployed here at {deployed}")
+            else:
+                notes.append(
+                    f"{where} is not deployed on this host, which is the "
+                    f"opt-in tier behaving as documented"
+                )
+    return failures, notes
 
 
 def main(argv: list[str]) -> int:
     root = Path(argv[1]).resolve() if len(argv) > 1 else ROOT
-    failures = check(root)
+    failures, notes = check(root)
     for failure in failures:
         print(f"FAIL: {failure}", file=sys.stderr)
     if failures:
@@ -104,9 +135,12 @@ def main(argv: list[str]) -> int:
         return 1
     agents = read_agents(root, AGENT_GLOB)
     total = sum(len(agent.pre_tool_use) for agent in agents.values())
+    for note in notes:
+        print(f"note: {note}")
     print(
-        f"hooks registered: {total} hook(s) across {len(agents)} agents resolve "
-        f"and are executable (this does not prove the host calls them)"
+        f"hooks registered: {total} handler(s) across {len(agents)} agents are "
+        f"present and executable in hooks/ (this does not prove the host calls "
+        f"them)"
     )
     return 0
 

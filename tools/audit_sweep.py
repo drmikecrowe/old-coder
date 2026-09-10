@@ -15,12 +15,27 @@ is not the only bound available on every host: a `PreToolUse` hook declared in
 an agent's own frontmatter fires on that agent's tool calls and can deny them.
 So an agent may hold `Read` and still be unable to reach the source tree.
 
-The lift requires a parsed `PreToolUse` entry whose matcher names the defeating
-tool. Prose in the frontmatter does not earn it, a hook on a different tool
-does not earn it, and a hook file that is absent or not executable does not
-earn it either: `tools/hooks_registered.py` grades that half, and this sweep
-would otherwise credit a bound whose handler was deleted. A check that any
-agent can silence by mentioning hooks is not a check.
+The lift is narrow on three axes, and each one closes a way of earning it by
+declaration rather than by behaviour. An adversarial round defeated an earlier
+version with a `matcher: .*` and a handler that did nothing but `exit 0`,
+silencing the sweep for VE-1 and EX-7, which are the two rows this repository
+says a hook cannot close at all.
+
+  exact       the matcher must NAME the tool. Per the hooks reference a matcher
+              is match-all, an exact string or list, or an unanchored regex;
+              only the exact form is a statement about a specific tool. `.*`
+              fires for everything and therefore asserts nothing
+  not a shell  a hook never lifts a shell tool. Bounding one means deciding
+              whether an arbitrary shell string writes, and `ceiling.md` says
+              plainly that a blocklist over shell syntax is not a bound. If a
+              future object bounds a shell by an allowlist grammar, it changes
+              this rule deliberately and says so
+  probed      a recorded host probe must exist for the handler. Only a probe
+              proves a hook denies; the CI half proves the wiring resolves.
+              This is the rule that stops a no-op handler from lifting anything
+
+Prose in the frontmatter does not earn it, and neither does a hook file that is
+absent or not executable: `tools/hooks_registered.py` grades that half.
 
 Fails closed. No agent frontmatter found, or no audit to read, is an error
 rather than a pass: a sweep that reads nothing agrees with everything.
@@ -83,7 +98,33 @@ def row_fields(line: str) -> tuple[str, str] | None:
     return cells[1].strip(), cells[3].strip()
 
 
-def sweep(audit: Path, agents: dict[str, Agent]) -> list[str]:
+def recorded_probes(root: Path) -> set[str]:
+    """Handler stems that have a recorded host probe.
+
+    A probe file is `hooks/probes/<handler stem>-<anything>.md`. The stem is the
+    handler's filename without its extension, so `spec-intent-scope.sh` is
+    proven by `hooks/probes/spec-intent-scope-<tree hash>.md`.
+    """
+    stems: set[str] = set()
+    for path in (root / "hooks" / "probes").glob("*.md"):
+        if path.name in ("README.md", "RUNBOOK.md"):
+            continue
+        stems.add(path.stem)
+    return stems
+
+
+def lifted(agent: Agent, tool: str, probes: set[str]) -> bool:
+    """Whether a hook genuinely takes `tool` back from this agent."""
+    if tool in SHELL:
+        return False
+    for hook in agent.names_exactly(tool):
+        stem = Path(hook.command.split()[0]).stem if hook.command else ""
+        if any(probe == stem or probe.startswith(f"{stem}-") for probe in probes):
+            return True
+    return False
+
+
+def sweep(audit: Path, agents: dict[str, Agent], probes: set[str]) -> list[str]:
     """Report every row that credits a bound its named agent cannot hold."""
     failures: list[str] = []
     for number, line in enumerate(audit.read_text(encoding="utf-8").splitlines(), 1):
@@ -107,20 +148,16 @@ def sweep(audit: Path, agents: dict[str, Agent]) -> list[str]:
                 held = defeated_by & set(agents[agent].tools)
                 if not held:
                     continue
-                # The hooks tier: a PreToolUse hook matching every tool that
-                # would defeat the bound takes those tools back. Anything less
-                # leaves the row overclaimed, and the tools still holding the
-                # hole are named so the reader knows which.
                 unbounded = sorted(
-                    tool for tool in held if not agents[agent].bounds(tool)
+                    tool for tool in held if not lifted(agents[agent], tool, probes)
                 )
                 if not unbounded:
                     continue
                 failures.append(
                     f"{audit.name}:{number}: {rule_id} reads `enforced` for a "
                     f"{label} bound while {agent} declares "
-                    f"{agents[agent].tools} with no PreToolUse hook on "
-                    f"{unbounded}"
+                    f"{agents[agent].tools} with no probed, exact PreToolUse "
+                    f"hook on {unbounded}"
                 )
     return failures
 
@@ -133,7 +170,7 @@ def main(argv: list[str]) -> int:
     agents = read_agents(root, AGENT_GLOB)
     if not agents:
         raise SystemExit(f"FAIL: no agent frontmatter under {root / AGENT_GLOB}")
-    failures = sweep(audit, agents)
+    failures = sweep(audit, agents, recorded_probes(root))
     for failure in failures:
         print(f"FAIL: {failure}", file=sys.stderr)
     if failures:

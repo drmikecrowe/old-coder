@@ -14,11 +14,15 @@ that gap is real. A hook closes one of those places on one host. It is not a
 better way to write the instruction; it is the point where the instruction
 stops and enforcement starts, and the two are never blended.
 
-So the tier's test has two clauses and both are required:
+So the tier's test has three clauses and all are required:
 
-1. **A hook ships with a control that proves it denies.** A hook without one is
+1. **A hook here is a bound.** It refuses something. A hook that injects,
+   rewrites or logs is out of scope for this directory, because clause 2 is a
+   proof of denial and a hook that never denies satisfies it by having nothing
+   to prove.
+2. **A hook ships with a control that proves it denies.** A hook without one is
    a bound that reports success while measuring nothing.
-2. **The skill text never claims what only a hook enforces.** A reader on
+3. **The skill text never claims what only a hook enforces.** A reader on
    another host must be able to tell, from the text alone, which sentences are
    bounds for them and which are instructions.
 
@@ -48,18 +52,23 @@ all. Nothing inside the handler can change this, because the handler did not
 run.
 
 `tools/hooks_registered.py` is the mitigation, not the fix: it fails the
-gauntlet when a frontmatter references a hook file that is not present and
-executable. It catches the deletion. It does not catch a host that silently
-stops honouring frontmatter hooks. Rerun the host probes on every hook change,
-and rebind them, for exactly that reason.
+gauntlet when a frontmatter names a handler that is missing from `hooks/`, is
+not a file, or is not executable. It grades the repository's copy rather than
+your deployment, because the tier is opt-in and a check that reddens for a
+reader's choice is a check people learn to ignore. So it catches the deletion,
+and it does not catch a host that silently stops honouring frontmatter hooks,
+nor one that never opted in. Rerun the host probes on every hook change, and
+rebind them, for exactly that reason.
 
 ## The hooks
 
 ### `spec-intent-scope.sh`
 
 Bounds `old-coder-spec-intent`'s `Read` to the directory its SPEC lives in.
-Closes EX-1: the reviewer's brief says "do not go looking for the codebase",
-and without this that is an instruction.
+This is the mechanism that would move EX-1, and it has not moved it: the row
+reads `accepted` in `docs/loop-alignment.md` and stays there until the probes
+below are recorded. The reviewer's brief says "do not go looking for the
+codebase", and until a probe exists that is still an instruction.
 
 Deny by default, allow by resolved path. Every path component is resolved
 before the prefix test, the final one included, because a symlink inside the
@@ -107,6 +116,7 @@ Then copy the `hooks:` block from this fork's agent frontmatter into yours.
 ```sh
 sh hooks/test_spec_intent_scope.sh     # unit half, twelve cases
 python3 tools/hooks_registered.py      # registration half
+sh tools/test_hooks_registered.sh      # controls for the registration half
 ```
 
 #### The host probes

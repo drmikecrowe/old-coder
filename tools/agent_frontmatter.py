@@ -37,6 +37,20 @@ TOOLS = re.compile(r"^tools:\s*(.+)$", re.MULTILINE)
 TOOLS_ABSENT = "<key absent: inherits all>"
 
 
+# Matcher semantics, from the Claude Code hooks reference. Three cases, and the
+# difference between them is the whole of finding 1 from H2's adversarial round:
+#
+#   "*", "" or omitted        match every tool
+#   only [A-Za-z0-9_- ,|]     exact string, or a list separated by `|` or `,`
+#   anything else             an UNANCHORED JavaScript regular expression, so
+#                             `Edit.*` fires for `NotebookEdit` and `.*` fires
+#                             for everything
+#
+# Reproducing this faithfully matters because a caller may need to know not just
+# whether a matcher fires for a tool, but whether it names that tool exactly.
+EXACT_CHARS = re.compile(r"^[A-Za-z0-9_\- ,|]+$")
+
+
 @dataclass(frozen=True)
 class Hook:
     """One `PreToolUse` entry: the tools it matches and the command it runs."""
@@ -44,16 +58,38 @@ class Hook:
     matcher: str
     command: str
 
-    def matches(self, tool: str) -> bool:
-        """Whether this entry fires for `tool`.
+    @property
+    def kind(self) -> str:
+        """`all`, `exact` or `regex`, per the reference's three cases."""
+        if self.matcher in ("", "*"):
+            return "all"
+        return "exact" if EXACT_CHARS.match(self.matcher) else "regex"
 
-        The matcher is a regular expression, so `Bash|PowerShell` covers both.
-        An unparseable matcher matches nothing: crediting a bound because a
-        pattern failed to compile is the fail-open direction.
+    def names_exactly(self, tool: str) -> bool:
+        """Whether this matcher names `tool` as one of its exact strings.
+
+        Deliberately false for `all` and for every regex matcher, including one
+        that happens to fire for the tool. A matcher that fires for everything
+        is not a statement about anything, and a bound credited from it is
+        credited from a declaration rather than from a decision.
         """
+        if self.kind != "exact":
+            return False
+        return tool in {part.strip() for part in re.split(r"[|,]", self.matcher)}
+
+    def matches(self, tool: str) -> bool:
+        """Whether this entry fires for `tool`, as the host would decide it."""
+        kind = self.kind
+        if kind == "all":
+            return True
+        if kind == "exact":
+            return self.names_exactly(tool)
         try:
-            return re.fullmatch(self.matcher, tool) is not None
+            # Unanchored, matching the reference's RegExp.prototype.test.
+            return re.search(self.matcher, tool) is not None
         except re.error:
+            # A matcher the host would accept and this cannot compile fires for
+            # nothing here. Under-crediting a bound is the safe direction.
             return False
 
 
@@ -67,6 +103,10 @@ class Agent:
     def bounds(self, tool: str) -> bool:
         """Whether a declared hook fires on `tool` for this agent."""
         return any(hook.matches(tool) for hook in self.pre_tool_use)
+
+    def names_exactly(self, tool: str) -> list[Hook]:
+        """Every declared hook whose matcher names `tool` exactly."""
+        return [hook for hook in self.pre_tool_use if hook.names_exactly(tool)]
 
 
 def _indent(line: str) -> int:
