@@ -1,6 +1,6 @@
 #!/bin/sh
 # Fail-closed execution and completion accounting for the gauntlet entry point.
-GAUNTLET_EXPECTED_LAYERS="orchestration-self-test checker-self-test source-state-self-test tests-coverage types lint-format shell-lint supply-chain must-not-scans mutation-control mutation real-execution audit-sweep ceiling-ids source-state evidence-binding"
+GAUNTLET_EXPECTED_LAYERS="orchestration-self-test checker-self-test source-state-self-test tests-coverage types lint-format shell-lint supply-chain must-not-scans mutation-control mutation real-execution audit-sweep ceiling-ids contract-ids source-state evidence-binding"
 GAUNTLET_COMPLETED_LAYERS=""
 
 # State the exit trap classifies from. run_layer and finish_gauntlet keep

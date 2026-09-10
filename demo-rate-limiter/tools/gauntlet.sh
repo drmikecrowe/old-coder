@@ -82,6 +82,7 @@ run_layer real-execution "$PY/python" examples/demo.py
 # REVISION 10 records that as debt, not as a design.
 run_layer audit-sweep "$PY/python" ../tools/audit_sweep.py
 run_layer ceiling-ids "$PY/python" ../tools/ceiling_ids.py
+run_layer contract-ids "$PY/python" ../tools/contract_ids.py
 
 run_layer source-state tools/source_state.sh
 
