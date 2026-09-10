@@ -572,6 +572,56 @@ neither half closes the object alone.
   implementation second; evidence rebinding third. Independent verification
   remains `not performed` unless a separate verifier inspects the final state.
 
+## REVISION 10 — the demo's gauntlet runs the repository's own checks (Tier 3)
+
+Approved 2026-09-10, track-A object A5. This revision registers two existing
+checks as layers; it adds no new check, and does not change rate-limiter
+runtime behaviour or its public API.
+
+`tools/audit_sweep.py` and `tools/ceiling_ids.py` live at the repository root
+and grade repository documents: that no audit row credits a capability bound
+its agent's tool list cannot hold, and that the ceiling published inside the
+skill matches the audit it is drawn from. Both have negative controls. Neither
+is run by anything. A check nobody runs is this repository's own named defect
+class, so leaving them as hand-run scripts contradicts the text they check.
+
+**Name the smell rather than hide it.** These are repository-level checks and
+the demo is a rate limiter. They land here because the demo's gauntlet is the
+only runner this repository has. That is a real design problem: the correct
+home is a repository-level gauntlet the demo's one is a member of. This
+revision buys the checks a runner today and records the debt.
+
+### Behaviour
+
+- Two layers, `audit-sweep` and `ceiling-ids`, run `../tools/audit_sweep.py`
+  and `../tools/ceiling_ids.py`. Both are registered in the expected-layer
+  manifest, so an omitted one is an orchestration failure like any other.
+- They run before `source-state`, because they grade documents outside the
+  source manifest and a failure in them says nothing about the binding.
+- Each fails closed on its own terms, already: an audit with no rule rows, a
+  ceiling with no rule rows, and an absent file are failures naming the reason.
+
+### Must NOT do
+
+- Do not add the repository-root `tools/` directory to the source manifest.
+  The binding is about the demo's runtime behaviour; a wording change in an
+  audit must not invalidate a rate-limiter verdict. The consequence, that these
+  two checkers are outside the binding, is published in the skill's ceiling
+  rather than fixed by widening the hash.
+- Do not let either layer's absence pass. They are manifest members, not
+  optional extras.
+- Do not add a runtime or development dependency for either layer.
+
+### Setup plan
+
+- Register both layers in `tools/gauntlet.sh` and the manifest in
+  `tools/gauntlet_layers.sh`. Add both rows to `evidence.md`'s gauntlet table
+  and update the layer count. No new dependency, no new test: both scripts
+  already carry their controls, exercised in the objects that wrote them.
+- Commit cadence: this approved SPEC first; the registration second; evidence
+  rebinding third. Independent verification remains `not performed` unless a
+  separate verifier inspects the final state.
+
 ## Revision history
 
 Revisions 1–3 (2026-07-25 → 07-27) were made autonomously during the original
