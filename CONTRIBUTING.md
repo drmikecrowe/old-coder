@@ -97,7 +97,7 @@ for upstream; and translations.
 daemon, a credential, a scheduler, a per-agent capability, or a host feature to
 enforce it, it does not belong in a skill file, and putting it here produces
 either an instruction pretending to be a bound or a mechanism that only works
-on one host. Those go to `drmikecrowe/old-coder-runtime`.
+on one host. Those go to the runtime repo.
 
 The line is not "small versus large". It is whether an agent that can only
 *read* the text can honour the change. `skills/old-coder/references/ceiling.md`

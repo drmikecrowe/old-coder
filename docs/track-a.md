@@ -22,7 +22,7 @@ exists to prevent.
 | `enforced` | a mechanism does it, and the evidence column names the mechanism |
 | `n-a by scope` | the loop this rule governs is not built here |
 | `accepted` | prose is the enforcement, the reason is written down, and the reason is not "we ran out of time" |
-| `delegated` | it needs a capability, and the destination repo and rule id are named |
+| `delegated` | it needs a capability a skill file cannot ship, and the row names the rule id plus what the missing capability must do. Not a repo name |
 
 `partial` is not an end state. Every `partial` row resolves to one of the four
 before A is closed.
@@ -207,9 +207,20 @@ Docs changes still run the stack. The rows that actually bite:
 
 ## The runtime repo's opening backlog
 
-`drmikecrowe/old-coder-runtime` does not exist yet. When it does, these are its
-first issues, carrying the same rule ids on both sides so the two backlogs can
-be diffed rather than reconciled from memory.
+The runtime repo does not exist yet. When it does, these are its first issues,
+carrying the same rule ids on both sides so the two backlogs can be diffed
+rather than reconciled from memory.
+
+**It is deliberately unnamed here, and the rule ids are why.** The join between
+the two backlogs is `VE-1`, not a URL. A name written down before the repo
+exists is a binding to something with no state to bind to: nothing can confirm
+it, nothing goes red when it turns out to be wrong, and the first reader to
+follow it lands on a 404 that looks like a broken promise rather than an
+unstarted one. The rule id survives a rename, a different owner, and the
+decision not to build the repo at all. So `delegated` requires the id and a
+description of what the missing capability must do, and it does not require a
+destination anyone can type. When the repo exists, its issues carry these ids
+and the join works without either side citing the other's address.
 
 | Id | What it needs | Why prose cannot do it |
 |---|---|---|
@@ -304,7 +315,7 @@ Glob`. `Bash` is a general write path, and the brief's "reach for `Bash` only
 for git" is an instruction, which EX-1 in the same table already says does not
 count as scope.
 
-Resolved to `delegated → drmikecrowe/old-coder-runtime VE-1`. The capability
+Resolved to `delegated` to the runtime repo under VE-1. The capability
 that closes it is a git surface narrow enough to read a diff without writing,
 or a read-only source view. Neither is expressible in a skill file, which is
 why the row leaves this repo instead of getting another paragraph.

@@ -17,7 +17,7 @@ hand, so without that check the drift would be invisible.
 | State | Means |
 |---|---|
 | `accepted` | prose is the enforcement, and the written reason is not "we ran out of time" |
-| `delegated` | it needs a capability a skill file cannot ship; the destination repo and rule id are named |
+| `delegated` | it needs a capability a skill file cannot ship; the row names the rule id and what that capability must do |
 | `n-a` | the rule does not apply here, and the reason is named |
 | `n-a by scope` | the loop the rule governs is not built here |
 | `partial` | **not an end state.** A row may sit here only while it names the open decision it waits on. No row is in it |
@@ -28,10 +28,10 @@ hand, so without that check the drift would be invisible.
 |---|---|---|---|
 | IN-4 | a plan missing validation statements is rejected before execution | accepted | a human approver shown a plan with no validation statements is a better rejector than a parser |
 | EX-1 | scope is absent capability, not instruction | accepted | `old-coder-spec-intent` holds `tools: Read`, the host's floor, and `Read` opens any file, so its "do not go looking for the codebase" is instruction. One host can close this; see "One limit you can close yourself" below |
-| EX-5 | irreversible actions are missing capabilities, not policy | delegated | `drmikecrowe/old-coder-runtime` VE-1. True of the workflow, false of the adversary, whose `Bash` reaches `git push`. Same capability as VE-1, same id |
-| EX-7 | tools are narrow and verb-specific | delegated | `drmikecrowe/old-coder-runtime` VE-1. Three of the adversary's four tools are verb-specific; `Bash` is a shell |
+| EX-5 | irreversible actions are missing capabilities, not policy | delegated | the runtime repo, VE-1. True of the workflow, false of the adversary, whose `Bash` reaches `git push`. Same capability as VE-1, same id |
+| EX-7 | tools are narrow and verb-specific | delegated | the runtime repo, VE-1. Three of the adversary's four tools are verb-specific; `Bash` is a shell |
 | EX-9 | authorization enforced at the tool boundary, per-tool credentials | n-a | no tool in this skill holds credentials |
-| VE-1 | the verifier holds no write capability | delegated | `drmikecrowe/old-coder-runtime` VE-1. The adversary declares `Read, Bash, Grep, Glob`, and `Bash` writes. What closes it is a git surface narrow enough to read a diff without writing, or a read-only source view |
+| VE-1 | the verifier holds no write capability | delegated | the runtime repo, VE-1. The adversary declares `Read, Bash, Grep, Glob`, and `Bash` writes. What closes it is a git surface narrow enough to read a diff without writing, or a read-only source view |
 | CO-1 | iteration counted by calling code | n-a by scope | no outer loop is built here; the human is the loop |
 | CO-2 | three exits: pass, retry, escalate, plus stable failure | accepted | the exits are defined; the human is the loop, so the human is the counter |
 | CO-3 | stagnation detected by failure signature | n-a by scope | with CO-1 |
