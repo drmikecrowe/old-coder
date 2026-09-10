@@ -112,6 +112,7 @@ And one limit stated plainly: the gauntlet turns the constraints expressed in th
 
 ```
 skills/old-coder/         reliable coding workflow (SKILL.md + references/ + agents/)
+  references/ceiling.md     what the skill does not enforce, by rule id
   references/gauntlet.md    the layer catalogue and risk model
   references/setup.md       how rules are read, isolation, artifact layout
   references/templates.md   the SPEC and EVIDENCE templates

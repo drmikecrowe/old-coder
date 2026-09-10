@@ -31,6 +31,12 @@ build the loop.
 `docs/track-a.md` is the plan that closes this audit. It drives every row here
 to an end state and records which object resolved it.
 
+`skills/old-coder/references/ceiling.md` is this audit turned outward: every
+row below that is not `enforced`, published inside the skill so its readers see
+the limits without opening `docs/`. `tools/ceiling_ids.py` fails when the two
+lists differ in either direction, or when they name different end states for
+the same id.
+
 `tools/audit_sweep.py` checks this file mechanically: a row asserting a
 capability bound must name the agent id it constrains, and may not read
 `enforced` when that agent's frontmatter declares a tool defeating the bound.
@@ -43,7 +49,7 @@ Run it by hand for now; A5 makes it a gauntlet layer.
 | IN-1 | acceptance criteria are falsifiable, with a negative case | enforced | SPEC scenarios demand concrete inputs/outputs and error cases; "Handles bad input is not a spec" (`SKILL.md` §1) |
 | IN-2 | intent lives in a plan artifact outside the conversation | enforced | `SPEC.md` is a file, committed at approval; append-only enforced by diffing the committed copy |
 | IN-3 | every step names what would show it complete | enforced | scenario → test mapping is 1:1 and mechanical (`templates.md`) |
-| IN-4 | a plan missing validation statements is rejected before execution | partial | the spec-intent review and human approval reject in prose; nothing rejects in code. Accepted: the artifact is prose and the approver is the gate |
+| IN-4 | a plan missing validation statements is rejected before execution | accepted | the spec-intent review and human approval reject in prose; nothing rejects in code. Accepted, and the reason is not time: the artifact is prose, and a human approver who can be shown a plan with no validation statements is a better rejector of it than a parser would be |
 | IN-5 | one loop, one object type | enforced | the skill runs one task per artifact directory; `old-coder-api` composition explicitly forbids two parallel workflows |
 | IN-6 | agree on what a partial result looks like before the run | enforced | the five-status layer vocabulary, `PASSED WITH LIMITS`, and declared downgrades are exactly this |
 
@@ -55,7 +61,7 @@ Run it by hand for now; A5 makes it a gauntlet layer.
 | EX-2 | deny beats allow; empty allow list permits nothing | enforced | grants honored only from user scope; "no rule visible means the restrictive default" (`SKILL.md` §Setup) |
 | EX-3 | the check's author is not the implementation's author | enforced | human approves the spec; adversary and spec-intent reviewers spawn fresh; the merge gate's text is the scope authority |
 | EX-4 | split the doer before adding a tool | enforced | two agents on purpose, and the split itself is real: `old-coder-spec-intent` and `old-coder-adversary` are separate files with separate briefs and budgets (`SKILL.md` §The bundled agents). The rule this row scores is the split. The instruction that `old-coder-spec-intent` stay away from the source tree is prose, not capability, and is scored at EX-1 |
-| EX-5 | irreversible actions are missing capabilities, not policy | partial | true of the skill's own workflow: push and PR-open are "not gated, absent", never grantable. Not true of the adversary, whose `Bash` reaches `git push` like any other command. The gap is VE-1's, not a separate one |
+| EX-5 | irreversible actions are missing capabilities, not policy | delegated → `drmikecrowe/old-coder-runtime` VE-1 | true of the skill's own workflow: push and PR-open are "not gated, absent", never grantable. Not true of `old-coder-adversary`, whose `Bash` reaches `git push` like any other command. Not a second gap and not a second delegation: the same capability that closes VE-1 closes this, and it carries VE-1's id on both sides |
 | EX-6 | containment first, path scoping as defense in depth | enforced | worktree/branch isolation from Tier 2; checkpoint restores verified by `git diff --exit-code` |
 | EX-7 | tools are narrow and verb-specific | delegated → `drmikecrowe/old-coder-runtime` VE-1 | `old-coder-adversary` holds `Read, Bash, Grep, Glob`. Three are verb-specific; `Bash` is a general-purpose shell, so the list is not narrow and the row cannot read `enforced`. Same capability closes it as VE-1, which is where the write path is stated |
 | EX-8 | tool output is untrusted input | enforced | Phase C (landed): the adversary brief makes a comment, docstring, commit message, or file that directs the reviewer a finding in its own right, reported with `file:line` (`agents/old-coder-adversary.md`) |
@@ -85,27 +91,27 @@ Run it by hand for now; A5 makes it a gauntlet layer.
 | Id | Rule, in one line | Status | Evidence / gap |
 |---|---|---|---|
 | CO-1 | iteration counted by calling code | n-a by scope | no outer loop is built here; the human is the loop |
-| CO-2 | three exits: pass, retry, escalate — plus stable failure | partial | abandon-after-round-2 is the stable-failure exit, and it is defined; nothing counts in code. Accepted with CO-1 |
+| CO-2 | three exits: pass, retry, escalate — plus stable failure | accepted | abandon-after-round-2 is the stable-failure exit and it is defined; nothing counts in code. Accepted with CO-1: the human is the loop, so the human is the counter |
 | CO-3 | stagnation detected by failure signature | n-a by scope | with CO-1 |
-| CO-4 | budgets raise when exhausted | partial | the adversary's 10-call budget and the verifier's 2-round cap are enforced by the author and the human, not by a type. Phase C (landed) makes an uncounted or over-budget round a failed round rather than a nudge (`gauntlet.md`, `templates.md`). The counting itself is still prose |
+| CO-4 | budgets raise when exhausted | accepted | the adversary's 10-call budget and the verifier's 2-round cap are enforced by the author and the human, not by a type. Phase C (landed) makes an uncounted or over-budget round a failed round rather than a nudge (`gauntlet.md`, `templates.md`). Accepted: a budget *type* is unbuildable in prose, so the enforcement is that a breached budget voids the round |
 | CO-5 | escalation names a visible destination | enforced | the skill ends at EVIDENCE shown to the human; blocked operations are recorded there, never silently dropped |
 | CO-6 | stopping carries gate, reason, and evidence | enforced | `FAILED` requires the verbatim failure; abandonment reports the findings that drove it |
 | CO-7 | state survives the process, written atomically, locked | n-a by scope | single-run artifacts; no concurrent scheduled runs exist to protect against |
-| CO-8 | corrupt state is a stop, not a fresh start | enforced (where state exists) | a rejected spec keeps its directory and history; corrupt source-state inputs fail closed with no partial hash |
+| CO-8 | corrupt state is a stop, not a fresh start | enforced | where state exists: a rejected spec keeps its directory and history, and corrupt source-state inputs fail closed with no partial hash. The skill holds no other durable state, so there is none left to corrupt |
 | CO-9 | the trace is written on the exception path too | enforced | Phase D (landed): the exit trap stamps the failed-layer, orchestration-error, incomplete and crash paths, each with its own control. A failed source-state command is stamped `unavailable`, never guessed |
 | CO-10 | exit codes distinguish a decision from a crash | enforced | Phase D (landed): 0 green, 2 a layer ran and failed, 3 the orchestration contract was violated (an exit 0 that skipped the audit included), anything else a crash passed through. One control per code |
 | CO-11 | the trigger lives outside the loop | enforced | the offer gate: a configured wake IS the ask; the trigger never changes an exit |
 | CO-12 | never destroy human work to simplify the task | enforced | isolation invariant; the worktree trap; "never report green from a tree that never ran the suite" |
-| CO-13 | the final attempt narrows to the blocking row | gap, accepted | no rule narrows the last verifier round to the blocking finding. Left open: rounds are graded by the human, who can direct this |
+| CO-13 | the final attempt narrows to the blocking row | accepted | no rule narrows the last verifier round to the blocking finding. Accepted deliberately, not for time: rounds are graded by a human who can direct this, and a rule that always narrows the last round would hide a second defect behind the first |
 
 ## Drift
 
 | Id | Rule, in one line | Status | Evidence / gap |
 |---|---|---|---|
-| DR-1 | gates and evaluations are different instruments | partial | gates are strong. The only evaluation was CI running the demo on every PR, and on this fork it does not run: `drmikecrowe/old-coder` has zero workflow runs. Upstream runs it; the fork's own changes are evaluated by nothing |
-| DR-2 | a fixed corpus of known-good inputs, run on a schedule | partial | the demo is the corpus; the trigger is a human running `tools/gauntlet.sh`, because the fork's CI does not fire (see DR-1). No schedule independent of traffic either. Accepted for a prose skill; the missing trigger is not accepted, it is escalated |
+| DR-1 | gates and evaluations are different instruments | accepted | gates are strong. The only evaluation was CI running the demo on every PR, and on this fork it does not run: `drmikecrowe/old-coder` has zero workflow runs, so the fork's own changes are evaluated by nothing. Upstream runs it. Accepted as a rule about the skill, which cannot make anyone's CI fire; **escalated as a fact about this repo**, and published in the skill's ceiling because a gauntlet that only ever runs on the author's machine is a gate wearing an evaluation's name |
+| DR-2 | a fixed corpus of known-good inputs, run on a schedule | accepted | the demo is the corpus; the trigger is a human running `tools/gauntlet.sh`, because the fork's CI does not fire (see DR-1). No schedule independent of traffic either. Accepted for a prose skill; the missing trigger is escalated with DR-1, not accepted |
 | DR-3 | evaluate weekly | n-a | no production traffic; the failure this catches does not accrue here |
-| DR-4 | instructions and skills are behavior: versioned, reviewed, tested | partial | versioned and reviewed, yes (this repo, CONTRIBUTING's bar). Phase E (landed): CONTRIBUTING now requires that a skill-text change altering what the gauntlet accepts ships with the fixture that fails without it. Still `partial`: the requirement is stated, and nothing rejects a PR that ignores it |
+| DR-4 | instructions and skills are behavior: versioned, reviewed, tested | accepted | versioned and reviewed, yes (this repo, CONTRIBUTING's bar). Phase E (landed): CONTRIBUTING requires that a skill-text change altering what the gauntlet accepts ships with the fixture that fails without it. Accepted: nothing rejects a PR that ignores it, and the reviewer who would enforce it is the same human who would notice the missing fixture. A related limit is published in the ceiling: the source manifest excludes `skills/`, so a skill-text change moves no tree hash |
 | DR-5 | track cost and step count per unit of work | enforced | per-layer wall-clock and per-layer yield are EVIDENCE fields, kept to tune the tier map (fork-local; rejected upstream on #10) |
 
 ## The gaps, as work

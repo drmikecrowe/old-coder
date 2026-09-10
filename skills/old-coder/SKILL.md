@@ -121,6 +121,14 @@ human already made:
 Both default to asking: build the text, write it to the artifact directory, post
 nothing.
 
+**It also stops short of enforcing some of what it asks for.** A skill is
+prose, and prose persuades an agent rather than bounding one.
+`references/ceiling.md` is the list of rules this methodology states and does
+not enforce, each with the reason and, where a capability would close it, the
+destination. It is checked against the internal audit mechanically, so it
+cannot quietly fall behind. Read it before you quote a guarantee from this file
+in a report of your own.
+
 So with no grants in effect, nothing this skill does is outward-facing and an
 unattended run cannot cause external harm. The confidence downgrade for
 autonomous mode is therefore about **evidence quality** — the spec was never

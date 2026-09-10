@@ -202,7 +202,7 @@ Docs changes still run the stack. The rows that actually bite:
 | A2 VE-1 correction | landed 2026-09-09, `delegated` |
 | A3 spec reviewer tools | landed 2026-09-09 after one adversarial round; EX-1 is `partial`, and its end state is A6's portability call |
 | A4 one identity function | landed 2026-09-10 as a mechanism, not an `accepted` |
-| A5 publish the ceiling | not started |
+| A5 publish the ceiling | published 2026-09-10; the layer registration waits on REVISION 10 |
 | A6 freeze and hand off | not started |
 
 ## Findings
@@ -307,6 +307,63 @@ that claims a read-only constraint for one while reading `enforced`. Against
 the pre-A2 audit it exits 1 naming VE-1; against the post-A2 audit it exits 0.
 The script is not yet a gauntlet layer. A5 is the object that gives checks over
 the audit a durable home, and this one lands with it.
+
+### A5, 2026-09-10
+
+**Closing the audit's `partial` rows came first**, because a ceiling cannot
+publish an end state a row does not have. Nine rows read `partial` or
+`gap, accepted`. Eight resolved:
+
+| Rows | To | Why, in one line |
+|---|---|---|
+| IN-4, CO-2, CO-4, CO-13, DR-1, DR-2, DR-4 | `accepted` | each reason is a design position, not a shortage of time, and each is now written as one |
+| EX-5 | `delegated` | it is VE-1's gap seen from another row, so it carries VE-1's id rather than opening a second delegation |
+
+`CO-8` also read `enforced (where state exists)`, a qualifier smuggled into a
+closed vocabulary. The qualifier moved to the evidence column where it belongs.
+
+**EX-1 is the one row still `partial`, and that is deliberate.** It waits on
+A6's portability decision and names it. The ceiling publishes it as the
+undecided row rather than rounding it to an end state it has not reached.
+
+**The ceiling ships inside the skill**, at
+`skills/old-coder/references/ceiling.md`, not in `docs/`. `SKILL.md` is loaded
+in full on every invocation and `CONTRIBUTING.md` asks that it stay short, so
+the always-loaded file carries a pointer and the table lives beside the other
+reference files. It also carries the two limits Mike asked for, both framed as
+facts about any project rather than confessions about this one:
+
+- a gauntlet that only ever runs on the author's machine is a gate, not an
+  evaluation, and this fork is the worked example at `total_count: 0`;
+- a source binding covers what its manifest covers, and prose usually sits
+  outside it, so a review of a skill-text change binds to a hash that did not
+  move.
+
+**The check.** `tools/ceiling_ids.py` compares rule ids in both directions and,
+for shared ids, compares end states. Five controls, each producing a different
+failure:
+
+| Control | Result |
+|---|---|
+| an id deleted from the ceiling | exit 1: named as present in the audit, missing from the ceiling |
+| the ceiling claiming a row the audit enforces | exit 1: both directions fire at once |
+| the two files naming different end states for one id | exit 1: names both states |
+| the audit resolving a row to `enforced` while the ceiling keeps it | exit 1: the reverse direction alone |
+| a ceiling with no rule rows | exit 1: fails closed rather than comparing nothing |
+
+**Not yet a gauntlet layer, and that is the object's open half.** A5 requires
+the check to run as one, and the only runner in this repo is the demo's
+gauntlet. Registering repo-level checks there is a change to the demo's
+contract, which under this repo's own discipline needs an approved spec. That
+is REVISION 10, and it also covers `tools/audit_sweep.py`, committed under A3
+and still run only by hand.
+
+Worth saying plainly: the reason repo-level checks have to be bolted onto a
+demo's gauntlet is that the repo has no runner of its own. That is a real
+design smell and REVISION 10 is where it gets named rather than hidden.
+
+Pre-existing drift found and not fixed, because it is outside this object:
+`README-zh.md` still says the demo has 41 tests. It has 65.
 
 ### A4, 2026-09-10
 
