@@ -80,12 +80,14 @@ The writeup below, in brief:
   SHAs, so none of them can be checked against the current state. The
   `evidence-binding` layer therefore holds this report below a bare `PASSED`
   mechanically, which is the verdict it already declared for its own reasons.
-- Toolchain: pinned in `requirements-dev.txt` (local run: Python 3.14.7).
-  `.github/workflows/gauntlet.yml` pins 3.12 and is the second Python this
-  report has ever claimed, but **it has not run against this state.** The
-  workflow executes on `AmazingAng/old-coder`, where this demo originated;
-  `drmikecrowe/old-coder` has zero workflow runs, so every fork-only change
-  since 2026-08-18 is proven on 3.14.7 on one machine and on nothing else.
+- Toolchain: pinned in `requirements-dev.txt`. Two Pythons, both run against
+  this state: locally on 3.14.7, and on 3.12.14 in CI via
+  `.github/workflows/gauntlet.yml`. The CI run derived this report's exact
+  binding, source commit `8ecf38b` and tree `7bc4352ff62e5e3e`, and reported
+  every layer green:
+  <https://github.com/drmikecrowe/old-coder/actions/runs/34468087528>. Its
+  HEAD was `24dd097`, a later commit touching only out-of-scope paths, which
+  is the manifest behaving as this section describes.
 - Entry point: `./tools/gauntlet.sh` reruns every layer below and writes
   `gauntlet-stamp.txt`: the result, the layer sets, a UTC timestamp, and the
   source binding — on the failure path too, with the exit status
@@ -458,9 +460,10 @@ independently verified**:
 - **Known gaps left open**: the memory bound is temporal, not cardinal —
   unbounded distinct keys *within* one window is accepted residual risk;
   forward clock skew, NaN clock readings and reentrant clocks are caller
-  obligations, not defended in code; there is no `Retry-After` accessor; and
-  evidence is generated on Python 3.14 while the workflow pins 3.12, which on
-  this fork means the 3.12 leg is unproven rather than merely different.
+  obligations, not defended in code; and there is no `Retry-After` accessor.
+  The Python split is no longer among these limits: the numbers here come from
+  3.14.7 locally, and CI reran every layer green on 3.12.14 against this same
+  binding.
 - **Spec revisions 2026-07-25 and 2026-07-27 remain unapproved**, and the
   revision-3 failure model was a retrofit reconstructed after implementation
   rather than written before it.

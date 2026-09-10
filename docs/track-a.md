@@ -224,7 +224,7 @@ Docs changes still run the stack. The rows that actually bite:
 
 | Object | State |
 |---|---|
-| A1 merge loop-alignment | landed at `8e2b2c2`, 2026-09-09; one criterion blocked, see below |
+| A1 merge loop-alignment | landed at `8e2b2c2`, 2026-09-09; its CI criterion discharged 2026-09-10 |
 | A2 VE-1 correction | landed 2026-09-09, `delegated` |
 | A3 spec reviewer tools | landed 2026-09-09 after one adversarial round; EX-1 is `partial`, and its end state is A6's portability call |
 | A4 one identity function | landed 2026-09-10 as a mechanism, not an `accepted` |
@@ -266,7 +266,36 @@ snippet instead, which is a different answer from "someone else's problem".
 
 ## Findings
 
-### The fork's CI is a claim, not a mechanism
+### The fork's CI is a claim, not a mechanism — RESOLVED 2026-09-10
+
+Resolved after the A7 push. Actions was enabled on the fork, the push to
+`24dd097` triggered the workflow, and it went green on Python 3.12.14, deriving
+this repository's shipped binding: source commit `8ecf38b`, tree
+`7bc4352ff62e5e3e`. Run:
+<https://github.com/drmikecrowe/old-coder/actions/runs/34468087528>.
+
+That discharges A1's fourth criterion, which had been escalated since
+2026-09-09: CI green on `main` with `fetch-depth: 0`. The depth setting is
+proven by the run itself, which reported a real source commit rather than
+`(unavailable: shallow history)`.
+
+Everything narrowed under this finding is now un-narrowed and cited:
+`evidence.md`'s toolchain bullet and its known-limits list, and DR-1 and DR-2
+in the audit. The skill's ceiling kept the lesson and dropped the dead example,
+because the general point survives the fix: running a gauntlet twice is not
+evaluating it.
+
+**How this was nearly missed, which is the part worth keeping.** The check was
+run once at the start of the session, returned `total_count: 0`, and the thread
+was closed on that reading. The instruction said to push and then check. I
+pushed and did not re-check, and reported the fork as needing a settings click
+as though that were established rather than one hypothesis consistent with zero
+runs. Mike asked "shouldn't we push then run the action?" and the answer was
+already sitting in the API. A measurement taken before the action that would
+change it is not evidence about the state after it, and "cause unconfirmed" was
+the honest report rather than a named cause.
+
+The original finding, as it stood:
 
 `drmikecrowe/old-coder` has zero workflow runs. Every green CI run this repo's
 documents cite is `AmazingAng/old-coder`'s, and those are real: the demo, the
@@ -385,11 +414,15 @@ names all three commits and what the third one repaired.
 
 ### The three leftovers, 2026-09-10
 
-**Fork CI: still escalated, thread stopped.**
-`gh api repos/drmikecrowe/old-coder/actions/runs` returns `total_count: 0`.
-Nothing to un-narrow: the narrowed claims in `evidence.md` and in DR-1 and DR-2
-stand exactly as they were, because they are still the true ones. This remains
-one settings click and no amount of prose closes it.
+**Fork CI: checked at zero, closed too early, resolved the same day.**
+`gh api repos/drmikecrowe/old-coder/actions/runs` returned `total_count: 0`
+when the object opened, so the thread was stopped and nothing was un-narrowed.
+That reading was correct and the conclusion drawn from it was not: the
+instruction was to push and then check, and the check was never repeated after
+the push. Actions turned out to be enabled, the A7 push fired the workflow, and
+it went green on 3.12.14 against the shipped binding. Everything this thread
+had narrowed is now un-narrowed and cited. See the Findings section, where the
+resolution and the reasoning error are both recorded.
 
 **The demo test count.** `README-zh.md` said 41. The suite says 65, verified by
 running it rather than by trusting the number in the instruction. `README.md`
@@ -418,13 +451,13 @@ Criteria, one by one:
   `docs/loop-alignment.md`. The workflow already carried `fetch-depth: 0`,
   added when `source_state.sh` learned to withhold provenance on a truncated
   history; no workflow change was needed.
-- **CI green on `main`: BLOCKED.** `gh api
-  repos/drmikecrowe/old-coder/actions/runs` returns `total_count: 0`. The fork
-  has never run a workflow, on any branch or event, against a `gauntlet`
-  workflow created 2026-08-05. Enabling Actions on a fork is a one-time click
-  in repository settings with no API behind it, so this criterion is escalated
-  to the human rather than retried. What was proven instead: the full gauntlet,
-  green locally at `e226c7b` on Python 3.14.7. See Findings.
+- **CI green on `main`: blocked at the time, discharged 2026-09-10.** When A1
+  landed, `gh api repos/drmikecrowe/old-coder/actions/runs` returned
+  `total_count: 0` and the criterion was escalated; what was proven instead was
+  the full gauntlet green locally at `e226c7b` on Python 3.14.7. It is now
+  discharged for real: run 34468087528 is green on `main` on 3.12.14, and
+  reported a source commit rather than `(unavailable: shallow history)`, which
+  is what proves the `fetch-depth: 0` half of the criterion. See Findings.
 - **The stamp fixture is non-vacuous.** Replaced the `write_gauntlet_stamp
   "$result"` call in `tools/gauntlet_layers.sh` with a no-op and reran
   `tools/test_gauntlet_orchestration.sh`: 8 expectations violated, exit 1.
@@ -514,11 +547,13 @@ Track A closed without a single upstream merge, because publishing runs at the
 maintainer's review latency and closure cannot.
 
 **What track A did not close, stated rather than quietly dropped.** A1's CI
-criterion is still escalated: `drmikecrowe/old-coder` has zero workflow runs,
-so every change in this track was proven on one machine. That is not a prose
-gap and no amount of writing closes it; it is a settings click. It is published
-in the ceiling as the worked example of a gate wearing an evaluation's name,
-which is the most useful thing an unfixed problem can do.
+criterion was still escalated at the close: `drmikecrowe/old-coder` had zero
+workflow runs, so every change in this track was proven on one machine. Written
+here as a permanent limit, which it was not. It was discharged the same day,
+after A7, when a push fired the workflow and it went green on the pinned
+interpreter. Left as written, with this note, because a plan that quietly edits
+its own "what we did not close" section is worth less than one that shows which
+of its limits turned out to be temporary.
 
 ### A5, 2026-09-10
 
@@ -546,7 +581,10 @@ reference files. It also carries the two limits Mike asked for, both framed as
 facts about any project rather than confessions about this one:
 
 - a gauntlet that only ever runs on the author's machine is a gate, not an
-  evaluation, and this fork is the worked example at `total_count: 0`;
+  evaluation, and this fork is the worked example at `total_count: 0`. That
+  example went stale within the day: CI now runs here. The ceiling keeps the
+  lesson, drops the dead claim, and says instead that running a gauntlet twice
+  is not evaluating it;
 - a source binding covers what its manifest covers, and prose usually sits
   outside it, so a review of a skill-text change binds to a hash that did not
   move.

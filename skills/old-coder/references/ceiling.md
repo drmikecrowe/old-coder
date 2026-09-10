@@ -38,8 +38,8 @@ hand, so without that check the drift would be invisible.
 | CO-4 | budgets raise when exhausted | accepted | a budget *type* is unbuildable in prose, so the enforcement is that a breached budget voids the round |
 | CO-7 | state survives the process, written atomically, locked | n-a by scope | single-run artifacts; no concurrent scheduled runs to protect against |
 | CO-13 | the final attempt narrows to the blocking row | accepted | a rule that always narrows the last round would hide a second defect behind the first |
-| DR-1 | gates and evaluations are different instruments | accepted | the skill cannot make anyone's CI fire. See "Two limits worth more than a row" below |
-| DR-2 | a fixed corpus of known-good inputs, run on a schedule | accepted | the demo is the corpus; the trigger is a human, and that is escalated with DR-1 |
+| DR-1 | gates and evaluations are different instruments | accepted | running the gauntlet twice is not evaluating it. See "Two limits worth more than a row" below |
+| DR-2 | a fixed corpus of known-good inputs, run on a schedule | accepted | the demo is the corpus and CI is the trigger, but the trigger is traffic, not a schedule |
 | DR-3 | evaluate weekly | n-a | no production traffic; the failure this catches does not accrue here |
 | DR-4 | instructions and skills are behavior: versioned, reviewed, tested | accepted | `CONTRIBUTING.md` requires the fixture; nothing rejects a PR that ignores it |
 
@@ -85,14 +85,27 @@ not a bound. That is why VE-1 is `delegated` and this one is not.
 
 ## Two limits worth more than a row
 
-**A gauntlet that only runs on the author's machine is a gate, not an
-evaluation.** This repository is the example. `drmikecrowe/old-coder` has never
-run a GitHub Actions workflow: `actions/runs` returns `total_count: 0` against
-a workflow committed in August. Every green CI run this repo's documents cite
-is the upstream project's, and those are real, but they are not evidence about
-this fork. Read your own CI the same way before crediting it in EVIDENCE. A
-gate catches the change in front of it; an evaluation catches drift across
-changes, and nothing does the second job here.
+**Running your gauntlet twice is not evaluating it.** A gate catches the change
+in front of it. An evaluation catches drift across changes: a dependency that
+moved, an interpreter that changed behaviour, a flaky test that has been flaky
+for a month. CI on every push is a second gate, on a second machine, and that
+is worth having. It is not the second instrument, because nothing fires unless
+someone pushes, and a quiet repository is one where drift accumulates unseen.
+
+This repository is the worked example twice over, and the second half only
+because the first was caught. For weeks its CI ran zero times while its own
+documents credited CI in the present tense: `actions/runs` returned
+`total_count: 0` against a workflow committed in August, and every green run
+those documents cited belonged to the upstream project. Real runs, wrong
+repository. It now runs on every push, on the pinned interpreter rather than
+the author's, and the gap it closed was never the one the documents claimed to
+have covered.
+
+Two habits fall out of that. Check that your CI has run, on your repository,
+against the state you are shipping, before crediting it in EVIDENCE; a workflow
+file is not a workflow run. And do not let a green pipeline persuade you that
+the drift question is answered, because that question is about the runs nobody
+triggered.
 
 **A source binding covers what its manifest covers, and prose usually sits
 outside it.** This skill's own demo hashes `.github/workflows` and the demo's
