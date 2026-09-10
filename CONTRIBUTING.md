@@ -83,6 +83,34 @@ a demo of the loop.
 
 Run `./tools/gauntlet.sh` before opening the PR. It must exit 0.
 
+## What belongs here, and what does not
+
+This repository is a prose methodology plus one worked demo. It is deliberately
+finished as a place to invent enforcement.
+
+**It takes:** wording that makes an existing rule clearer or harder to
+misread; fixtures, negative controls and layers that prove an existing claim;
+corrections where the text says something untrue; re-cuts of fork-local work
+for upstream; and translations.
+
+**It does not take a new runtime.** If your idea needs a process to run, a
+daemon, a credential, a scheduler, a per-agent capability, or a host feature to
+enforce it, it does not belong in a skill file, and putting it here produces
+either an instruction pretending to be a bound or a mechanism that only works
+on one host. Those go to `drmikecrowe/old-coder-runtime`.
+
+The line is not "small versus large". It is whether an agent that can only
+*read* the text can honour the change. `skills/old-coder/references/ceiling.md`
+is the standing list of rules that fail that test, each with its destination.
+A PR that would move a row from `delegated` to `enforced` is the one kind of
+change that is out of scope here no matter how good it is.
+
+One exception, and it has a shape: an **opt-in** mechanism may ship as a
+documented snippet a reader applies deliberately, never as a default in a
+shipped agent or config file. The `PreToolUse` snippet in `ceiling.md` is the
+pattern. A default that silently does nothing on the reader's host is worse
+than a stated instruction.
+
 ## Practical notes
 
 - Drafts are welcome, and a series of small independent PRs beats one large

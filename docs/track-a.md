@@ -203,7 +203,28 @@ Docs changes still run the stack. The rows that actually bite:
 | A3 spec reviewer tools | landed 2026-09-09 after one adversarial round; EX-1 is `partial`, and its end state is A6's portability call |
 | A4 one identity function | landed 2026-09-10 as a mechanism, not an `accepted` |
 | A5 publish the ceiling | landed 2026-09-10, all four criteria met |
-| A6 freeze and hand off | not started |
+| A6 freeze and hand off | landed 2026-09-10; track A is closed |
+
+## The runtime repo's opening backlog
+
+`drmikecrowe/old-coder-runtime` does not exist yet. When it does, these are its
+first issues, carrying the same rule ids on both sides so the two backlogs can
+be diffed rather than reconciled from memory.
+
+| Id | What it needs | Why prose cannot do it |
+|---|---|---|
+| VE-1 | a git surface narrow enough to read a diff without writing, or a read-only source view, for `old-coder-adversary` | the agent needs `Bash` to run `git diff`, and bounding `Bash` means deciding whether an arbitrary shell string writes. A blocklist over shell syntax is not a bound |
+| EX-5 | the same capability | push is absent from the skill's workflow and present in the adversary's shell. Not a second gap: same fix, same id |
+| EX-7 | the same capability | three of the adversary's four tools are verb-specific and `Bash` is not, so the list cannot read as narrow while it is there |
+
+One id, three rows. That is the honest count: the three rows are one missing
+capability seen from three rules, and splitting them into three issues would
+overstate the work.
+
+`EX-1` is deliberately **not** on this list. It looked like a fourth
+delegation until the adversarial round on A3 falsified that, and it turned out
+to be closeable on one host by a `PreToolUse` hook. It ships as an opt-in
+snippet instead, which is a different answer from "someone else's problem".
 
 ## Findings
 
@@ -307,6 +328,40 @@ that claims a read-only constraint for one while reading `enforced`. Against
 the pre-A2 audit it exits 1 naming VE-1; against the post-A2 audit it exits 0.
 The script is not yet a gauntlet layer. A5 is the object that gives checks over
 the audit a durable home, and this one lands with it.
+
+### A6, 2026-09-10
+
+**EX-1 resolved to `accepted` with an upgrade path, which is neither of the two
+answers the question first looked like it had.** Shipping the hook by default
+would put a Claude Code mechanism in a skill that claims to run wherever a
+skill can be read, and a default that silently does nothing on the reader's
+host is worse than a stated instruction. Refusing it outright would have
+withheld a real bound from readers who can use it. So the hook ships as a
+documented snippet in `references/ceiling.md`, applied deliberately, with the
+two ways to get it wrong named: deny by default and allow by path, never the
+reverse, and fail closed, because a handler that errors leaves the normal
+permission flow running, which is the same as no hook at all.
+
+That was the audit's last `partial`. Every rule id now ends in `enforced`,
+`accepted`, `delegated`, `n-a`, or `n-a by scope`, and `tools/ceiling_ids.py`
+fails if the published list ever disagrees with it.
+
+**The freeze is written where a contributor will hit it**, in
+`CONTRIBUTING.md`, not here. The test it states is not size: it is whether an
+agent that can only read the text can honour the change. A PR that would move a
+row from `delegated` to `enforced` is out of scope no matter how good it is.
+The one exception is the opt-in shape EX-1 just established.
+
+`ROADMAP.md` says plainly that it is not a closure dependency and never was.
+Track A closed without a single upstream merge, because publishing runs at the
+maintainer's review latency and closure cannot.
+
+**What track A did not close, stated rather than quietly dropped.** A1's CI
+criterion is still escalated: `drmikecrowe/old-coder` has zero workflow runs,
+so every change in this track was proven on one machine. That is not a prose
+gap and no amount of writing closes it; it is a settings click. It is published
+in the ceiling as the worked example of a gate wearing an evaluation's name,
+which is the most useful thing an unfixed problem can do.
 
 ### A5, 2026-09-10
 

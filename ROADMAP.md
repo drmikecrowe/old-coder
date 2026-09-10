@@ -3,9 +3,13 @@
 The plan for moving this fork's work into
 [AmazingAng/old-coder](https://github.com/AmazingAng/old-coder), one proposal at
 a time. Written for the agent executing it. Companion to `ATTRIBUTION.md`
-(provenance and PR history). The other track is `docs/track-a.md`, which
-closes out the prose methodology; it does not gate this file, and this file
-does not gate it.
+(provenance and PR history).
+
+**This file is not a closure dependency and never was.** `docs/track-a.md`
+closed the prose methodology on 2026-09-10 without waiting for a single
+upstream merge, because publishing runs at the maintainer's review latency and
+closure cannot. This track keeps running at whatever pace review allows. What
+changed is that nothing is now blocked on it.
 
 ## Status
 
