@@ -48,11 +48,15 @@ def read_text(path: Path) -> str:
 
 
 def contract_layers(spec: str) -> list[str]:
-    """Layer names from the contract's own table, and from no other table.
+    """Layer names from the contract's first table, and from no other table.
 
-    Scoped to the section rather than matched across the whole document: a spec
-    is full of tables whose first cell looks like a layer name, and grading a
-    row that was never part of the contract is the same defect as missing one.
+    Scoped twice. To the section, because a spec is full of tables whose first
+    cell looks like a layer name. Then to the first contiguous table inside it,
+    because the section holds a second table of review layers, which are graded
+    by a human and have no `run_layer` call to match. Relying on review-layer
+    names failing the name pattern would make this check depend on how someone
+    happens to format a cell: reformat one to lowercase in backticks and the
+    layer reports drift that does not exist.
     """
     lines = spec.splitlines()
     try:
@@ -62,14 +66,17 @@ def contract_layers(spec: str) -> list[str]:
             f"FAIL: no '{CONTRACT_HEADING}' section in the spec; nothing was compared"
         ) from None
     names: list[str] = []
+    in_table = False
     for line in lines[start:]:
         if line.startswith("## "):
             break
-        if not line.startswith("|"):
-            continue
-        cell = line.split("|")[1].strip().strip("`")
-        if LAYER_NAME.match(cell):
-            names.append(cell)
+        if line.startswith("|"):
+            in_table = True
+            cell = line.split("|")[1].strip().strip("`")
+            if LAYER_NAME.match(cell):
+                names.append(cell)
+        elif in_table and line.strip():
+            break
     return names
 
 

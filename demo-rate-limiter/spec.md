@@ -701,9 +701,13 @@ those look identical.
   are the ones the author already feared least. Powers and binding are the
   published half; the questions are not.
 - Do not let the checker read layer names from anywhere but the contract
-  section. A spec is full of tables whose first cell looks like a layer name,
-  and grading a row that was never in the contract is the same defect as
-  missing one.
+  section's **first** table. A spec is full of tables whose first cell looks
+  like a layer name, and grading a row that was never in the contract is the
+  same defect as missing one. The section's second table lists review layers,
+  which are graded by a human and have no `run_layer` call to match. Scoping to
+  the first table rather than relying on review-layer names failing the name
+  pattern is deliberate: the weaker rule would make this layer depend on how
+  someone formats a cell, and report drift that does not exist.
 - Do not let an absent or empty contract pass. A check that compares nothing
   agrees with everything.
 - Do not add a runtime or development dependency for this layer.
