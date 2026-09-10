@@ -177,6 +177,34 @@ with that fact attached.
 ## Revisions
 
 - Initial draft, 2026-09-10, from `docs/track-a2.md` H1's acceptance criteria.
+- 2026-09-10, H1 adversarial round one, bound to `10d6ecf...8e9c2d4` at tree
+  `7bc4352ff62e5e3e`. Note on that binding: `docs/` and `skills/` are outside
+  the source manifest, so the hash did not move for the change reviewed, and
+  the reviewer was told so rather than left to infer it. Three findings, all
+  upheld, 5 of 10 tool calls used.
+  1. `CONTRIBUTING.md` still forbade moving a row from `delegated` to
+     `enforced` "no matter how good it is" while the new tier's whole point is
+     that a hook is where enforcement starts. The reviewer named the literal
+     escape itself (EX-1 reads `accepted`, not `delegated`) and called relying
+     on it lawyering, which is right: H3 moves three genuinely `delegated`
+     rows. Repaired by stating the exception at the ban as a pointer and its
+     terms inside the tier, so a top-to-bottom reader gets the answer where the
+     contradiction was.
+  2. `CONTRIBUTING.md` asserted a `hooks/` directory in the present tense that
+     did not exist at `8e9c2d4`. Correct at its binding and closed since by
+     `6930f38`. Not repaired, because there is nothing left to repair; recorded
+     because the window was real and the disclosure lived only in a commit
+     message, which the reviewer correctly said no contributor reads.
+  3. The tier's test was vacuous for any hook that does not deny. An injecting
+     or rewriting hook satisfied "ships with a control that proves it denies"
+     by having nothing to prove, entering on-by-default and untested through
+     the one door marked tested. Repaired: the test is three clauses now, and
+     the first requires a hook in this tier to be a bound.
+  Two defects found while repairing, neither reported by the reviewer and both
+  mine: the first repair produced two adjacent paragraphs each claiming to be
+  "one exception", and the tier claimed `~/.claude/agents/`, which is wrong on
+  this host. Both fixed in the same commit. H1 round two of two; no signature
+  repeated, so no stable-failure exit.
 
 ---
 

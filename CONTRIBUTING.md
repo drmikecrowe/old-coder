@@ -103,13 +103,15 @@ The line is not "small versus large". It is whether an agent that can only
 *read* the text can honour the change. `skills/old-coder/references/ceiling.md`
 is the standing list of rules that fail that test, each with its destination.
 A PR that would move a row from `delegated` to `enforced` is the one kind of
-change that is out of scope here no matter how good it is.
+change that is out of scope here no matter how good it is. The hooks tier below
+is the single exception, on terms stated there; nothing else moves a row.
 
 One exception, and it has a shape: an **opt-in** mechanism may ship as a
 documented snippet a reader applies deliberately, never as a default in a
-shipped agent or config file. The `PreToolUse` snippet in `ceiling.md` is the
-pattern. A default that silently does nothing on the reader's host is worse
-than a stated instruction.
+shipped agent or config file. `ceiling.md` describes the `PreToolUse` bound
+this way for a reader on another host, and `hooks/README.md` says how to take
+it. A default that silently does nothing on the reader's host is worse than a
+stated instruction.
 
 ### The hooks tier
 
@@ -122,12 +124,27 @@ The two halves are never blended. The skill text keeps its claim that any agent
 able to read it can honour it. A hook is where that claim stops and enforcement
 starts, and a hook is the only thing entitled to say "cannot".
 
-**The tier's test, both clauses required.** A hook ships with a control that
-proves it denies. And the skill text never claims what only a hook enforces, so
-a reader on another host can tell from the text alone which sentences are bounds
-for them and which are instructions.
+**This is what lets a row move, and it is the only thing that does.** A rule in
+`ceiling.md` may leave `delegated` or `accepted` for `enforced` when a hook in
+`hooks/` is what moves it, the row's evidence names the host the bound holds on,
+and a recorded host probe proves it denies. Text asserting the move does not
+earn it, and neither does a green CI check. For any mechanism that is not a
+hook, the rule above stands: that PR is out of scope no matter how good it is.
 
-The first clause is not satisfied by CI. A hook control needs the host: a probe
+**The tier's test, three clauses, all required.**
+
+1. **A hook here is a bound.** It refuses something. A hook that injects
+   context, rewrites a tool call, or logs is not in scope for this directory,
+   however useful it is. The second clause is a proof of denial, and a hook
+   that never denies satisfies it by having nothing to prove, which would let
+   an on-by-default mechanism enter the tree untested through the one door
+   marked "tested".
+2. **A hook ships with a control that proves it denies.**
+3. **The skill text never claims what only a hook enforces**, so a reader on
+   another host can tell from the text alone which sentences are bounds for
+   them and which are instructions.
+
+The second clause is not satisfied by CI. A hook control needs the host: a probe
 script plus a recorded denial, rerun and rebound on every hook change. CI can
 verify that hook files parse and that a frontmatter references them. Only the
 host can verify that they deny. State both halves inside the control, so nobody
@@ -135,9 +152,11 @@ reads the CI half as the proof. A hook without a control that proves it denies
 is a bound that reports success while measuring nothing, which is this project's
 oldest failure mode wearing a new hat.
 
-**In this fork, shipped and deployed are the same file.** `~/.claude/agents/`
-symlinks at `skills/old-coder/agents/`, so a hook registered in a tracked
-agent's frontmatter is live here on the next run. That is what "on by default in
+**In this fork, shipped and deployed are the same file.** The agents directory
+under `CLAUDE_CONFIG_DIR` symlinks at `skills/old-coder/agents/`, so a hook
+registered in a tracked agent's frontmatter is live here on the next run. Read
+that variable rather than assuming `~/.claude`: it is set to a different path on
+this host, and a hook command that hardcodes the guess resolves to nothing. That is what "on by default in
 this fork's own deployment" costs, and it is why the paragraph above still
 governs a portable reader: what is a default here is a documented artifact they
 apply deliberately, or do not.
