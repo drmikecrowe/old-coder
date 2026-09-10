@@ -2,7 +2,7 @@
 
 ## Orientation
 - **Verdict:** **PASSED WITH LIMITS.** Every gauntlet layer is green at source
-  state `89db3ed`, but independent verification is `not performed` against that
+  state `aca8429`, but independent verification is `not performed` against that
   state. This report is finalized as a **declared downgrade**, not on a passing
   verdict.
 - **Delivered:** an in-process `RateLimiter(limit, window_seconds, clock)` with
@@ -25,7 +25,7 @@ The writeup below, in brief:
 
 - **Spec → test mapping:** 33 rows, all `pass`, no `unverified` or `n-a`. Both
   Must NOT constraints are mapped — one to a test, one to the must-not scan.
-- **Gauntlet:** 18 layers. Four exist to prove the harness can fail — an
+- **Gauntlet:** 20 layers. Four exist to prove the harness can fail — an
   orchestration self-test (11 scenarios, 34/34 expectations), a checker self-test
   (3/3), a source-state self-test (9/9), and a mutation negative control (C1
   killed, C2 survived).
@@ -56,21 +56,21 @@ The writeup below, in brief:
   Earlier revisions (2026-07-25, 2026-07-27) were autonomous and are still
   unapproved; treat them as the weaker part of the spec.
 - Independent verification: **not performed against the final source state
-  `89db3ed`.** Six earlier rounds were performed; the last verified state
+  `aca8429`.** Six earlier rounds were performed; the last verified state
   `d0b506c` returned `failed`, and the fixes made since — one of them
   behavioural — are disclosed below as unverified. This report is finalized as
   a **declared downgrade**, not on the strength of a passing verdict. A
   verdict attaches to the state a verifier actually saw, and no verifier has
   seen this one.
-- Source state: source commit `89db3ed`; sha256 tree hash
-  `d8b2c9e2976c997b` — reproduce both with `./tools/source_state.sh` from any
+- Source state: source commit `aca8429`; sha256 tree hash
+  `fa9119fe4fd5a79d` — reproduce both with `./tools/source_state.sh` from any
   directory, or read them from `gauntlet-stamp.txt`, which the entry point
   writes on every exit path. When a binding is produced the tree hash is the required content
   identity; the source commit is provenance and is supplied only where
   complete history is available, so a shallow checkout reports
   `(unavailable: shallow history)` and a no-Git archive reports `(no git)`,
   both alongside this same tree hash. No error path emits a binding at all.
-  The script separately reports current HEAD; commits after `89db3ed` that
+  The script separately reports current HEAD; commits after `aca8429` that
   touch only this report or other out-of-scope paths preserve the source
   commit and tree hash. The manifest includes `.github/workflows`, which
   decides whether the gauntlet runs in CI at all.
@@ -93,7 +93,7 @@ The writeup below, in brief:
   crash (passed through).
 
 All numbers are from one final fresh run of the entry point, executed
-2026-09-10 at source commit `89db3ed` after the last code edit; the stamp
+2026-09-10 at source commit `aca8429` after the last code edit; the stamp
 from that run reads `result: green` over the binding above.
 
 The branch carrying that state was merged to fork `main` as `8e2b2c2` on
@@ -169,10 +169,12 @@ Status legend: pass / fail / unverified / n-a.
 | Real execution | `python examples/demo.py` (real `time.monotonic`) | burst of 5 → `[True, True, True, False, False]`; other key unaffected; allowed again after window |
 | Supply chain | `pip-audit -r requirements-dev.txt` | no known vulnerabilities; runtime dependencies: **none** (stdlib only; `threading` is stdlib) |
 | Secret scan | must-not scan in `tools/gauntlet.sh` over src, tests, tools, examples, spec.md, pyproject.toml, requirements-dev.txt and `../.github` | clean, no matches |
-| Source binding | `tools/source_state.sh` (and captured again into `gauntlet-stamp.txt` at exit) | source commit `89db3ed`; tree `d8b2c9e2976c997b`; current HEAD is reported separately |
+| Audit sweep | `../tools/audit_sweep.py` (REVISION 10; grades `docs/loop-alignment.md`, outside the source manifest) | pass: no audit row credits a capability bound its agent's tool list cannot hold |
+| Ceiling ids | `../tools/ceiling_ids.py` (REVISION 10; grades the audit against `skills/old-coder/references/ceiling.md`) | pass: same rule ids in both directions, same end state for each |
+| Source binding | `tools/source_state.sh` (and captured again into `gauntlet-stamp.txt` at exit) | source commit `aca8429`; tree `fa9119fe4fd5a79d`; current HEAD is reported separately |
 | Evidence binding | `tools/evidence_binding.py` (last gauntlet layer; REVISION 9) | pass: this report's cited tree hash equals the derived one, and its review binding is `unavailable`, which the layer holds below a bare `PASSED` |
 | License check | — | n-a: zero runtime dependencies, nothing redistributed beyond this repo's own MIT code |
-| Suite health | pytest-randomly (order shuffled every run) | 65 passed in randomized order, 10/10 consecutive runs (rerun at `89db3ed`) |
+| Suite health | pytest-randomly (order shuffled every run) | 65 passed in randomized order, 10/10 consecutive runs (rerun at `aca8429`) |
 
 ## Layer attribution
 
@@ -248,8 +250,12 @@ independently verified**:
 - REVISION 8 and the completion stamp with its exit vocabulary in commits
   `13b3cd5` and `d81b5db`;
 - REVISION 9 and the evidence-binding layer in commits `fab2f02`, `12e8d65`
-  and `89db3ed`, plus this rebind. `89db3ed` is the adversarial round's
-  repair: the checker graded whichever match came first in a report holding
+  and `89db3ed`, plus this rebind;
+- REVISION 10 and the two repository-level layers in commits `548c24f` and
+  `aca8429`. Both checkers pre-date the revision and carry their own controls;
+  what changed is that something now runs them.
+
+  `89db3ed` is the adversarial round's repair: the checker graded whichever match came first in a report holding
   many hashes, and now refuses to grade an ambiguous field at all. The layer is the first mechanism in this repo
   that can catch a stale rebind, and it could not grade its own arrival: it
   went red on this report for both reasons it exists to catch, and green once

@@ -202,7 +202,7 @@ Docs changes still run the stack. The rows that actually bite:
 | A2 VE-1 correction | landed 2026-09-09, `delegated` |
 | A3 spec reviewer tools | landed 2026-09-09 after one adversarial round; EX-1 is `partial`, and its end state is A6's portability call |
 | A4 one identity function | landed 2026-09-10 as a mechanism, not an `accepted` |
-| A5 publish the ceiling | published 2026-09-10; the layer registration waits on REVISION 10 |
+| A5 publish the ceiling | landed 2026-09-10, all four criteria met |
 | A6 freeze and hand off | not started |
 
 ## Findings
@@ -351,16 +351,26 @@ failure:
 | the audit resolving a row to `enforced` while the ceiling keeps it | exit 1: the reverse direction alone |
 | a ceiling with no rule rows | exit 1: fails closed rather than comparing nothing |
 
-**Not yet a gauntlet layer, and that is the object's open half.** A5 requires
-the check to run as one, and the only runner in this repo is the demo's
-gauntlet. Registering repo-level checks there is a change to the demo's
-contract, which under this repo's own discipline needs an approved spec. That
-is REVISION 10, and it also covers `tools/audit_sweep.py`, committed under A3
-and still run only by hand.
+**Both checks now run.** `REVISION 10`, approved, registers `audit-sweep` and
+`ceiling-ids` as manifest members of the demo's gauntlet, so an omitted one is
+an orchestration failure rather than a silent skip. They run before
+`source-state`, because they grade documents outside the source manifest and a
+failure in them says nothing about the binding.
 
-Worth saying plainly: the reason repo-level checks have to be bolted onto a
-demo's gauntlet is that the repo has no runner of its own. That is a real
-design smell and REVISION 10 is where it gets named rather than hidden.
+The registration was proven at the layer, not only at the script. Deleting
+`CO-13` from the ceiling and running the layer through the real harness exits
+2, the layer-verdict code, and the stamp reads
+`result: layer-failed (ceiling-ids, rc=1)`. That is A5's fourth criterion
+discharged against the mechanism a reader would actually hit, and it also
+distinguishes correctly: a failing layer, not an orchestration error.
+
+Worth saying plainly, and REVISION 10 says it in the repo rather than only
+here: repo-level checks are landing in a rate limiter's gauntlet because this
+repo has no runner of its own. The right home is a repo-level gauntlet the
+demo's is a member of. The revision buys the checks a runner today and records
+the debt. It also refuses the tempting fix of widening the source manifest to
+cover the checkers, because a wording change in an audit must not invalidate a
+rate-limiter verdict; that consequence is published in the ceiling instead.
 
 Pre-existing drift found and not fixed, because it is outside this object:
 `README-zh.md` still says the demo has 41 tests. It has 65.
