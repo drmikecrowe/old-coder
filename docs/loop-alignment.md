@@ -19,6 +19,9 @@ The skill is a human-gated methodology, not a scheduled loop. Outer-loop
 iteration and durable-state rules are `n-a` by scope: this audit does not
 build the loop.
 
+`docs/track-a.md` is the plan that closes this audit. It drives every row here
+to an end state and records which object resolved it.
+
 ## Plane 1 — Intent
 
 | Id | Rule, in one line | Status | Evidence / gap |

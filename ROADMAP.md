@@ -3,7 +3,9 @@
 The plan for moving this fork's work into
 [AmazingAng/old-coder](https://github.com/AmazingAng/old-coder), one proposal at
 a time. Written for the agent executing it. Companion to `ATTRIBUTION.md`
-(provenance and PR history).
+(provenance and PR history). The other track is `docs/track-a.md`, which
+closes out the prose methodology; it does not gate this file, and this file
+does not gate it.
 
 ## Status
 
@@ -41,16 +43,20 @@ In land order, not label order. The letter in each box is the state:
 - [ ] **4a · The adversarial layer** — gauntlet.md + SKILL.md wiring
 - [ ] **4b · The bundled agents** — `old-coder-adversary`, `old-coder-spec-intent`
 - [ ] **5 · Orientation** — last, with its defense attached
-- [ ] **6a · Completion stamp + exit vocabulary** — the demo entry point writes
-      a harness-side completion stamp (green and red paths) and exits with a
-      decision-vs-crash vocabulary. Extends 3b's entry-point guard, so it lands
-      after 3b. Mapping and rationale: `docs/loop-alignment.md` Phases B/D.
-- [ ] **6b · Agent hardening** — adversary treats repo content as data, an
-      uncounted or over-budget round is a failed round, brief-path runs record
-      a confidence downgrade. Travels with Phase 4 (it edits the same files).
-      Mapping: `docs/loop-alignment.md` Phase C.
-- [ ] **6c · Skill text ships with its fixture** — CONTRIBUTING states the
-      expectation. Mapping: `docs/loop-alignment.md` Phase E.
+- [c] **6a · Completion stamp + exit vocabulary** · merged to fork `main` at
+      `8e2b2c2` (2026-09-09). The demo entry point writes a harness-side
+      completion stamp on the green and red paths and exits with a
+      decision-vs-crash vocabulary. Extends 3b's entry-point guard, so the
+      upstream proposal still lands after 3b. Mapping and rationale:
+      `docs/loop-alignment.md` Phases B/D.
+- [c] **6b · Agent hardening** · merged to fork `main` at `8e2b2c2`. Adversary
+      treats repo content as data, an uncounted or over-budget round is a
+      failed round, brief-path runs record a confidence downgrade. Travels
+      upstream with Phase 4 (it edits the same files). Mapping:
+      `docs/loop-alignment.md` Phase C.
+- [c] **6c · Skill text ships with its fixture** · merged to fork `main` at
+      `8e2b2c2`. CONTRIBUTING states the expectation. Mapping:
+      `docs/loop-alignment.md` Phase E.
 
 States verified against `upstream/main` (`01f8fe9`) and the upstream PR list on
 2026-08-17. Re-verify after each merge rather than trusting this block —

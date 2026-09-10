@@ -86,6 +86,13 @@ All numbers are from one final fresh run of the entry point, executed
 2026-08-30 at source commit `d81b5db` after the last code edit; the stamp
 from that run reads `result: green` over the binding above.
 
+The branch carrying that state was merged to fork `main` as `8e2b2c2` on
+2026-09-09. The entry point was rerun at that HEAD: every layer green, and the
+binding reproduced unchanged (source commit `d81b5db`, tree
+`5a0eefa64a2cc101`). The merge is the case the paragraph above describes: it
+carried in-scope files, but every one of them arrived from `d81b5db`, so the
+content identity did not move. Only HEAD did.
+
 `spec.md` was deliberately pruned back to a contract before REVISION 5
 (339 → 255 lines). Every clause, invariant, obligation and failure-model row
 survived; what was removed is the per-revision forensics, which lives in the
