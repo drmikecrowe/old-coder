@@ -755,6 +755,15 @@ no implementation yet, and a spec compared against the source instead of the int
 passes. The code reviewer must reach it and nothing else matters. Merging them produces one
 agent that does the heavy review at both stages, which is the failure this split prevents.
 
+**What the split does not buy you.** The separation is real; the boundary is not. `Read`
+reaches the whole tree, and it is already the narrowest setting the host offers — omit
+`tools:` and the agent inherits everything, list nothing that resolves to a tool and it
+fails to launch. So "must not reach the codebase" is an instruction the reviewer follows,
+not a wall it meets. Read it the way you read any honored-not-enforced constraint: the
+layer is worth running, and a spec review that starts quoting source files has already left
+its lane. `docs/loop-alignment.md` EX-1 records this as an open gap rather than a solved
+one.
+
 **Why the tool lists and budgets are short.** A subagent re-reads its whole context every
 turn, so its cost is `baseline x turns` and tool schemas sit in the baseline. Give it few
 tools and a hard turn budget; do not reach for output-shrinking tooling, which targets tool
@@ -772,7 +781,8 @@ the tool list is enforced or merely honored:
   a real constraint, not a promise.
 
 Prefer the registered path where it exists, because a constraint the host applies cannot be
-forgotten under pressure. Say in EVIDENCE which path ran — "adversary, registered agent" and
+forgotten under pressure. What it applies is the tool *list*, not the *scope* those tools
+reach: see "What the split does not buy you" above. Say in EVIDENCE which path ran — "adversary, registered agent" and
 "adversary, brief in a general-purpose subagent" are different strengths of the same claim.
 The brief path is a confidence downgrade, not a neutral note: the tool list was honored
 rather than enforced, so record it the way an unapproved spec is recorded, and claim

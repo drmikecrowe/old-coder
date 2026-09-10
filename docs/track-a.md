@@ -200,7 +200,7 @@ Docs changes still run the stack. The rows that actually bite:
 |---|---|
 | A1 merge loop-alignment | landed at `8e2b2c2`, 2026-09-09; one criterion blocked, see below |
 | A2 VE-1 correction | landed 2026-09-09, `delegated` |
-| A3 spec reviewer tools | not started, blocked on step zero |
+| A3 spec reviewer tools | landed 2026-09-09 after one adversarial round; EX-1 is `partial`, and its end state is A6's portability call |
 | A4 one identity function | not started |
 | A5 publish the ceiling | not started |
 | A6 freeze and hand off | not started |
@@ -308,7 +308,99 @@ the pre-A2 audit it exits 1 naming VE-1; against the post-A2 audit it exits 0.
 The script is not yet a gauntlet layer. A5 is the object that gives checks over
 the audit a durable home, and this one lands with it.
 
-Observation for A4, not acted on. `evidence.md` line 154 records the source
+### A3, 2026-09-09
+
+**Step zero, answered from the host's documentation** (`docs.claude.com`,
+Create custom subagents, "Supported frontmatter fields"):
+
+| `tools:` | What the host does |
+|---|---|
+| key omitted | "Inherits every tool available to subagents if omitted" |
+| empty, or no entry resolving to a tool | the subagent "usually fails to launch with an error naming the entries" |
+| minimal list | host-enforced; `disallowedTools` additionally removes from the inherited or specified list |
+
+The object offered two branches and the answer is neither. Empty does not mean
+no tools, it means a broken agent. `tools: Read` is therefore already the
+narrowest setting the host has: there is nothing between "one tool" and "will
+not start". The spec reviewer is at the floor and still holds a tool that
+reaches every file in the tree.
+
+**The first resolution of this object was wrong, and the adversary caught it.**
+Round 1 concluded that the missing per-agent path-scoped read did not exist on
+this host, and moved EX-1 to `delegated`. It does exist. A `PreToolUse` hook
+declared in the subagent's own frontmatter is registered only while that
+subagent runs and removed when it finishes, fires on that subagent's tool
+calls, and can return `permissionDecision: "deny"`, which prevents the call.
+Denying `Read` outside the spec's own directory is expressible there today, in
+the agent file, with no runtime repo involved.
+
+So EX-1 is `partial`, not `delegated`. The bound is buildable; it is not built.
+The reason it is not built is a real trade and not a shortage of mechanism: a
+frontmatter hook is a Claude Code feature, and this skill's claim is that any
+agent can read it and carry no runtime. Taking the hook buys a real boundary on
+one host and costs the portability the skill is built on. That is A6's question
+(freeze and hand off), so EX-1 waits for A6 rather than being answered here.
+
+VE-1 keeps `delegated`, with its reason corrected. The same hook cannot close
+it: bounding the adversary's `Bash` means deciding whether an arbitrary shell
+string writes, and a blocklist over shell syntax is not a bound. Path-scoped
+`Read` denial is a decision about a path; write detection over `Bash` is not.
+
+EX-4 stays `enforced` and is narrowed rather than downgraded. Its rule is
+"split the doer before adding a tool", and the split is real: two files, two
+briefs, two budgets. What was wrong was the evidence clause borrowing the
+spec reviewer's scope instruction as proof. That claim now lives at EX-1,
+where it can be scored honestly.
+
+RED before GREEN. The sweep is now a committed file, `tools/audit_sweep.py`,
+not a claim about one. Round 1 cited exit codes from a script that lived only
+in the session's scratchpad, which is a fabricated citation by this repo's own
+rule, and the adversary led with it. Four controls, all run against the
+committed script:
+
+| Control | Result |
+|---|---|
+| audit at `7f4dd97` | exit 1: EX-4 and EX-7 assert a bound and name no agent id |
+| delegated rows forced back to `enforced` | exit 1: EX-7 and VE-1 overclaim against `old-coder-adversary`'s tool list |
+| audit file absent | exit 1: fails closed rather than passing on nothing |
+| the shipped audit | exit 0 |
+
+Nothing runs it yet. A5 is the object that gives checks over the audit a
+gauntlet layer, and this one lands with it; until then the citation resolves to
+a file a reader can run by hand, which is the part that was missing.
+
+`SKILL.md` gains a paragraph saying the boundary is not what the split buys,
+and the "prefer the registered path" advice now says what that path enforces:
+the tool list, not the scope those tools reach. It does not mention the
+frontmatter hook, because SKILL.md is the portable half and the hook is
+host-specific; the audit carries it. Per `CONTRIBUTING.md` this is a wording
+change. It alters no gauntlet acceptance, so it ships without a fixture; the
+fixture in this object belongs to the audit rows, not the skill text.
+
+**Adversarial round, one round, findings graded.** Fresh context, no inherited
+reasoning, bound to base `7f4dd97`. Nine of ten tool calls used.
+
+| Finding | Grade |
+|---|---|
+| the "proven" sweep cites a script that exists in no committed file | upheld; the script is now `tools/audit_sweep.py` and the "not yet a layer" caveat is restored |
+| `permissions.deny` asserted as the host's only path scoping, uncited, and it is the whole basis for `delegated` | upheld, and it inverted the object: frontmatter `PreToolUse` hooks are per-agent and can deny, so EX-1 is `partial` |
+| the exit-1 claim for EX-4 is unverifiable | upheld as subordinate to the first; the committed control now shows it |
+
+Three findings, three upheld, none dismissed. The second is the one that
+mattered: it was the load-bearing claim under the object's verdict, and it was
+an assumption wearing a citation's clothes.
+
+Two observations for A4, not acted on.
+
+`tools/source_state.py` scopes the content hash to `.github/workflows` and the
+demo's own directories. `skills/` is outside it, so this session's SKILL.md
+edit left the tree hash unmoved. That is right for the demo, whose binding is
+about the demo. It is wrong for track A, where the skill text is the
+deliverable: a review bound to that hash proves nothing about the prose it
+reviewed, and DR-4 says skills are behavior. A4 is the object that decides
+whether one identity function covers both.
+
+`evidence.md` line 154 records the source
 binding as "source commit, tree hash, current HEAD reported separately," while
 the verification rounds bind to bare commit SHAs (`d0b506c`, `13b3cd5`). Both
 identities are already in the same file, one sentence apart. A4 is the object
