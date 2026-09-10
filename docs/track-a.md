@@ -358,6 +358,29 @@ This object closes no audit row on its own. It strengthens VE-9 and VE-11: the
 harness-written completion artifact now has a layer that fails when the
 model-written report disagrees with it.
 
+**Adversarial round, one round, findings graded.** Fresh context, bound to
+`966bc7f...HEAD`, told explicitly that the tree hash does not cover `skills/`
+so the prose in the diff was unbound. Six of ten tool calls.
+
+| Finding | Grade |
+|---|---|
+| `VERDICT`, `REPORT_BINDING` and `REVIEW_BINDING` all used `search`, so the checker graded whichever match came first in a report full of hashes | upheld, three findings for one defect; `sole_match` makes a duplicated field a failure naming the count and line numbers |
+| the stale-review control asserted only that `PASSED` appeared in stderr | upheld; it now asserts both hashes and the specific reason |
+| "drops this layer back to not-run" misstates the mechanism, which fails rather than not-runs | not upheld as written, and the misreading is the finding |
+
+The last one is worth the space. The sentence is about the adversarial review
+layer, where not-run is correct: nobody has reviewed the state being shipped.
+The reviewer read it as the evidence-binding layer, which fails. It read it
+that way because after A4 both layers key off the same hash, so the sentence
+now names which layer it means and says the two states differ. A reviewer
+misreading a sentence in the direction of a real ambiguity is a finding about
+the sentence.
+
+The three-for-one defect is the one that mattered. The checker was correct only
+because the report happened to hold exactly one of each field. Restoring
+first-match-wins fails the three new controls and nothing else, which is what
+makes them non-vacuous rather than decorative.
+
 **What A4 deliberately did not do.** The A3 log banked an observation: the
 source manifest scopes to `.github/workflows` and the demo's own directories,
 so `skills/` sits outside it and a SKILL.md edit does not move the tree hash.

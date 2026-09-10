@@ -2,13 +2,13 @@
 
 ## Orientation
 - **Verdict:** **PASSED WITH LIMITS.** Every gauntlet layer is green at source
-  state `12e8d65`, but independent verification is `not performed` against that
+  state `89db3ed`, but independent verification is `not performed` against that
   state. This report is finalized as a **declared downgrade**, not on a passing
   verdict.
 - **Delivered:** an in-process `RateLimiter(limit, window_seconds, clock)` with
   `allow(key) -> bool` — sliding window per key, thread-safe, with a throttled
   sweep that bounds the key map temporally.
-- **Proven:** 34/34 mapped scenarios pass; 62 tests, 100% changed-line coverage
+- **Proven:** 34/34 mapped scenarios pass; 65 tests, 100% changed-line coverage
   (49/49 statements, 20/20 branches, gated), 22/22 mutants killed. The mutation
   score is carried **entirely by the scenario suite** — the properties alone
   kill 3/22.
@@ -56,21 +56,21 @@ The writeup below, in brief:
   Earlier revisions (2026-07-25, 2026-07-27) were autonomous and are still
   unapproved; treat them as the weaker part of the spec.
 - Independent verification: **not performed against the final source state
-  `12e8d65`.** Six earlier rounds were performed; the last verified state
+  `89db3ed`.** Six earlier rounds were performed; the last verified state
   `d0b506c` returned `failed`, and the fixes made since — one of them
   behavioural — are disclosed below as unverified. This report is finalized as
   a **declared downgrade**, not on the strength of a passing verdict. A
   verdict attaches to the state a verifier actually saw, and no verifier has
   seen this one.
-- Source state: source commit `12e8d65`; sha256 tree hash
-  `e1e514b57b26706c` — reproduce both with `./tools/source_state.sh` from any
+- Source state: source commit `89db3ed`; sha256 tree hash
+  `d8b2c9e2976c997b` — reproduce both with `./tools/source_state.sh` from any
   directory, or read them from `gauntlet-stamp.txt`, which the entry point
   writes on every exit path. When a binding is produced the tree hash is the required content
   identity; the source commit is provenance and is supplied only where
   complete history is available, so a shallow checkout reports
   `(unavailable: shallow history)` and a no-Git archive reports `(no git)`,
   both alongside this same tree hash. No error path emits a binding at all.
-  The script separately reports current HEAD; commits after `12e8d65` that
+  The script separately reports current HEAD; commits after `89db3ed` that
   touch only this report or other out-of-scope paths preserve the source
   commit and tree hash. The manifest includes `.github/workflows`, which
   decides whether the gauntlet runs in CI at all.
@@ -93,7 +93,7 @@ The writeup below, in brief:
   crash (passed through).
 
 All numbers are from one final fresh run of the entry point, executed
-2026-09-10 at source commit `12e8d65` after the last code edit; the stamp
+2026-09-10 at source commit `89db3ed` after the last code edit; the stamp
 from that run reads `result: green` over the binding above.
 
 The branch carrying that state was merged to fork `main` as `8e2b2c2` on
@@ -148,7 +148,7 @@ Status legend: pass / fail / unverified / n-a.
 | REVISION 6: truncated history withholds provenance, never invents it | test_source_state.py::test_shallow_history_withholds_provenance (exact marker, shallow HEAD, tree equal to the full clone, empty stderr) | pass |
 | REVISION 6: covered error scenarios pin their reason and emit no binding | test_source_state.py (Git dirty, Git deletion, Git untracked, no-Git missing input, no-Git empty scope — each asserts the reason and `stdout == ""`) | pass |
 | REVISION 7: omitted or failed gauntlet work cannot report green | test_gauntlet_orchestration.sh (omitted layer, failing command with exact rc and stopped sentinel, unknown layer, duplicate layer, complete-manifest positive control) | pass |
-| REVISION 9: the report's binding is graded against the derived one | test_evidence_binding.py (12 controls: stale report binding, bare `PASSED` over a stale review, bare `PASSED` over an unavailable one, each of three fields absent, absent report, source-state command exiting nonzero, and exiting zero with no tree line) | pass |
+| REVISION 9: the report's binding is graded against the derived one | test_evidence_binding.py (15 controls: stale report binding, bare `PASSED` over a stale review, bare `PASSED` over an unavailable one, each of three fields absent, each of three fields duplicated, absent report, source-state command exiting nonzero, and exiting zero with no tree line) | pass |
 | REVISION 8: every exit path is stamped and classified | test_gauntlet_orchestration.sh scenarios 6–11 (green stamp with binding, failed-layer stamp and exit 2, orchestration stamp and exit 3, crash passthrough, exit-0-before-audit remap, unavailable binding never guessed) | pass |
 
 ## Gauntlet (final fresh run: `./tools/gauntlet.sh`)
@@ -159,7 +159,7 @@ Status legend: pass / fail / unverified / n-a.
 | Checker self-test | `sh tools/test_gauntlet_checks.sh` (asserts the must-not scan fails on a planted pattern, passes on a clean tree, and fails closed with a distinct rc 2 when the scan itself breaks) | 3/3 expectations ok |
 | Source-state self-test | `pytest -q tests/test_source_state.py` (negative controls for the covered fail-closed scenarios; shallow/full-history, clean clone and no-Git archive comparisons) | 9/9 passed |
 | Mutation harness negative control | `python tools/mutants.py --negative-control` (a killer and a strictly-equivalent mutant of identical size under one pinned mtime) | C1 KILLED, C2 SURVIVED — ok |
-| Tests | `pytest -q --cov=ratelimiter` | 62 passed, 0 failed |
+| Tests | `pytest -q --cov=ratelimiter` | 65 passed, 0 failed |
 | Types | `mypy src tests examples tools` (strict) | 0 errors in 8 files |
 | Lint + format + complexity | `ruff check . && ruff format --check .` (mccabe ≤ 8) | 0 warnings, 10 files formatted |
 | Shell lint | `shellcheck tools/*.sh` (0.11.0); fails closed with rc 2 when shellcheck is absent, so a missing linter is a red layer rather than a silent skip | 0 findings across 6 scripts |
@@ -169,10 +169,10 @@ Status legend: pass / fail / unverified / n-a.
 | Real execution | `python examples/demo.py` (real `time.monotonic`) | burst of 5 → `[True, True, True, False, False]`; other key unaffected; allowed again after window |
 | Supply chain | `pip-audit -r requirements-dev.txt` | no known vulnerabilities; runtime dependencies: **none** (stdlib only; `threading` is stdlib) |
 | Secret scan | must-not scan in `tools/gauntlet.sh` over src, tests, tools, examples, spec.md, pyproject.toml, requirements-dev.txt and `../.github` | clean, no matches |
-| Source binding | `tools/source_state.sh` (and captured again into `gauntlet-stamp.txt` at exit) | source commit `12e8d65`; tree `e1e514b57b26706c`; current HEAD is reported separately |
+| Source binding | `tools/source_state.sh` (and captured again into `gauntlet-stamp.txt` at exit) | source commit `89db3ed`; tree `d8b2c9e2976c997b`; current HEAD is reported separately |
 | Evidence binding | `tools/evidence_binding.py` (last gauntlet layer; REVISION 9) | pass: this report's cited tree hash equals the derived one, and its review binding is `unavailable`, which the layer holds below a bare `PASSED` |
 | License check | — | n-a: zero runtime dependencies, nothing redistributed beyond this repo's own MIT code |
-| Suite health | pytest-randomly (order shuffled every run) | 62 passed in randomized order, 10/10 consecutive runs (rerun at `12e8d65`) |
+| Suite health | pytest-randomly (order shuffled every run) | 65 passed in randomized order, 10/10 consecutive runs (rerun at `89db3ed`) |
 
 ## Layer attribution
 
@@ -247,8 +247,10 @@ independently verified**:
   unguarded `cd`, so a failed `cd` would have run them against the wrong tree;
 - REVISION 8 and the completion stamp with its exit vocabulary in commits
   `13b3cd5` and `d81b5db`;
-- REVISION 9 and the evidence-binding layer in commits `fab2f02` and
-  `12e8d65`, plus this rebind. The layer is the first mechanism in this repo
+- REVISION 9 and the evidence-binding layer in commits `fab2f02`, `12e8d65`
+  and `89db3ed`, plus this rebind. `89db3ed` is the adversarial round's
+  repair: the checker graded whichever match came first in a report holding
+  many hashes, and now refuses to grade an ambiguous field at all. The layer is the first mechanism in this repo
   that can catch a stale rebind, and it could not grade its own arrival: it
   went red on this report for both reasons it exists to catch, and green once
   the report was rebound.
