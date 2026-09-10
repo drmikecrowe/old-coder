@@ -80,27 +80,47 @@ def read_report(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def sole_match(pattern: re.Pattern[str], text: str, field: str) -> re.Match[str] | str:
+    """Return the report's one match for a field, or the reason there is not one.
+
+    Grading the first of several matches grades whichever the author happened to
+    write first, in a report that is hundreds of lines of prose full of hashes
+    and verdicts. So more than one is a failure, not a tiebreak: the report has
+    to say which one it means.
+    """
+    matches = list(pattern.finditer(text))
+    if not matches:
+        return f"no {field} field found in the report"
+    if len(matches) > 1:
+        lines = ", ".join(str(text.count("\n", 0, m.start()) + 1) for m in matches)
+        return (
+            f"{field} field is ambiguous: {len(matches)} matches (lines {lines}). "
+            f"A checker that grades the first of several grades the wrong one"
+        )
+    return matches[0]
+
+
 def grade(text: str, derived: str) -> list[str]:
     """Return every failing row, worst first. Empty means the report agrees."""
     failures: list[str] = []
 
-    verdict_match = VERDICT.search(text)
-    if verdict_match is None:
-        return ["no verdict found; the report states no claim to grade"]
+    verdict_match = sole_match(VERDICT, text, "verdict")
+    if isinstance(verdict_match, str):
+        return [verdict_match]
     verdict = verdict_match.group(1).upper()
 
-    report_match = REPORT_BINDING.search(text)
-    if report_match is None:
-        failures.append("no source state tree hash found in the report")
+    report_match = sole_match(REPORT_BINDING, text, "source state")
+    if isinstance(report_match, str):
+        failures.append(report_match)
     elif report_match.group(1) != derived:
         failures.append(
             f"report binding is stale: report says `{report_match.group(1)}`, "
             f"the source-state command derives `{derived}`"
         )
 
-    review_match = REVIEW_BINDING.search(text)
-    if review_match is None:
-        failures.append("no review binding field found in the report")
+    review_match = sole_match(REVIEW_BINDING, text, "review binding")
+    if isinstance(review_match, str):
+        failures.append(review_match)
     elif verdict == "PASSED":
         review = review_match.group(1)
         if review is None:

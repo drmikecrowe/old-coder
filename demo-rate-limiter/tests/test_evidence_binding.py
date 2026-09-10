@@ -91,7 +91,11 @@ def test_bare_passed_over_a_stale_review_fails(tmp_path: Path) -> None:
     report = _report(tmp_path, verdict="PASSED", review=f"tree `{STALE}`")
     result = _run(report, _fake_source_state(tmp_path))
     assert result.returncode == 1
-    assert "PASSED" in result.stderr
+    # Naming both hashes is what distinguishes this failure from every other
+    # message that happens to contain the word PASSED.
+    assert STALE in result.stderr
+    assert DERIVED in result.stderr
+    assert "caps the verdict" in result.stderr
 
 
 def test_stale_review_under_a_limited_verdict_passes(tmp_path: Path) -> None:
@@ -168,3 +172,47 @@ def test_source_state_without_a_tree_line_fails_closed(tmp_path: Path) -> None:
     script.chmod(0o755)
     result = _run(_report(tmp_path), script)
     assert result.returncode == 1
+
+
+def _duplicated(tmp_path: Path, extra: str) -> Path:
+    """A report carrying a second copy of a graded field, above the real one."""
+    report = tmp_path / "evidence.md"
+    report.write_text(
+        "# Evidence Report\n\n"
+        "## Honest notes\n"
+        f"{extra}\n\n"
+        "## Orientation\n"
+        "- **Verdict:** **PASSED.** The claim actually being graded.\n"
+        "- Source state: source commit `def5678`; sha256 tree hash\n"
+        f"  `{DERIVED}` — reproduce with `./tools/source_state.sh`.\n"
+        f"- Review binding: tree `{STALE}`\n",
+        encoding="utf-8",
+    )
+    return report
+
+
+def test_a_second_verdict_is_ambiguous_not_a_tiebreak(tmp_path: Path) -> None:
+    """First-match-wins would read the earlier verdict and skip the real check."""
+    report = _duplicated(tmp_path, "An earlier **verdict:** **PASSED WITH LIMITS.**")
+    result = _run(report, _fake_source_state(tmp_path))
+    assert result.returncode == 1
+    assert "ambiguous" in result.stderr
+    assert "verdict" in result.stderr
+
+
+def test_a_second_report_binding_is_ambiguous(tmp_path: Path) -> None:
+    report = _duplicated(
+        tmp_path, f"A quoted sha256 tree hash\n  `{DERIVED}` from an old run."
+    )
+    result = _run(report, _fake_source_state(tmp_path))
+    assert result.returncode == 1
+    assert "ambiguous" in result.stderr
+    assert "source state" in result.stderr
+
+
+def test_a_second_review_binding_is_ambiguous(tmp_path: Path) -> None:
+    report = _duplicated(tmp_path, f"Review binding: tree `{DERIVED}` (round 1)")
+    result = _run(report, _fake_source_state(tmp_path))
+    assert result.returncode == 1
+    assert "ambiguous" in result.stderr
+    assert "review binding" in result.stderr
