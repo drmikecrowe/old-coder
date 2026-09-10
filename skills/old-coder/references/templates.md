@@ -117,12 +117,20 @@ section's headline rather than its title:
   confidence downgraded; spec is the artifact to review after the fact>
 - Spec intent review: <`old-coder-spec-intent` ran — <N> points, <what changed in the spec>,
   <what you disagreed with and why> | not run — reason>
-- Source state: <commit SHA | uncommitted work, tree hash <sha256>> — persist
-  the computation as a script (e.g. tools/source_state.sh); a hash recipe
-  written in prose is working-directory-sensitive and will fail to reproduce. When
-  Git exists, derive the tree hash from version-controlled inputs, fail on
-  relevant staged, unstaged, deleted, or non-ignored untracked files, and
-  never hash ambient ignored build artifacts
+- Source state: tree hash <sha256> <; source commit <SHA> where complete
+  history is available> — persist the computation as a script (e.g.
+  tools/source_state.sh); a hash recipe written in prose is
+  working-directory-sensitive and will fail to reproduce. When Git exists,
+  derive the tree hash from version-controlled inputs, fail on relevant
+  staged, unstaged, deleted, or non-ignored untracked files, and never hash
+  ambient ignored build artifacts. **The tree hash is the identity; a commit
+  SHA is provenance.** A SHA names a commit, not the tree that produced these
+  numbers, so a report bound only to a SHA can be clean on paper and dirty in
+  fact
+- Review binding: <tree hash each counted review round saw | unavailable
+  (reason)> — the same value the source-state command produces, not a SHA you
+  type. A round may bind to an older tree; that is what a declared downgrade
+  is. What it may not do is sit under a bare `PASSED`
 - Isolation: <worktree | branch | none> <; fallback reason if a worktree could
   not run the gauntlet>
 - Grants in effect: <which permissions were standing, and from which scope; note
@@ -323,6 +331,11 @@ mechanically, as the report's final act:
   with it: `PASSED` requires a green stamp over the same source state; an
   unavailable binding caps the verdict at `PASSED WITH LIMITS`. No stamp
   mechanism in the project — this line does not apply.
+- **Binding:** the tree hash under `Source state` equals the one the
+  source-state command derives now, and every review round counted under a
+  bare `PASSED` binds to that same hash. A stale report binding is a failing
+  row; a stale or unavailable review binding under a bare `PASSED` is a
+  failing row, and the fix is the verdict, never the binding.
 
 A summary that fails any line is a defect in the summary: fix it, never the table.
 

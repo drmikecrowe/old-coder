@@ -201,7 +201,7 @@ Docs changes still run the stack. The rows that actually bite:
 | A1 merge loop-alignment | landed at `8e2b2c2`, 2026-09-09; one criterion blocked, see below |
 | A2 VE-1 correction | landed 2026-09-09, `delegated` |
 | A3 spec reviewer tools | landed 2026-09-09 after one adversarial round; EX-1 is `partial`, and its end state is A6's portability call |
-| A4 one identity function | not started |
+| A4 one identity function | landed 2026-09-10 as a mechanism, not an `accepted` |
 | A5 publish the ceiling | not started |
 | A6 freeze and hand off | not started |
 
@@ -307,6 +307,73 @@ that claims a read-only constraint for one while reading `enforced`. Against
 the pre-A2 audit it exits 1 naming VE-1; against the post-A2 audit it exits 0.
 The script is not yet a gauntlet layer. A5 is the object that gives checks over
 the audit a durable home, and this one lands with it.
+
+### A4, 2026-09-10
+
+**The object's escape hatch did not apply, and saying so is the finding.** A4
+offered `accepted` plus `delegated` if no fixture could be written without a
+runtime. There is a runtime: the demo has a real `evidence.md`, a source-state
+command that already fails closed, and a gauntlet to run a layer in. A fixture
+was writable, so taking the hatch would have been a dodge dressed as a
+judgment. The mechanism shipped.
+
+`REVISION 9`, approved after an intent review, adds an `evidence-binding`
+layer. It grades two things:
+
+- the tree hash the report cites for its own gauntlet run must equal the one
+  the source-state command derives now;
+- a verification round may bind to an older tree, because that is what a
+  declared downgrade is, but not under a bare `PASSED`.
+
+Two design points that are easy to get wrong. The layer never hashes anything
+itself, because a second implementation of the identity function is the defect
+being closed, reintroduced. And it never reads `gauntlet-stamp.txt`: the exit
+trap writes that after every layer has run, so a layer reading it would grade
+the previous run. REVISION 8 already forbids the stamp carrying a binding the
+source-state command did not produce, so deriving fresh and reading the stamp
+cannot disagree.
+
+Twelve controls, red before the checker existed and green after. They drive the
+checker through a fake source-state command, which is not only for speed: the
+checker's contract is that only that command produces a binding, so a fake
+command is the entire environment it can observe. It also keeps the suite
+honest on a machine whose signing agent is refusing.
+
+**The layer proved itself on arrival.** It could not grade its own commit: at
+`12e8d65` it went red on the real report for both reasons it exists to catch,
+naming the stale hash and the missing field, and green once the report was
+rebound to `e1e514b57b26706c`. That is a non-vacuity proof nobody had to
+construct.
+
+The companion half, which the intent review is the reason this object has: the
+templates asked authors to type a SHA. `references/templates.md` now asks for
+the tree hash and adds a `Review binding:` field, and its consistency check
+gains a `Binding:` row. `SKILL.md` says the adversarial layer binds to the tree
+hash the diff was taken from rather than the SHA typed to produce it, because
+binding to a SHA is what lets a review taken from a dirty tree report a clean
+state. A checker that catches a stale binding while the template keeps asking
+for the value that goes stale closes nothing.
+
+This object closes no audit row on its own. It strengthens VE-9 and VE-11: the
+harness-written completion artifact now has a layer that fails when the
+model-written report disagrees with it.
+
+**What A4 deliberately did not do.** The A3 log banked an observation: the
+source manifest scopes to `.github/workflows` and the demo's own directories,
+so `skills/` sits outside it and a SKILL.md edit does not move the tree hash.
+A4 leaves that alone. Extending the demo's manifest to cover the skill would
+make the demo's content identity depend on prose the demo does not execute,
+and every wording change would invalidate a binding about rate-limiter
+behaviour. The honest consequence stands and belongs in A5's ceiling: an
+adversarial review of a skill-text change binds to a hash that did not move,
+so the tree hash is not evidence about the prose it reviewed. One identity
+function now covers evidence and review. It does not cover the skill.
+
+The demo's own report records `Review binding: unavailable`. Its six
+verification rounds predate the mechanism and cite commit SHAs, so none can be
+checked. The layer therefore holds it below a bare `PASSED` mechanically, which
+is the verdict it had already declared for its own reasons. The two agreeing is
+the point.
 
 ### A3, 2026-09-09
 
