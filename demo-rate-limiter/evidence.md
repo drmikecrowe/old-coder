@@ -2,13 +2,13 @@
 
 ## Orientation
 - **Verdict:** **PASSED WITH LIMITS.** Every gauntlet layer is green at source
-  state `aca8429`, but independent verification is `not performed` against that
+  state `716028a`, but independent verification is `not performed` against that
   state. This report is finalized as a **declared downgrade**, not on a passing
   verdict.
 - **Delivered:** an in-process `RateLimiter(limit, window_seconds, clock)` with
   `allow(key) -> bool` — sliding window per key, thread-safe, with a throttled
   sweep that bounds the key map temporally.
-- **Proven:** 34/34 mapped scenarios pass; 65 tests, 100% changed-line coverage
+- **Proven:** 35/35 mapped scenarios pass; 65 tests, 100% changed-line coverage
   (49/49 statements, 20/20 branches, gated), 22/22 mutants killed. The mutation
   score is carried **entirely by the scenario suite** — the properties alone
   kill 3/22.
@@ -25,7 +25,7 @@ The writeup below, in brief:
 
 - **Spec → test mapping:** 33 rows, all `pass`, no `unverified` or `n-a`. Both
   Must NOT constraints are mapped — one to a test, one to the must-not scan.
-- **Gauntlet:** 20 layers. Four exist to prove the harness can fail — an
+- **Gauntlet:** 21 layers. Four exist to prove the harness can fail — an
   orchestration self-test (11 scenarios, 34/34 expectations), a checker self-test
   (3/3), a source-state self-test (9/9), and a mutation negative control (C1
   killed, C2 survived).
@@ -56,21 +56,21 @@ The writeup below, in brief:
   Earlier revisions (2026-07-25, 2026-07-27) were autonomous and are still
   unapproved; treat them as the weaker part of the spec.
 - Independent verification: **not performed against the final source state
-  `aca8429`.** Six earlier rounds were performed; the last verified state
+  `716028a`.** Six earlier rounds were performed; the last verified state
   `d0b506c` returned `failed`, and the fixes made since — one of them
   behavioural — are disclosed below as unverified. This report is finalized as
   a **declared downgrade**, not on the strength of a passing verdict. A
   verdict attaches to the state a verifier actually saw, and no verifier has
   seen this one.
-- Source state: source commit `aca8429`; sha256 tree hash
-  `fa9119fe4fd5a79d` — reproduce both with `./tools/source_state.sh` from any
+- Source state: source commit `716028a`; sha256 tree hash
+  `1f85ffb6ed06f504` — reproduce both with `./tools/source_state.sh` from any
   directory, or read them from `gauntlet-stamp.txt`, which the entry point
   writes on every exit path. When a binding is produced the tree hash is the required content
   identity; the source commit is provenance and is supplied only where
   complete history is available, so a shallow checkout reports
   `(unavailable: shallow history)` and a no-Git archive reports `(no git)`,
   both alongside this same tree hash. No error path emits a binding at all.
-  The script separately reports current HEAD; commits after `aca8429` that
+  The script separately reports current HEAD; commits after `716028a` that
   touch only this report or other out-of-scope paths preserve the source
   commit and tree hash. The manifest includes `.github/workflows`, which
   decides whether the gauntlet runs in CI at all.
@@ -93,7 +93,7 @@ The writeup below, in brief:
   crash (passed through).
 
 All numbers are from one final fresh run of the entry point, executed
-2026-09-10 at source commit `aca8429` after the last code edit; the stamp
+2026-09-10 at source commit `716028a` after the last code edit; the stamp
 from that run reads `result: green` over the binding above.
 
 The branch carrying that state was merged to fork `main` as `8e2b2c2` on
@@ -148,6 +148,7 @@ Status legend: pass / fail / unverified / n-a.
 | REVISION 6: truncated history withholds provenance, never invents it | test_source_state.py::test_shallow_history_withholds_provenance (exact marker, shallow HEAD, tree equal to the full clone, empty stderr) | pass |
 | REVISION 6: covered error scenarios pin their reason and emit no binding | test_source_state.py (Git dirty, Git deletion, Git untracked, no-Git missing input, no-Git empty scope — each asserts the reason and `stdout == ""`) | pass |
 | REVISION 7: omitted or failed gauntlet work cannot report green | test_gauntlet_orchestration.sh (omitted layer, failing command with exact rc and stopped sentinel, unknown layer, duplicate layer, complete-manifest positive control) | pass |
+| REVISION 11: the contract and the harness name the same layers | contract_ids.py, four arms against copies (contract promises an unrun layer, gauntlet runs an unnamed one, contract section absent, no `run_layer` calls) plus one run through the real harness reading `layer-failed (contract-ids, rc=1)` back from the stamp | pass |
 | REVISION 9: the report's binding is graded against the derived one | test_evidence_binding.py (15 controls: stale report binding, bare `PASSED` over a stale review, bare `PASSED` over an unavailable one, each of three fields absent, each of three fields duplicated, absent report, source-state command exiting nonzero, and exiting zero with no tree line) | pass |
 | REVISION 8: every exit path is stamped and classified | test_gauntlet_orchestration.sh scenarios 6–11 (green stamp with binding, failed-layer stamp and exit 2, orchestration stamp and exit 3, crash passthrough, exit-0-before-audit remap, unavailable binding never guessed) | pass |
 
@@ -171,10 +172,11 @@ Status legend: pass / fail / unverified / n-a.
 | Secret scan | must-not scan in `tools/gauntlet.sh` over src, tests, tools, examples, spec.md, pyproject.toml, requirements-dev.txt and `../.github` | clean, no matches |
 | Audit sweep | `../tools/audit_sweep.py` (REVISION 10; grades `docs/loop-alignment.md`, outside the source manifest) | pass: no audit row credits a capability bound its agent's tool list cannot hold |
 | Ceiling ids | `../tools/ceiling_ids.py` (REVISION 10; grades the audit against `skills/old-coder/references/ceiling.md`) | pass: same rule ids in both directions, same end state for each |
-| Source binding | `tools/source_state.sh` (and captured again into `gauntlet-stamp.txt` at exit) | source commit `aca8429`; tree `fa9119fe4fd5a79d`; current HEAD is reported separately |
+| Contract ids | `../tools/contract_ids.py` (REVISION 11; grades `spec.md`'s Verification contract against the `run_layer` calls in `tools/gauntlet.sh`) | pass: 17 layers named and run, no disagreement in either direction |
+| Source binding | `tools/source_state.sh` (and captured again into `gauntlet-stamp.txt` at exit) | source commit `716028a`; tree `1f85ffb6ed06f504`; current HEAD is reported separately |
 | Evidence binding | `tools/evidence_binding.py` (last gauntlet layer; REVISION 9) | pass: this report's cited tree hash equals the derived one, and its review binding is `unavailable`, which the layer holds below a bare `PASSED` |
 | License check | — | n-a: zero runtime dependencies, nothing redistributed beyond this repo's own MIT code |
-| Suite health | pytest-randomly (order shuffled every run) | 65 passed in randomized order, 10/10 consecutive runs (rerun at `aca8429`) |
+| Suite health | pytest-randomly (order shuffled every run) | 65 passed in randomized order, 10/10 consecutive runs (rerun at `716028a`) |
 
 ## Layer attribution
 
@@ -253,7 +255,11 @@ independently verified**:
   and `89db3ed`, plus this rebind;
 - REVISION 10 and the two repository-level layers in commits `548c24f` and
   `aca8429`. Both checkers pre-date the revision and carry their own controls;
-  what changed is that something now runs them.
+  what changed is that something now runs them;
+- REVISION 11, the published verification contract and the `contract-ids`
+  layer, in commits `ba3ded9` and `716028a`. The contract names every layer
+  and its threshold before any of them runs, so a reader can tell a failed
+  layer from one nobody wired up.
 
   `89db3ed` is the adversarial round's repair: the checker graded whichever match came first in a report holding
   many hashes, and now refuses to grade an ambiguous field at all. The layer is the first mechanism in this repo

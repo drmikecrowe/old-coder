@@ -182,6 +182,32 @@ invisible, because both files read as prose and neither parses the other.
 **Broken.** Without the freeze written down, the next good idea lands here,
 where it can only be prose, and A reopens.
 
+### A7. The grading contract
+
+Cut from the original six and landed after the close. The rule: publish the
+contract, not the grader's discretion. Artifact-computed rows are public with
+their thresholds; the review layers' categories, powers and binding are public;
+the findings to look for are never pre-listed, because a reviewer whose
+questions are known in advance grades work optimised for exactly those
+questions.
+
+**Acceptance criteria.**
+
+- `references/templates.md`: the SPEC template gains a Verification contract
+  section, filled at approval.
+- `SKILL.md`: GREEN opens by restating the contract; a handoff without it is
+  incomplete.
+- `demo-rate-limiter/spec.md`: carry the filled contract, bound to the actual
+  layer names in `tools/gauntlet.sh`.
+- `tools/contract_ids.py`: diff the contract's layer list against the
+  `run_layer` calls, both directions, fail closed on an empty contract, and run
+  as a manifest layer.
+
+**Broken.** A contract nobody checks decays into a description of what the
+harness used to do, and it decays silently, because both files read as prose
+and neither parses the other. Then a missing layer and a failed layer look the
+same to the reader the contract was written for.
+
 ## Gauntlet rows for this work
 
 Docs changes still run the stack. The rows that actually bite:
@@ -204,6 +230,7 @@ Docs changes still run the stack. The rows that actually bite:
 | A4 one identity function | landed 2026-09-10 as a mechanism, not an `accepted` |
 | A5 publish the ceiling | landed 2026-09-10, all four criteria met |
 | A6 freeze and hand off | landed 2026-09-10; track A is closed |
+| A7 the grading contract | landed 2026-09-10 after the close, under the freeze rather than around it |
 
 ## The runtime repo's opening backlog
 
@@ -260,6 +287,91 @@ Actions on the fork, then one push. Until then the affected claims are
 narrowed to what is true rather than left standing.
 
 ## Log
+
+### A7, 2026-09-10
+
+Cut from the original six and landed after the close. It fits under
+`CONTRIBUTING.md`'s freeze rather than around it: the freeze's test is whether
+an agent that can only read the text can honour the change, and three of the
+four criteria are text. The fourth is one repo-level check in the pattern
+REVISION 10 established, which the freeze already treats as in scope. Recorded
+here rather than escalated, because escalating a change the freeze admits would
+be theatre.
+
+Each criterion, and what discharges it:
+
+- **The SPEC template.** `references/templates.md` gains `## Verification
+  contract`: a table of every layer with the number or state that passes it, a
+  second table of review layers with their powers and binding, and the exit
+  vocabulary. Filled at approval, before anything runs.
+- **GREEN restates it.** One paragraph in `SKILL.md`. It says restate, not
+  re-derive: a difference between what GREEN writes and what was approved is a
+  finding, not an update. `SKILL.md` stays short.
+- **The demo carries the filled contract.** All seventeen layers by the exact
+  name the entry point invokes, plus the three review layers and the exit
+  vocabulary, in `demo-rate-limiter/spec.md` under REVISION 11.
+- **The check.** `tools/contract_ids.py`, in `ceiling_ids.py`'s mould, diffs
+  the contract's layer names against the `run_layer` calls in both directions.
+
+**The asymmetry is the object, not a detail of it.** Thresholds are published
+because a number is checkable and withholding it only protects the author.
+Review layers publish powers and binding and never a list of findings to hunt.
+A reviewer handed the questions in advance grades work optimised for exactly
+those questions, and the categories left off the list are the ones the author
+already feared least. That is a Must NOT in REVISION 11, so a later revision
+cannot add a "defect classes to look for" table and call it thoroughness.
+
+**RED before GREEN, twice, and the second time was not planned.** The checker
+ran against the repository before the contract section existed and failed
+closed: no section, nothing compared. Then the contract was written naming
+`contract-ids` before the layer was registered, so the missing arm fired
+against the real files, and registering the layer is what turned it green. The
+check was red on this repository before it was ever green on it.
+
+Four arms, each against a copy: a contract promising a layer the gauntlet never
+runs, a gauntlet running a layer the contract does not name, a missing contract
+section, and a gauntlet with no `run_layer` calls.
+
+**Proven through the real harness, not only as a script.** Deleting the `types`
+row from the contract and running `contract-ids` through the harness exits 2,
+and `gauntlet-stamp.txt` reads `result: layer-failed (contract-ids, rc=1)`.
+Restored, green. The stamp is what distinguishes this from an unregistered
+layer, which would have produced an orchestration error instead.
+
+One audit row changed, and only where the evidence genuinely did. IN-6 ("agree
+what a partial result looks like before the run") read as enforced by the
+five-status vocabulary and declared downgrades. Those say what a partial result
+is called, not which layers were promised. The contract is the missing half of
+"before the run", so IN-6's evidence now names it. `ceiling-ids` ran green
+after, which is the check that would have caught a status change smuggled in
+with an evidence edit.
+
+Full gauntlet green at `716028a`, twenty-one rows, `audit-sweep`, `ceiling-ids`
+and `contract-ids` among them.
+
+### The three leftovers, 2026-09-10
+
+**Fork CI: still escalated, thread stopped.**
+`gh api repos/drmikecrowe/old-coder/actions/runs` returns `total_count: 0`.
+Nothing to un-narrow: the narrowed claims in `evidence.md` and in DR-1 and DR-2
+stand exactly as they were, because they are still the true ones. This remains
+one settings click and no amount of prose closes it.
+
+**The demo test count.** `README-zh.md` said 41. The suite says 65, verified by
+running it rather than by trusting the number in the instruction. `README.md`
+carried the identical stale figure in the identical sentence and was fixed with
+it: correcting one and leaving the other would have left the pair disagreeing
+about the same fact. Coverage and mutation figures in that sentence were still
+right and were left alone.
+
+**The successor repo is no longer named.** Every `drmikecrowe/old-coder-runtime`
+became "the runtime repo", and both definitions of `delegated` changed to match:
+a delegated row names the rule id and what the missing capability must do, not
+a destination anyone can type. The reasoning is in the handoff section above.
+The audit and the published ceiling define `delegated` separately, so
+`ceiling-ids` ran before and after; that layer is what makes "they had to move
+together" mechanical rather than remembered.
+
 
 ### A1, 2026-09-09
 

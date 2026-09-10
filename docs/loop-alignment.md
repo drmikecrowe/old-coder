@@ -51,7 +51,7 @@ Run it by hand for now; A5 makes it a gauntlet layer.
 | IN-3 | every step names what would show it complete | enforced | scenario → test mapping is 1:1 and mechanical (`templates.md`) |
 | IN-4 | a plan missing validation statements is rejected before execution | accepted | the spec-intent review and human approval reject in prose; nothing rejects in code. Accepted, and the reason is not time: the artifact is prose, and a human approver who can be shown a plan with no validation statements is a better rejector of it than a parser would be |
 | IN-5 | one loop, one object type | enforced | the skill runs one task per artifact directory; `old-coder-api` composition explicitly forbids two parallel workflows |
-| IN-6 | agree on what a partial result looks like before the run | enforced | the five-status layer vocabulary, `PASSED WITH LIMITS`, and declared downgrades are exactly this |
+| IN-6 | agree on what a partial result looks like before the run | enforced | the five-status layer vocabulary, `PASSED WITH LIMITS`, and declared downgrades. A7 added the missing half of "before the run": the SPEC's Verification contract fixes every layer and threshold at approval, and `tools/contract_ids.py` fails when it and the harness disagree (`references/templates.md`, `demo-rate-limiter/spec.md` REVISION 11) |
 
 ## Plane 2 — Execution
 
