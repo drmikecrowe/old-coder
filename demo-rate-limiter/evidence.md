@@ -56,21 +56,21 @@ The writeup below, in brief:
   Earlier revisions (2026-07-25, 2026-07-27) were autonomous and are still
   unapproved; treat them as the weaker part of the spec.
 - Independent verification: **not performed against the final source state
-  `6930f38`.** Six earlier rounds were performed; the last verified state
+  `4559a7c`.** Six earlier rounds were performed; the last verified state
   `d0b506c` returned `failed`, and the fixes made since — one of them
   behavioural — are disclosed below as unverified. This report is finalized as
   a **declared downgrade**, not on the strength of a passing verdict. A
   verdict attaches to the state a verifier actually saw, and no verifier has
   seen this one.
-- Source state: source commit `6930f38`; sha256 tree hash
-  `cad3731ce3693e2a` — reproduce both with `./tools/source_state.sh` from any
+- Source state: source commit `4559a7c`; sha256 tree hash
+  `d31377f2d4077fe9` — reproduce both with `./tools/source_state.sh` from any
   directory, or read them from `gauntlet-stamp.txt`, which the entry point
   writes on every exit path. When a binding is produced the tree hash is the required content
   identity; the source commit is provenance and is supplied only where
   complete history is available, so a shallow checkout reports
   `(unavailable: shallow history)` and a no-Git archive reports `(no git)`,
   both alongside this same tree hash. No error path emits a binding at all.
-  The script separately reports current HEAD; commits after `6930f38` that
+  The script separately reports current HEAD; commits after `4559a7c` that
   touch only this report or other out-of-scope paths preserve the source
   commit and tree hash. The manifest includes `.github/workflows`, which
   decides whether the gauntlet runs in CI at all.
@@ -98,7 +98,7 @@ The writeup below, in brief:
   crash (passed through).
 
 All numbers are from one final fresh run of the entry point, executed
-2026-09-10 at source commit `6930f38` after the last code edit; the stamp
+2026-09-10 at source commit `4559a7c` after the last code edit; the stamp
 from that run reads `result: green` over the binding above.
 
 The branch carrying that state was merged to fork `main` as `8e2b2c2` on
@@ -183,7 +183,7 @@ Status legend: pass / fail / unverified / n-a.
 | Hooks registered | `../tools/hooks_registered.py` (REVISION 12; every frontmatter hook names a handler present and executable in `hooks/`) | pass: 1 handler across 2 agents. Grades the repository's copy, not the local deployment, so it is green on a host that declined the opt-in tier. **This is the CI half.** It does not prove Claude Code calls the handler; only a recorded host probe does, and none has been run |
 | Hooks-registered controls | `sh ../tools/test_hooks_registered.sh` (REVISION 12) | 8/8 cases ok, including the case an earlier version failed: a host with no `CLAUDE_CONFIG_DIR` and no symlink, which would have reddened this repository's own CI on every push |
 | Hook controls | `sh ../hooks/test_spec_intent_scope.sh` (REVISION 12) | 12/12 cases ok. Two defects were found here rather than by review: a symlink inside the scope was allowed, and an empty payload failed open |
-| Source binding | `tools/source_state.sh` (and captured again into `gauntlet-stamp.txt` at exit) | source commit `6930f38`; tree `cad3731ce3693e2a`; current HEAD is reported separately |
+| Source binding | `tools/source_state.sh` (and captured again into `gauntlet-stamp.txt` at exit) | source commit `4559a7c`; tree `d31377f2d4077fe9`; current HEAD is reported separately |
 | Evidence binding | `tools/evidence_binding.py` (last gauntlet layer; REVISION 9) | pass: this report's cited tree hash equals the derived one, and its review binding is `unavailable`, which the layer holds below a bare `PASSED` |
 | License check | — | n-a: zero runtime dependencies, nothing redistributed beyond this repo's own MIT code |
 | Suite health | pytest-randomly (order shuffled every run) | 65 passed in randomized order, 10/10 consecutive runs (rerun at `8ecf38b`; REVISION 12 added no test and changed no runtime code) |

@@ -504,6 +504,32 @@ Nothing in this SPEC lets a green gauntlet stand in for a recorded denial.
   acceptance criteria that already existed. `shell-lint` widened to cover them.
   Demo `spec.md` REVISION 12 carries all of it; the contract now names 20
   layers.
+- 2026-09-10, H2 adversarial round one, bound to `8e9c2d4...6930f38` at tree
+  `cad3731ce3693e2a`, which unlike H1's did move. Four findings and one hunch;
+  all four upheld, both mechanical attacks reproduced before repair.
+  1. **The lift credited a declaration, not a behaviour.** `matcher: .*` plus a
+     handler that only ran `exit 0` silenced the sweep for VE-1 and EX-7, the
+     two rows this repository says a hook cannot close at all. The repository's
+     own failure class, inside the mechanism built to catch it. Closed three
+     ways: exact matcher naming the tool, no lift for shell tools, and a
+     recorded probe required. The third makes EX-1 self-enforcing.
+  2. **`hooks-registered` would have reddened CI on the next push**, and every
+     host that declined the opt-in tier, by treating "not deployed here" as
+     "handler deleted". It grades `hooks/<handler>` now and notes the
+     deployment.
+  3. **No negative control for `hooks-registered`**, while `evidence.md`
+     credited non-vacuity for three checks and cited controls for two.
+     `tools/test_hooks_registered.sh` closes it. Every control was then watched
+     failing against a deliberately broken handler.
+  4. **`hooks/README.md` said "Closes EX-1"** while the row is deliberately
+     held at `accepted`. Corrected, along with a "two clauses" that H1 round
+     two had already made three.
+  The hunch, that `matcher: Read` might also fire for `NotebookRead`, is
+  answered by the reference's matcher table: an exact-match matcher does not,
+  so that fail-open does not exist. `agent_frontmatter.py` now implements all
+  three documented matcher cases rather than a single `fullmatch`, which was
+  wrong in the conservative direction.
+  H2 round two of two. No signature repeated, so no stable-failure exit.
 - 2026-09-10, during GREEN. **H2 splits into two commits.** The SPEC assumed
   one commit carrying both the mechanism and EX-1's move to `enforced`. That
   ordering writes the claim before the proof exists: the evidence column would

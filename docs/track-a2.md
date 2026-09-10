@@ -279,7 +279,7 @@ ceiling exists to prevent, now in the ceiling itself.
 | Object | State |
 |---|---|
 | H1 amend the freeze | landed 2026-09-10 at `8e9c2d4`, repaired at `0f5d8df` after one adversarial round; three findings upheld |
-| H2 spec reviewer read scope | mechanism landed 2026-09-10; EX-1 held at `accepted` pending the recorded host probes |
+| H2 spec reviewer read scope | mechanism landed 2026-09-10 at `6930f38`, hardened at `4559a7c` after one adversarial round; four findings upheld. EX-1 held at `accepted` pending the recorded host probes, which the lift now requires mechanically |
 | H3 adversary shell grammar | not started, blocked on step zero |
 | H4 budget counted | not started, blocked on step zero |
 | H5 runner and scribe roles | not started, blocked on step zero |
