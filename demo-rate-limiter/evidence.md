@@ -80,17 +80,20 @@ The writeup below, in brief:
   SHAs, so none of them can be checked against the current state. The
   `evidence-binding` layer therefore holds this report below a bare `PASSED`
   mechanically, which is the verdict it already declared for its own reasons.
-- Toolchain: pinned in `requirements-dev.txt`. Locally on 3.14.7 against this
-  state. **CI has not run on this state**, and this report does not credit it
-  as though it had. The last CI run bound to the previous source state,
-  `8ecf38b` and tree `7bc4352ff62e5e3e`, reported every layer green
-  (<https://github.com/drmikecrowe/old-coder/actions/runs/34468087528>, HEAD
-  `24dd097`), and REVISION 12 has moved the tree since. That run is provenance
-  for the state it saw and says nothing about this one. This repository is the
-  worked example of the failure that rule exists to prevent, so the second
-  interpreter is recorded here as outstanding rather than assumed:
-  `.github/workflows/gauntlet.yml` fires on push, and the claim can be made
-  again once it has.
+- Toolchain: pinned in `requirements-dev.txt`. Two Pythons, both run against
+  this state: locally on 3.14.7, and on 3.12.14 in CI via
+  `.github/workflows/gauntlet.yml`. **The CI run derived this report's exact
+  binding**, tree `0f6d9e8aa98315ec`, and reported all 21 layers green:
+  <https://github.com/drmikecrowe/old-coder/actions/runs/34606856991>. Its HEAD
+  was `ad2b4a0`.
+
+  That run is credited only because it was checked, on this repository, against
+  this tree. The run before it went red, and the failure was real rather than
+  environmental: CI's `shellcheck` flags a pattern the author's 0.11.0 does not,
+  so `shell-lint` was passing locally on code CI refused. The local gate was the
+  weaker of the two. Nothing here was proven on one machine and assumed on the
+  other.
+
 - Entry point: `./tools/gauntlet.sh` reruns every layer below and writes
   `gauntlet-stamp.txt`: the result, the layer sets, a UTC timestamp, and the
   source binding — on the failure path too, with the exit status
