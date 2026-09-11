@@ -1,7 +1,8 @@
 # SPEC - Track A2, objects H1 and H2
 
-Two objects, two SPECs, one approval gate. The loop in `docs/track-a2.md`
-runs them in order: H1 lands, then H2. Budget is two rounds per object; the
+Two objects, approved together, both landed. H2b was cut from H2's residual
+limit and has its own SPEC at `docs/spec-a2-h2b.md`. The loop in
+`docs/track-a2.md` runs them in order. Budget is two rounds per object; the
 same failure signature twice is a stable failure recorded here, not a third
 attempt.
 
@@ -10,6 +11,11 @@ House rule: no em dashes.
 ---
 
 # SPEC - H1. Amend the freeze
+
+> **LANDED** 2026-09-10 at `8e9c2d4`, repaired at `0f5d8df` after one
+> adversarial round. Everything below is the record of an approved and closed
+> object. Its `Decide` items were answered before RED and are kept as written,
+> with the outcomes in `## Revisions`. Nothing here is an open question.
 
 ## Orientation
 
@@ -123,40 +129,40 @@ Feature: the freeze admits a hooks tier
 Filled before anything runs. Layer names are exactly as
 `demo-rate-limiter/tools/gauntlet.sh` invokes them.
 
-| Layer | What it gates | Threshold |
-|---|---|---|
-| orchestration-self-test | the runner reports what it ran | exit 0 |
-| checker-self-test | the home-grown checkers can fail | exit 0 |
-| source-state-self-test | binding fails closed | exit 0 |
-| tests-coverage | demo regressions | exit 0, 100% branch |
-| types | demo regressions | exit 0 |
-| lint-format | demo regressions | exit 0 |
-| shell-lint | demo regressions | exit 0 |
-| supply-chain | demo regressions | exit 0 |
-| must-not-scans | credentials and real time in the demo | exit 0 |
-| mutation-control | the mutation layer is non-vacuous | exit 0 |
-| mutation | demo regressions | exit 0, all mutants killed |
-| real-execution | the demo runs | exit 0 |
-| audit-sweep | an audit row crediting a bound its agent cannot hold | exit 0 |
-| ceiling-ids | audit and ceiling naming different end states | exit 0 |
-| contract-ids | the demo contract and the runner disagreeing | exit 0 |
-| source-state | content identity | exit 0 |
-| evidence-binding | evidence bound to a stale tree | exit 0 |
+| Layer                   | What it gates                                        | Threshold                  |
+| ----------------------- | ---------------------------------------------------- | -------------------------- |
+| orchestration-self-test | the runner reports what it ran                       | exit 0                     |
+| checker-self-test       | the home-grown checkers can fail                     | exit 0                     |
+| source-state-self-test  | binding fails closed                                 | exit 0                     |
+| tests-coverage          | demo regressions                                     | exit 0, 100% branch        |
+| types                   | demo regressions                                     | exit 0                     |
+| lint-format             | demo regressions                                     | exit 0                     |
+| shell-lint              | demo regressions                                     | exit 0                     |
+| supply-chain            | demo regressions                                     | exit 0                     |
+| must-not-scans          | credentials and real time in the demo                | exit 0                     |
+| mutation-control        | the mutation layer is non-vacuous                    | exit 0                     |
+| mutation                | demo regressions                                     | exit 0, all mutants killed |
+| real-execution          | the demo runs                                        | exit 0                     |
+| audit-sweep             | an audit row crediting a bound its agent cannot hold | exit 0                     |
+| ceiling-ids             | audit and ceiling naming different end states        | exit 0                     |
+| contract-ids            | the demo contract and the runner disagreeing         | exit 0                     |
+| source-state            | content identity                                     | exit 0                     |
+| evidence-binding        | evidence bound to a stale tree                       | exit 0                     |
 
 Manual rows, graded by reading, not computed:
 
-| Row | What it gates | Threshold |
-|---|---|---|
-| vocabulary sweep | banned wording in changed files, per `ROADMAP.md` step 7 | 0 hits |
-| em-dash sweep over changed lines | the house rule | 0 hits |
-| verbatim check on the freeze's skill-text test | Must NOT #1 | exact match |
+| Row                                            | What it gates                                            | Threshold   |
+| ---------------------------------------------- | -------------------------------------------------------- | ----------- |
+| vocabulary sweep                               | banned wording in changed files, per `ROADMAP.md` step 7 | 0 hits      |
+| em-dash sweep over changed lines               | the house rule                                           | 0 hits      |
+| verbatim check on the freeze's skill-text test | Must NOT #1                                              | exact match |
 
 Review layers:
 
-| Layer | Powers | Binding |
-|---|---|---|
-| human SPEC approval | full; the only approver | this file at its approved content |
-| adversarial | `old-coder-adversary`: Read, Bash, Grep, Glob; one round; 10 calls | `base...HEAD` for H1's commit, tree hash from `tools/source_state.sh` |
+| Layer               | Powers                                                             | Binding                                                               |
+| ------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| human SPEC approval | full; the only approver                                            | this file at its approved content                                     |
+| adversarial         | `old-coder-adversary`: Read, Bash, Grep, Glob; one round; 10 calls | `base...HEAD` for H1's commit, tree hash from `tools/source_state.sh` |
 
 Exit vocabulary: 0 green, 2 a layer ran and failed, 3 the orchestration
 contract was violated, anything else a crash passed through.
@@ -200,15 +206,20 @@ with that fact attached.
      by having nothing to prove, entering on-by-default and untested through
      the one door marked tested. Repaired: the test is three clauses now, and
      the first requires a hook in this tier to be a bound.
-  Two defects found while repairing, neither reported by the reviewer and both
-  mine: the first repair produced two adjacent paragraphs each claiming to be
-  "one exception", and the tier claimed `~/.claude/agents/`, which is wrong on
-  this host. Both fixed in the same commit. H1 round two of two; no signature
-  repeated, so no stable-failure exit.
+     Two defects found while repairing, neither reported by the reviewer and both
+     mine: the first repair produced two adjacent paragraphs each claiming to be
+     "one exception", and the tier claimed `~/.claude/agents/`, which is wrong on
+     this host. Both fixed in the same commit. H1 round two of two; no signature
+     repeated, so no stable-failure exit.
 
 ---
 
 # SPEC - H2. The spec reviewer's read scope
+
+> **LANDED** 2026-09-11 at `af40aef`. Its four `Decide` items are all answered,
+> two of them differently from the recommendation written below; the
+> corrections are in `## Revisions`, in order. Nothing here is an open
+> question. H2b, at the end of this file, is the live one.
 
 ## Orientation
 
@@ -249,11 +260,11 @@ whole tier exists to prevent, shipped as the default.
 
 Three options:
 
-| Option | Works when | Cost |
-|---|---|---|
-| absolute path to this checkout | always, on this machine | a machine-specific path in a tracked file that other readers inherit |
-| `$HOME/.claude/hooks/spec-intent-scope.sh`, symlinked at the repo file | always, on this host | one setup step, and it matches how `~/.claude/agents/` already symlinks at `skills/old-coder/agents/` |
-| keep `${CLAUDE_PROJECT_DIR}` | only when old-coder runs on old-coder | the bound is absent on every real use |
+| Option                                                                 | Works when                            | Cost                                                                                                  |
+| ---------------------------------------------------------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| absolute path to this checkout                                         | always, on this machine               | a machine-specific path in a tracked file that other readers inherit                                  |
+| `$HOME/.claude/hooks/spec-intent-scope.sh`, symlinked at the repo file | always, on this host                  | one setup step, and it matches how `~/.claude/agents/` already symlinks at `skills/old-coder/agents/` |
+| keep `${CLAUDE_PROJECT_DIR}`                                           | only when old-coder runs on old-coder | the bound is absent on every real use                                                                 |
 
 Recommendation: the symlink. It reuses a deployment shape this host already
 uses, keeps the tracked file portable, and makes the setup step explicit
@@ -270,11 +281,11 @@ exists.
 
 The artifact directory is per-task and dated, so no path can be baked in.
 
-| Option | Decidable | Fails closed |
-|---|---|---|
-| `OLD_CODER_SPEC_DIR` env var, deny everything when unset or not a directory | yes | yes |
-| infer from the hook payload's `cwd` | no; cwd is the repo, which is the thing being denied | no |
-| allow any directory containing a `SPEC.md` | no; a repo may contain many | no |
+| Option                                                                      | Decidable                                            | Fails closed |
+| --------------------------------------------------------------------------- | ---------------------------------------------------- | ------------ |
+| `OLD_CODER_SPEC_DIR` env var, deny everything when unset or not a directory | yes                                                  | yes          |
+| infer from the hook payload's `cwd`                                         | no; cwd is the repo, which is the thing being denied | no           |
+| allow any directory containing a `SPEC.md`                                  | no; a repo may contain many                          | no           |
 
 Recommendation: the env var. Deny by default, allow by resolved path prefix,
 and an unset variable denies everything rather than allowing everything.
@@ -446,34 +457,34 @@ Feature: the audit and the ceiling move together
 
 The computed table is H1's, unchanged, plus one row if Decide 4 is taken:
 
-| Layer | What it gates | Threshold |
-|---|---|---|
-| (all seventeen layers from H1's table) | as above | as above |
-| hooks-registered (only if Decide 4 is taken) | a hook file that does not parse, or that no frontmatter references | exit 0 |
+| Layer                                        | What it gates                                                      | Threshold |
+| -------------------------------------------- | ------------------------------------------------------------------ | --------- |
+| (all seventeen layers from H1's table)       | as above                                                           | as above  |
+| hooks-registered (only if Decide 4 is taken) | a hook file that does not parse, or that no frontmatter references | exit 0    |
 
 Host rows. These cannot run in CI, and the split is stated in the control
 itself so nobody reads the CI half as the proof:
 
-| Row | What it proves | Threshold | Who runs it |
-|---|---|---|---|
-| negative control probe | the hook denies a source read | denial recorded verbatim | Mike, at the keyboard |
-| positive control probe | the hook allows inside the spec dir | success recorded verbatim | Mike, at the keyboard |
-| rebinding | both probes belong to this hook version | rerun on every hook change, tree hash recorded | Mike |
+| Row                    | What it proves                          | Threshold                                      | Who runs it           |
+| ---------------------- | --------------------------------------- | ---------------------------------------------- | --------------------- |
+| negative control probe | the hook denies a source read           | denial recorded verbatim                       | Mike, at the keyboard |
+| positive control probe | the hook allows inside the spec dir     | success recorded verbatim                      | Mike, at the keyboard |
+| rebinding              | both probes belong to this hook version | rerun on every hook change, tree hash recorded | Mike                  |
 
 Unit rows, which run anywhere and prove the script's own logic, never its
 registration:
 
-| Row | What it proves | Threshold |
-|---|---|---|
-| `tools/test_audit_sweep.sh` | the sweep's hook lift is not vacuous | exit 0, two controls fail as designed |
-| the hook's own five scenarios, driven by piping payloads to the script | deny by default, allow by path, fail closed | all five |
+| Row                                                                    | What it proves                              | Threshold                             |
+| ---------------------------------------------------------------------- | ------------------------------------------- | ------------------------------------- |
+| `tools/test_audit_sweep.sh`                                            | the sweep's hook lift is not vacuous        | exit 0, two controls fail as designed |
+| the hook's own five scenarios, driven by piping payloads to the script | deny by default, allow by path, fail closed | all five                              |
 
 Review layers:
 
-| Layer | Powers | Binding |
-|---|---|---|
-| human SPEC approval | full | this file at its approved content |
-| adversarial | `old-coder-adversary`: Read, Bash, Grep, Glob; one round; 10 calls | `base...HEAD` for H2's commit, tree hash from `tools/source_state.sh` |
+| Layer               | Powers                                                             | Binding                                                               |
+| ------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| human SPEC approval | full                                                               | this file at its approved content                                     |
+| adversarial         | `old-coder-adversary`: Read, Bash, Grep, Glob; one round; 10 calls | `base...HEAD` for H2's commit, tree hash from `tools/source_state.sh` |
 
 Exit vocabulary: as H1.
 
@@ -539,12 +550,12 @@ Nothing in this SPEC lets a green gauntlet stand in for a recorded denial.
   4. **`hooks/README.md` said "Closes EX-1"** while the row is deliberately
      held at `accepted`. Corrected, along with a "two clauses" that H1 round
      two had already made three.
-  The hunch, that `matcher: Read` might also fire for `NotebookRead`, is
-  answered by the reference's matcher table: an exact-match matcher does not,
-  so that fail-open does not exist. `agent_frontmatter.py` now implements all
-  three documented matcher cases rather than a single `fullmatch`, which was
-  wrong in the conservative direction.
-  H2 round two of two. No signature repeated, so no stable-failure exit.
+     The hunch, that `matcher: Read` might also fire for `NotebookRead`, is
+     answered by the reference's matcher table: an exact-match matcher does not,
+     so that fail-open does not exist. `agent_frontmatter.py` now implements all
+     three documented matcher cases rather than a single `fullmatch`, which was
+     wrong in the conservative direction.
+     H2 round two of two. No signature repeated, so no stable-failure exit.
 - 2026-09-10, during GREEN. **H2 splits into two commits.** The SPEC assumed
   one commit carrying both the mechanism and EX-1's move to `enforced`. That
   ordering writes the claim before the proof exists: the evidence column would
@@ -552,20 +563,3 @@ Nothing in this SPEC lets a green gauntlet stand in for a recorded denial.
   EX-1 held at `accepted`, the reason stated in the row itself. Commit two
   moves EX-1 after the recorded probes land in `hooks/probes/`. The acceptance
   criteria are unchanged; only their order is.
-
----
-
-## What I need from you
-
-1. **Approve or revise both SPECs.** RED does not start until you do.
-2. **Decide 1** for H2: symlink, absolute path, or leave it project-scoped.
-   My recommendation is the symlink.
-3. **Decide 2**: the `OLD_CODER_SPEC_DIR` env var. My recommendation is yes.
-4. **Decide 3** is not a choice, it is a dependency: `audit_sweep.py` widens
-   or EX-1 stays where it is. Confirm you want the sweep widened.
-5. **Decide 4**: ship the `hooks-registered` CI half in H2, or leave it to
-   H6. My recommendation is ship it.
-
-When H2 reaches its controls I will prepare the two probes, give you the
-exact commands, and wait for what you paste back. I will not write either
-result myself.
