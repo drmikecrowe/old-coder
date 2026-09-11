@@ -21,15 +21,23 @@ fails=0
 pass() { echo "  ok   $1"; }
 fail() { echo "  FAIL $1" >&2; fails=$((fails + 1)); }
 
-# probe <dir> <handler-stem>: record a host probe for that handler
+# probe <dir> <handler-stem> [hash-override]: record a host probe naming the
+# handler's sha256. A record that names no hash, or a stale one, must not lift.
 probe() {
   mkdir -p "$WORK/$1/hooks/probes"
-  echo "recorded" > "$WORK/$1/hooks/probes/$2-deadbeef.md"
+  if [ -n "${3:-}" ]; then
+    sha=$3
+  else
+    sha=$(sha256sum "$WORK/$1/hooks/$2.sh" | cut -d" " -f1)
+  fi
+  printf 'handler sha256: %s\n' "$sha" > "$WORK/$1/hooks/probes/$2-deadbeef.md"
 }
 
 # agent <dir> <name> <tools> [matcher]
 agent() {
-  mkdir -p "$WORK/$1/skills/old-coder/agents"
+  mkdir -p "$WORK/$1/skills/old-coder/agents" "$WORK/$1/hooks"
+  printf '#!/bin/sh\nexit 0\n' > "$WORK/$1/hooks/probe-hook.sh"
+  chmod +x "$WORK/$1/hooks/probe-hook.sh"
   {
     echo "---"
     echo "name: $2"
@@ -113,6 +121,19 @@ agent unprobed probe-agent Read Read
 expect 1 "an exact hook with no recorded probe does not lift" \
   "$WORK/enforced.md" "$WORK/unprobed"
 
+# The hole this object found: a probe that graded a different version of the
+# handler. "Rebind on every hook change" was prose until this refused.
+agent stale probe-agent Read Read
+probe stale probe-hook 0000000000000000000000000000000000000000000000000000000000000000
+expect 1 "a probe naming a different handler hash does not lift" \
+  "$WORK/enforced.md" "$WORK/stale"
+
+agent nohash probe-agent Read Read
+mkdir -p "$WORK/nohash/hooks/probes"
+echo "a probe record that names no hash at all" > "$WORK/nohash/hooks/probes/probe-hook-x.md"
+expect 1 "a probe naming no hash does not lift" \
+  "$WORK/enforced.md" "$WORK/nohash"
+
 expect 0 "a row that does not read enforced is not graded on tools" \
   "$WORK/accepted.md" "$WORK/no-hook"
 
@@ -131,4 +152,4 @@ if [ "$fails" -ne 0 ]; then
   echo "audit-sweep controls: $fails failure(s)" >&2
   exit 1
 fi
-echo "audit-sweep controls: all green (12 cases)"
+echo "audit-sweep controls: all green (14 cases)"

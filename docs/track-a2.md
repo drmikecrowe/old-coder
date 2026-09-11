@@ -103,6 +103,32 @@ never the reverse, and fail closed, exactly as the ceiling already warns.
 against the code instead of the intent, and returns no gaps. Fails green on
 the layer whose value is catching what the human would have caught.
 
+### H2b. The reviewer's scope, taken from the artifact root
+
+H2 proved the bound and left it unwired. Its handler took scope from an
+environment variable, which a hook inherits from the agent process, fixed
+before the session starts. The task's artifact directory is named inside the
+session, so the variable could only ever name a directory somebody pre-created
+by hand. The handler reads `<artifact root>/scope` instead, written when the
+SPEC step creates the artifact directory.
+
+**Acceptance criteria.**
+
+- The handler takes scope from the pointer and nothing else; the environment
+  variable is gone from the tree.
+- The three absences deny with distinguishable reasons: no artifact root, no
+  pointer, a pointer naming nothing usable.
+- `SKILL.md` writes the pointer as part of creating the artifact directory, and
+  `setup.md` carries the mechanics and the ignore rule.
+- A probe record names the handler's sha256, and `tools/audit_sweep.py` refuses
+  to lift a row on a record that graded different code.
+- A fresh host probe against the current handler, recorded and bound.
+
+**Broken.** The bound exists and never applies, because the one directory it is
+about cannot be named. Or worse, it applies as a deny-all nobody notices,
+because the reviewer normally uses no tools and returns an ordinary review
+either way.
+
 ### H3. The adversary's shell, bounded by grammar
 
 VE-1, EX-5 and EX-7 are one gap: `Bash` in the adversary's tool list. A3
@@ -279,7 +305,8 @@ ceiling exists to prevent, now in the ceiling itself.
 | Object | State |
 |---|---|
 | H1 amend the freeze | landed 2026-09-10 at `8e9c2d4`, repaired at `0f5d8df` after one adversarial round; three findings upheld |
-| H2 spec reviewer read scope | **landed 2026-09-11.** Mechanism at `6930f38`, hardened at `4559a7c` after one adversarial round, install pattern corrected at `86bfb66`. Host probe passed at tree `f50753965ccd5c78` (`hooks/probes/spec-intent-scope-f50753965ccd5c78.md`): the reviewer obeyed an instruction to read a source file and the call was refused, and a read inside the spec directory succeeded. EX-1 is `enforced`, single-valued, scoping in the evidence column. Open, and recorded rather than closed: nothing sets `OLD_CODER_SPEC_DIR` when the skill spawns the reviewer, so the bound is proven but not wired into the workflow |
+| H2 spec reviewer read scope | **landed 2026-09-11.** Mechanism at `6930f38`, hardened at `4559a7c` after one adversarial round, install pattern corrected at `86bfb66`. Its host probe passed and is not in the tree: H2b rewrote the handler, so that record graded code that no longer exists and was removed rather than left to vouch for this one. EX-1 moved to `enforced` on it and moved back when the handler changed, which is the rule working |
+| H2b reviewer scope from the artifact root | in progress 2026-09-11; SPEC at `docs/spec-a2-h2b.md`. Handler, controls and probe-freshness landed; awaiting a host probe against the current handler |
 | H3 adversary shell grammar | not started, blocked on step zero |
 | H4 budget counted | not started, blocked on step zero |
 | H5 runner and scribe roles | not started, blocked on step zero |

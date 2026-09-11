@@ -817,6 +817,46 @@ against this one, which is close to never.
   workflow that creates the artifact directory. Unset, the handler denies every
   read, including the SPEC.
 
+## REVISION 13: the reviewer's scope comes from the artifact root (Tier 3)
+
+Approved 2026-09-11 as track-A2 object H2b (`docs/spec-a2-h2b.md`). This
+revision changes a hook handler and two repository checks; it does not change
+rate-limiter runtime behaviour or its public API.
+
+REVISION 12 recorded an open item: nothing set the scope variable the handler
+required, so the bound was proved and unwired. The variable was the wrong
+mechanism, not a missing step. A hook inherits the environment of the agent
+process, fixed before the session starts, and the task's artifact directory is
+named inside the session, so an environment variable could only ever name a
+directory somebody pre-created by hand. That is a probe setup, not a workflow.
+
+### Behaviour
+
+- The handler walks up from the payload's `cwd` for `.old-coder/`, the way git
+  finds `.git`, and reads one absolute path from `scope`. Three absences deny
+  with distinguishable reasons: no artifact root, no pointer, a pointer naming
+  nothing usable. `hook-controls` covers 18 cases, up from 12.
+- `SKILL.md` writes the pointer as part of creating the artifact directory, one
+  clause on an instruction that was already there, with the mechanics in
+  `references/setup.md`. `.old-coder/scope` is gitignored: it holds one
+  machine's absolute path.
+- `tools/audit_sweep.py` requires a probe record naming the handler's current
+  sha256. Changing the handler invalidates every existing record, so a row
+  cannot keep reading `enforced` on the strength of a run against different
+  code. `audit-sweep-controls` covers 14 cases, up from 12; two of them are a
+  record naming a stale hash and a record naming none.
+- That check is why this revision removed `probes/spec-intent-scope-f507...md`
+  and returned EX-1 to `accepted`. The probe was real and passed; it graded a
+  handler this revision replaced.
+
+### What is still open, and is not a defect this revision can close
+
+A run in which the pointer was never written gives a handler that denies
+everything, a reviewer that reads nothing, and a review that looks entirely
+normal, because the reviewer's brief tells it to use no tools in the normal
+case. Safe and invisible. Closing it needs the reviewer to assert that it could
+reach its own SPEC, which is a change to its brief.
+
 ## Revision history
 
 Revisions 1–3 (2026-07-25 → 07-27) were made autonomously during the original

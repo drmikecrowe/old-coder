@@ -225,7 +225,8 @@ implementation files:
   does not replace them. Approval is of the scenarios; if the two disagree, the
   scenarios win (`references/templates.md`).
 - **The spec is a file, not a message.** Create the task's artifact directory
-  now — `<artifacts>/<YYYYMMDD-HHMMSS>-<slug>/`, UTC, one per *task* — and write
+  now — `<artifacts>/<YYYYMMDD-HHMMSS>-<slug>/`, UTC, one per *task* — record its
+  path in the artifact root's scope pointer (`references/setup.md`), and write
   `SPEC.md` there, with a tracker issue ID in the header if one exists (layout:
   `references/setup.md`; template: `references/templates.md`). **Commit it at
   approval** — subject to the commit grant, and only possible if the artifact directory

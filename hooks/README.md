@@ -65,25 +65,34 @@ rebind them, for exactly that reason.
 ### `spec-intent-scope.sh`
 
 Bounds `old-coder-spec-intent`'s `Read` to the directory its SPEC lives in.
-This is what moved EX-1 to `enforced` in `docs/loop-alignment.md`, and what
-moved it was the recorded probe at
-`probes/spec-intent-scope-f50753965ccd5c78.md`, not the controls below. The
-reviewer's brief says "do not go looking for the codebase"; on this host that
-sentence is now a bound, and on any host without the hook it is still an
-instruction.
+A recorded probe moved EX-1 to `enforced` in `docs/loop-alignment.md` once,
+and the row is back at `accepted` because the handler has since been rewritten
+and that record graded different code. The reviewer's brief says "do not go
+looking for the codebase"; where the hook is installed and a current probe
+exists, that sentence is a bound, and everywhere else it is an instruction.
 
-`tools/audit_sweep.py` keeps that honest mechanically: delete the probe record
-and the row can no longer read `enforced`, so the gauntlet goes red.
+`tools/audit_sweep.py` keeps that honest mechanically: the row cannot read
+`enforced` unless `probes/` holds a record naming the handler's current
+sha256. Delete the record or change the handler and the gauntlet goes red.
 
 Deny by default, allow by resolved path. Every path component is resolved
 before the prefix test, the final one included, because a symlink inside the
 spec directory pointing at a source file would otherwise pass while reading
 exactly the file the bound exists to hide.
 
-**Scope comes from `OLD_CODER_SPEC_DIR`.** The artifact directory is per-task
-and dated, so no path can be baked in. Unset, empty, or not a directory denies
-everything, including files that would otherwise be allowed. Set it to the
-task's artifact directory before spawning the reviewer.
+**Scope comes from the artifact root's `scope` pointer.** The task's artifact
+directory is per-task and dated, so no path can be baked in, and an environment
+variable cannot carry it either: a hook inherits the environment of the agent
+process, fixed before the session starts, while the directory is named inside
+the session. The handler walks up from the payload's `cwd` looking for
+`.old-coder/`, the way git finds `.git`, and reads one absolute path from
+`scope`.
+
+Three absences all deny, and the reasons are deliberately different, because
+they mean different things to whoever reads the transcript: no `.old-coder/`
+anywhere above `cwd` (no task in progress), an artifact root with no readable
+`scope` (a task is in progress and the pointer step was skipped), and a pointer
+that is empty or does not name a directory.
 
 Decision contract, from the Claude Code hooks reference:
 
@@ -142,12 +151,14 @@ could not tell the spec reviewer apart from anyone else and would bound every
 `Read` in the session. Scoping a bound to one subagent is what frontmatter
 hooks are for, and the cost is that they do not appear in `/hooks`.
 
-**The unresolved piece.** The handler denies every `Read` unless
-`OLD_CODER_SPEC_DIR` names the task's artifact directory, and nothing in the
-skill sets it when it spawns the reviewer. Today that is the operator's job,
-set in the environment of the `claude` process before the session starts. Until
-something owns it, this bound is not wired into the workflow that creates the
-dated artifact directory, and a run that forgets it will fail the allow half.
+**The piece that is still open.** `SKILL.md` now writes the pointer when it
+creates the artifact directory, so the bound is wired into the workflow. What
+remains is that skipping it is invisible: the handler denies everything, the
+reviewer reads nothing, and because its brief tells it to use no tools in the
+normal case, it returns a perfectly ordinary review. You would hold a deny-all
+that never fires while believing you held a path-scoped bound. Closing that
+needs the reviewer to assert it could reach its own SPEC, which is a change to
+its brief and a separate object.
 
 #### Running the controls
 

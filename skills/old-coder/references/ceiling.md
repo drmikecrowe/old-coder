@@ -27,6 +27,7 @@ hand, so without that check the drift would be invisible.
 | Id | Rule, in one line | End state | Where it goes |
 |---|---|---|---|
 | IN-4 | a plan missing validation statements is rejected before execution | accepted | a human approver shown a plan with no validation statements is a better rejector than a parser |
+| EX-1 | scope is absent capability, not instruction | accepted | `old-coder-spec-intent` holds `tools: Read`, and `Read` opens any file. A hook bounds it and has been proved on this host, but the handler has since changed and no probe against the current code is recorded. See "The limit a hook closed, then reopened" below |
 | EX-5 | irreversible actions are missing capabilities, not policy | delegated | the runtime repo, VE-1. True of the workflow, false of the adversary, whose `Bash` reaches `git push`. Same capability as VE-1, same id |
 | EX-7 | tools are narrow and verb-specific | delegated | the runtime repo, VE-1. Three of the adversary's four tools are verb-specific; `Bash` is a shell |
 | EX-9 | authorization enforced at the tool boundary, per-tool credentials | n-a | no tool in this skill holds credentials |
@@ -42,13 +43,18 @@ hand, so without that check the drift would be invisible.
 | DR-3 | evaluate weekly | n-a | no production traffic; the failure this catches does not accrue here |
 | DR-4 | instructions and skills are behavior: versioned, reviewed, tested | accepted | `CONTRIBUTING.md` requires the fixture; nothing rejects a PR that ignores it |
 
-## The one limit a hook closed, and what it cost
+## The limit a hook closed, then reopened
 
-EX-1 used to sit in the table above. It is `enforced` now, on this host, and
-the qualifier is not a hedge: **enforced on Claude Code, an instruction
-everywhere else.** The status cell stays one word because a closed vocabulary
-that grows parentheses stops being closed; the scoping lives in the audit's
-evidence column.
+EX-1 reached `enforced` on this host, on a recorded probe, and then went back
+to `accepted`. Nothing regressed and no bound was lost. The handler was
+rewritten to take its scope from the task's artifact directory rather than an
+environment variable, and the rule is that a probe vouches for the code it
+graded and no other. The old record named a different sha256, so it stopped
+counting and was removed.
+
+That is the row behaving correctly, and it is worth watching once. A row that
+could stay `enforced` across a rewrite of the thing enforcing it would be
+recording a belief rather than a measurement.
 
 What moved it was a recorded host probe, and only that. The handler's twelve
 unit controls were green before the bound existed at all. The registration
@@ -59,16 +65,23 @@ green pipeline is consistent with a hook nothing calls, and the gap does not
 announce itself from inside a run.
 
 So the rule is mechanical rather than aspirational. `tools/audit_sweep.py`
-refuses to let this row read `enforced` while `hooks/probes/` holds no record
-for the handler. Delete the probe file and the gauntlet goes red on the next
-run.
+refuses to let this row read `enforced` unless `hooks/probes/` holds a record
+naming the handler's **current** sha256. Delete the record, or change the
+handler, and the gauntlet goes red on the next run. "Rebind on every hook
+change" was a sentence in this file until that check existed.
 
-**What it cost, stated because the row does not say it.** The bound is proven,
-not yet wired. The handler takes its scope from `OLD_CODER_SPEC_DIR`, and
-nothing in the skill sets that when it spawns the reviewer, so an ordinary run
-leaves it unset and the handler then denies every read including the SPEC. What
-is enforced today is the capability. Joining it to the workflow that creates
-the artifact directory is still open.
+**What the rewrite bought.** The bound is now reachable in an ordinary run.
+The handler reads `<artifact root>/scope`, written when the task's artifact
+directory is created, so it sees a directory named inside the session. The
+environment variable it replaced could only ever name a directory somebody
+pre-created and exported by hand, which is a probe setup rather than a
+workflow.
+
+**What is still open.** A run in which the pointer was never written produces a
+handler that denies everything, a reviewer that reads nothing, and a review
+that looks entirely normal, because the reviewer's brief tells it to use no
+tools. Safe, and invisible. Closing that needs the reviewer to assert it could
+reach its own SPEC, which is a change to its brief.
 
 The mechanism is `hooks/spec-intent-scope.sh` in this repository. A
 `PreToolUse` hook declared in a subagent's own frontmatter is registered only

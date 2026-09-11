@@ -1,8 +1,14 @@
 # Recorded host probes
 
 One file per hook version, named `<hook>-<tree-hash>.md`. Each records the
-commands run, the output verbatim, the date, and the tree hash the probe was
-run against.
+commands run, the output verbatim, the date, the tree hash, and **the sha256 of
+the handler it graded**, on a line reading `handler sha256: <64 hex>`.
+
+The hash is not bookkeeping. `tools/audit_sweep.py` reads it, and a record whose
+hash does not match the current handler does not count: the audit row it would
+support drops back and the gauntlet goes red. A record naming no hash counts for
+nothing at all, because it cannot be matched to any version of the code. Get it
+with `sha256sum hooks/<handler>.sh`.
 
 These are the only proof that a hook denies. `hooks-registered` and
 `hook-controls` are the CI half; they prove the wiring resolves and the handler

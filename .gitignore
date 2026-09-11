@@ -9,3 +9,6 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 gauntlet-stamp.txt
+
+# The artifact root's scope pointer: one machine's absolute path, never shared.
+.old-coder/scope

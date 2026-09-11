@@ -30,9 +30,14 @@ says a hook cannot close at all.
               plainly that a blocklist over shell syntax is not a bound. If a
               future object bounds a shell by an allowlist grammar, it changes
               this rule deliberately and says so
-  probed      a recorded host probe must exist for the handler. Only a probe
-              proves a hook denies; the CI half proves the wiring resolves.
-              This is the rule that stops a no-op handler from lifting anything
+  probed      a recorded host probe must exist for the handler, AND it must
+              name the handler's current sha256. Only a probe proves a hook
+              denies; the CI half proves the wiring resolves. Requiring the
+              hash is what stops a probe from outliving the code it graded:
+              without it, editing the handler leaves yesterday's record
+              standing and the row keeps reading `enforced` on the strength of
+              a run against different code. "Rebind on every hook change" was
+              prose until this check existed
 
 Prose in the frontmatter does not earn it, and neither does a hook file that is
 absent or not executable: `tools/hooks_registered.py` grades that half.
@@ -50,6 +55,7 @@ declares no hook. Nothing else should pass them.
 
 from __future__ import annotations
 
+import hashlib
 import re
 import sys
 from pathlib import Path
@@ -98,33 +104,60 @@ def row_fields(line: str) -> tuple[str, str] | None:
     return cells[1].strip(), cells[3].strip()
 
 
-def recorded_probes(root: Path) -> set[str]:
-    """Handler stems that have a recorded host probe.
+SHA_IN_PROBE = re.compile(r"sha256[^0-9a-fA-F]{0,24}([0-9a-fA-F]{64})")
 
-    A probe file is `hooks/probes/<handler stem>-<anything>.md`. The stem is the
-    handler's filename without its extension, so `spec-intent-scope.sh` is
-    proven by `hooks/probes/spec-intent-scope-<tree hash>.md`.
+
+def handler_sha256(path: Path) -> str:
+    """The handler's content hash, or "" when it cannot be read."""
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError:
+        return ""
+
+
+def recorded_probes(root: Path) -> dict[str, set[str]]:
+    """Handler stem to the set of handler hashes its probe records name.
+
+    A probe file is `hooks/probes/<handler stem>-<anything>.md` and must state
+    the sha256 of the handler it was run against. A record that names no hash
+    contributes nothing: it cannot be matched to any version of the code, so
+    it cannot be evidence about one.
     """
-    stems: set[str] = set()
+    probes: dict[str, set[str]] = {}
     for path in (root / "hooks" / "probes").glob("*.md"):
         if path.name in ("README.md", "RUNBOOK.md"):
             continue
-        stems.add(path.stem)
-    return stems
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        hashes = {match.group(1).lower() for match in SHA_IN_PROBE.finditer(text)}
+        probes.setdefault(path.stem, set()).update(hashes)
+    return probes
 
 
-def lifted(agent: Agent, tool: str, probes: set[str]) -> bool:
+def lifted(agent: Agent, tool: str, probes: dict[str, set[str]], root: Path) -> bool:
     """Whether a hook genuinely takes `tool` back from this agent."""
     if tool in SHELL:
         return False
     for hook in agent.names_exactly(tool):
-        stem = Path(hook.command.split()[0]).stem if hook.command else ""
-        if any(probe == stem or probe.startswith(f"{stem}-") for probe in probes):
-            return True
+        if not hook.command:
+            continue
+        stem = Path(hook.command.split()[0]).stem
+        current = handler_sha256(root / "hooks" / f"{stem}.sh")
+        if not current:
+            continue
+        for recorded_stem, hashes in probes.items():
+            if recorded_stem != stem and not recorded_stem.startswith(f"{stem}-"):
+                continue
+            if current in hashes:
+                return True
     return False
 
 
-def sweep(audit: Path, agents: dict[str, Agent], probes: set[str]) -> list[str]:
+def sweep(
+    audit: Path, agents: dict[str, Agent], probes: dict[str, set[str]], root: Path
+) -> list[str]:
     """Report every row that credits a bound its named agent cannot hold."""
     failures: list[str] = []
     for number, line in enumerate(audit.read_text(encoding="utf-8").splitlines(), 1):
@@ -149,7 +182,7 @@ def sweep(audit: Path, agents: dict[str, Agent], probes: set[str]) -> list[str]:
                 if not held:
                     continue
                 unbounded = sorted(
-                    tool for tool in held if not lifted(agents[agent], tool, probes)
+                    tool for tool in held if not lifted(agents[agent], tool, probes, root)
                 )
                 if not unbounded:
                     continue
@@ -157,7 +190,8 @@ def sweep(audit: Path, agents: dict[str, Agent], probes: set[str]) -> list[str]:
                     f"{audit.name}:{number}: {rule_id} reads `enforced` for a "
                     f"{label} bound while {agent} declares "
                     f"{agents[agent].tools} with no probed, exact PreToolUse "
-                    f"hook on {unbounded}"
+                    f"hook on {unbounded} whose recorded probe names the handler's "
+                    f"current sha256"
                 )
     return failures
 
@@ -170,7 +204,7 @@ def main(argv: list[str]) -> int:
     agents = read_agents(root, AGENT_GLOB)
     if not agents:
         raise SystemExit(f"FAIL: no agent frontmatter under {root / AGENT_GLOB}")
-    failures = sweep(audit, agents, recorded_probes(root))
+    failures = sweep(audit, agents, recorded_probes(root), root)
     for failure in failures:
         print(f"FAIL: {failure}", file=sys.stderr)
     if failures:

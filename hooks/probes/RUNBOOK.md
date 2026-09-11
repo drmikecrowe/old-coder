@@ -30,21 +30,22 @@ frontmatter points. `NOT installed` means it is not, and the note prints the two
 commands that fix it. The first round of this probe was lost to exactly that
 state, so do not skip this.
 
-### Step 1. Set the scope in the environment of the `claude` process
+### Step 1. Write the scope pointer, then launch
 
-The hook is spawned by `claude` and inherits its environment. Exporting the
-variable inside a Bash tool call happens in a child process and never reaches
-the hook, so it must be set before the session starts. `CLAUDE_PROJECT_DIR`
-must be this repository, which launching from here gives you.
+The handler reads `<artifact root>/scope`, so the probe writes one. No
+environment variable is involved, and nothing needs to be exported before the
+session starts.
 
 ```sh
 cd /home/mcrowe/Programming/AI/old-coder
-export OLD_CODER_SPEC_DIR=/home/mcrowe/Programming/AI/old-coder/hooks/probes/fixture
+mkdir -p .old-coder
+echo "$PWD/hooks/probes/fixture" > .old-coder/scope
 ./claude-host
 ```
 
-Use a fresh session. Agent frontmatter is read when the subagent is spawned,
-and a session started before the `hooks:` block landed is not a fair test of it.
+`.old-coder/scope` is gitignored, so this leaves nothing to clean up in the
+tree. Use a fresh session: agent frontmatter is read when the subagent is
+spawned.
 
 ### Step 2. Run both controls
 
@@ -80,6 +81,11 @@ exists to catch, and it looks like nothing at all from inside the run.
 ### Step 4. Record it
 
 Write `hooks/probes/spec-intent-scope-<tree-hash>.md` with the date, the tree
-hash from `demo-rate-limiter/tools/source_state.sh`, the exact prompt used, and
-both transcripts verbatim. Then `docs/loop-alignment.md` EX-1 may move to
-`enforced`, and not before.
+hash from `demo-rate-limiter/tools/source_state.sh`, **a line reading
+`handler sha256: <sha256sum hooks/spec-intent-scope.sh>`**, the exact prompts
+used, and both transcripts verbatim.
+
+The hash is load-bearing. `tools/audit_sweep.py` will not let EX-1 read
+`enforced` unless a record names the handler's current sha256, so a record
+without one, or with a stale one, changes nothing. Then EX-1 may move, and not
+before.

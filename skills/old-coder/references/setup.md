@@ -168,9 +168,11 @@ One directory **per task**, not per session — a session runs several tasks and
 they would collide. Name it at SPEC time and keep using it for the whole task:
 
 ```
-<artifacts>/<YYYYMMDD-HHMMSS>-<slug>/
-  SPEC.md
-  EVIDENCE.md
+<artifacts>/
+  scope                      # one line: the absolute path of the task directory
+  <YYYYMMDD-HHMMSS>-<slug>/
+    SPEC.md
+    EVIDENCE.md
   ROLLUP.md        # only when the SPEC names a tracker issue
   logs/
     tests.log
@@ -178,6 +180,13 @@ they would collide. Name it at SPEC time and keep using it for the whole task:
     ...
 ```
 
+- `scope` is written when the task directory is created, and holds that
+  directory's absolute path on one line. It exists so a host bound can find the
+  directory: `hooks/spec-intent-scope.sh` reads it to decide which reads the
+  spec reviewer may make. An environment variable cannot carry this, because a
+  hook inherits the environment of the agent process, fixed before the session
+  started, and this directory is named inside the session. Skip the pointer and
+  the hook denies every read, including `SPEC.md`.
 - `logs/` is created at the start of the gauntlet run, before any redirect. A
   redirect into a directory that does not exist runs the command not at all —
   no log, no result, and an EVIDENCE row citing a path that was never written.
@@ -202,8 +211,10 @@ failure case.
 
 ### Tracked or ignored?
 
-**Track `SPEC.md` and `EVIDENCE.md`; ignore `logs/`.** That is the default, and
-the first half of it is not a preference.
+**Track `SPEC.md` and `EVIDENCE.md`; ignore `logs/` and `scope`.** That is the
+default, and the first half of it is not a preference. `scope` is ignored for a
+different reason from `logs/`: it holds one machine's absolute path, so a
+committed one is wrong for every other checkout.
 
 **Gitignoring the artifact directory silently disables the spec-drift
 mechanism.** The skill's enforcement for "the spec is append-only, never
@@ -217,7 +228,7 @@ So the honest cost table:
 
 | Choice | Audit trail | "Reproducible from the repo alone" | Spec-drift detection |
 |---|---|---|---|
-| Track `SPEC.md` + `EVIDENCE.md`, ignore `logs/` | travels with the repo | true, except log paths are local | **intact** |
+| Track `SPEC.md` + `EVIDENCE.md`, ignore `logs/` and `scope` | travels with the repo | true, except log paths are local | **intact** |
 | Track everything | travels with the repo | literally true | intact |
 | Ignore the whole directory | local only | false | **gone** |
 

@@ -49,7 +49,7 @@ Or manually:
   ```sh
   python3 tools/hooks_registered.py   # prints the exact fix if it is not installed
   ```
-  Two things to know before you rely on it. The bound needs `OLD_CODER_SPEC_DIR` set to the task's artifact directory in the environment of the `claude` process itself, and nothing sets that for you yet; unset, the handler denies every `Read`. And a green check here still does not prove the runtime calls the handler. Only a recorded probe does, and `hooks/README.md` has the procedure. Skip the hook entirely and the reviewer's "do not go looking for the codebase" stays what it has always been, an instruction.
+  The handler takes its scope from `<artifact root>/scope`, a one-line pointer the skill writes when it creates the task's artifact directory, so it needs nothing from you at run time. If that pointer is missing the handler denies every `Read`, including the SPEC, which is safe but silent: the reviewer normally uses no tools, so it will not notice and neither will you. And a green check here still does not prove the runtime calls the handler. Only a recorded probe does, and `hooks/README.md` has the procedure. Skip the hook entirely and the reviewer's "do not go looking for the codebase" stays what it has always been, an instruction.
 - **Other agents** — add `skills/old-coder/SKILL.md` to your `AGENTS.md`, rules file, or system prompt, and keep its `references/` directory alongside it. The two review passes are spawned as subagents briefed from `skills/old-coder/agents/old-coder-spec-intent.md` and `old-coder-adversary.md`; no agent-definition support is required.
 
 ### Optional companion: `old-coder-api`
