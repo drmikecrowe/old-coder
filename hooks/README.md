@@ -60,6 +60,17 @@ and it does not catch a host that silently stops honouring frontmatter hooks,
 nor one that never opted in. Rerun the host probes on every hook change, and
 rebind them, for exactly that reason.
 
+## What the tier needs present
+
+`jq`, for parsing the hook payload, and `readlink -f`, for resolving paths.
+Both are checked at the top of the handler and both exit 2 when absent, so a
+missing dependency denies rather than opens. That is the right failure and a
+confusing one to meet cold: the reviewer reports it could read nothing, which
+looks like a scope problem rather than a missing binary. `ubuntu-latest` and
+ordinary Linux and macOS installs have both; declare them anyway, because a
+bound that silently depends on an undeclared binary is a bound whose
+preconditions nobody checked.
+
 ## The hooks
 
 ### `spec-intent-scope.sh`

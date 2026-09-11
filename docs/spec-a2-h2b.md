@@ -5,8 +5,9 @@ record of their review rounds are at `docs/spec-a2-h1-h2.md`.
 
 House rule: no em dashes.
 
-> **AWAITING APPROVAL.** One open question, in the `Decide` block: whether to
-> take the probe freshness check. RED does not start until you approve.
+> **LANDED** 2026-09-11 at `47dc328`, after one adversarial round. The `Decide`
+> below was answered yes and is kept as written; outcomes are in `## Revisions`.
+> Nothing here is an open question.
 
 ## Orientation
 
@@ -223,6 +224,41 @@ object. Stated here so H2b is not read as closing it.
 ## Revisions
 
 - Initial draft, 2026-09-11, from H2's recorded residual limit.
+- 2026-09-11, approved with the `Decide` taken: probe records bind to the
+  handler's sha256. RED for it was concrete rather than argued: appending a
+  comment to the handler left the existing record standing and the sweep passed.
+- 2026-09-11, adversarial round one, bound to `0899bd0...3bf9a2e` at tree
+  `0f6d9e8aa98315ec`, handler sha256 `0fc7bb66...`. Three findings, two upheld
+  and one rejected with evidence, 5 of 10 tool calls used.
+  1. **The freshness check proved a hash, not an attribution.** It searched for
+     any 64 hex characters within 24 non-hex characters of the word "sha256", so
+     a superseded record that merely mentioned the current handler lifted the
+     row. The hash is now declared on its own line in one form, and a record
+     declaring two different hashes contributes nothing. The reviewer's own
+     example did not reproduce, because its separator text contained `b`, `e`
+     and `d`, which the pattern excludes as hex; the reasoning was right and the
+     example accidentally wrong, so it was reproduced with a hex-free separator
+     before anything was changed.
+  2. **The payload's `cwd` was not required to be absolute.** `readlink -f`
+     resolves a relative path against the handler's own process directory, so a
+     payload carrying `.` would find the launch directory's artifact root and
+     enforce some other task's scope. Now fails closed.
+  3. **Rejected:** the claim that the `case` pattern glob-expands when the scope
+     path holds metacharacters. Quoted text in a `case` pattern is literal; a
+     scope of `/tmp/spec[dir]` denies `/tmp/specdir/leak.txt`. Demonstrated.
+  The round ran out of budget before attack 6, the workflow half, and that
+  attack held a live defect. Under worktree isolation `setup.md` sends every
+  gitignored artifact to the durable root while `SPEC.md` goes to the worktree.
+  The pointer is gitignored, so it would have landed in the durable root while
+  the reviewer's cwd is the worktree: the walk-up finds the worktree's artifact
+  root, sees no pointer, and denies every read. `scope` is now the one ignored
+  artifact written in the worktree. H2b round two of two; no signature repeated.
+- 2026-09-11, at landing. The freshness check rejected the probe record I wrote,
+  correctly: the declaration was a list bullet and the pattern requires the line
+  to begin with the key. Since every other metadata field in a record is a
+  bullet, the pattern now accepts an optional list marker, with a control for
+  that form and the mention-only attack re-run under it. Host probe passed at
+  tree `0f6d9e8aa98315ec`; EX-1 is `enforced`.
 - 2026-09-11, before approval. The first draft listed three `Decide` items, two
   of which Mike had already answered. `templates.md` reserves that field for
   the calls you want ruled on, so re-asking a settled question pads the thing

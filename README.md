@@ -45,7 +45,7 @@ Or manually:
   mkdir -p ~/.claude/hooks
   ln -s "$PWD/hooks/spec-intent-scope.sh" ~/.claude/hooks/spec-intent-scope.sh
   ```
-  Then confirm it, because "I copied the files" is not the same as "the hook runs":
+  The handler needs `jq` on `PATH`. Without it the hook exits 2, which blocks every `Read` the spec reviewer makes: fail-closed and safe, but it looks like the reviewer has gone mute rather than like a missing dependency. Then confirm the install, because "I copied the files" is not the same as "the hook runs":
   ```sh
   python3 tools/hooks_registered.py   # prints the exact fix if it is not installed
   ```
