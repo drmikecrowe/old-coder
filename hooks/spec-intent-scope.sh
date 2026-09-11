@@ -127,10 +127,19 @@ scope=$(sed -e 's/[[:space:]]*$//' "$pointer" 2>/dev/null | sed -e '/^$/d' | hea
 # and pointing at a source file passes the prefix test while reading the file
 # the bound exists to hide. That hole was open in the first draft of this
 # handler and is the reason this comment is here.
-real_scope=$(readlink -f -- "$scope") && [ -n "$real_scope" ] \
-  || deny_hard "could not resolve the scope pointer's target"
-real_path=$(readlink -f -- "$path") && [ -n "$real_path" ] \
-  || deny "'$path' does not resolve to a location this reviewer may read."
+# Written as explicit tests rather than `A && B || C`. `readlink -f` prints
+# nothing and exits nonzero on failure, so the empty check covers both, and in
+# a handler whose every branch is a denial the reader should not have to work
+# out which failure reaches which arm.
+real_scope=$(readlink -f -- "$scope")
+if [ -z "$real_scope" ]; then
+  deny_hard "could not resolve the scope pointer's target"
+fi
+
+real_path=$(readlink -f -- "$path")
+if [ -z "$real_path" ]; then
+  deny "'$path' does not resolve to a location this reviewer may read."
+fi
 
 case "$real_path" in
   "$real_scope"/*) exit 0 ;;

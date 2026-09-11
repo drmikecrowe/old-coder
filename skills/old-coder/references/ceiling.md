@@ -27,6 +27,7 @@ hand, so without that check the drift would be invisible.
 | Id | Rule, in one line | End state | Where it goes |
 |---|---|---|---|
 | IN-4 | a plan missing validation statements is rejected before execution | accepted | a human approver shown a plan with no validation statements is a better rejector than a parser |
+| EX-1 | scope is absent capability, not instruction | accepted | a hook bounds `old-coder-spec-intent`'s `Read` and a host probe proved it, but a later lint-only edit changed the handler's hash and the record stopped counting. Returns to `enforced` on a probe against the current handler |
 | EX-5 | irreversible actions are missing capabilities, not policy | delegated | the runtime repo, VE-1. True of the workflow, false of the adversary, whose `Bash` reaches `git push`. Same capability as VE-1, same id |
 | EX-7 | tools are narrow and verb-specific | delegated | the runtime repo, VE-1. Three of the adversary's four tools are verb-specific; `Bash` is a shell |
 | EX-9 | authorization enforced at the tool boundary, per-tool credentials | n-a | no tool in this skill holds credentials |
@@ -49,13 +50,18 @@ Code, an instruction everywhere else.** The status cell stays one word because a
 closed vocabulary that grows parentheses stops being closed; the scoping lives
 in the audit's evidence column.
 
-It got there twice. The first time, the handler was rewritten afterwards to take
-its scope from the task's artifact directory instead of an environment variable,
-and the row dropped straight back to `accepted`, because a probe vouches for the
-code it graded and no other. Nothing regressed and no bound was lost. That is
-the row behaving correctly, and it is the part worth copying: a row that could
-stay `enforced` across a rewrite of the thing doing the enforcing would be
-recording a belief rather than a measurement.
+It has got there twice and dropped back twice, and the second time is the more
+useful lesson. The first drop followed a rewrite of the handler. The second
+followed a **lint-only** edit: CI's `shellcheck` flagged a pattern the author's
+newer local version does not, the fix changed no behaviour, and the row dropped
+anyway, because the rule compares content and cannot read intent.
+
+That cost is real and is the price of the rule being mechanical. A hash that
+tried to ignore "cosmetic" edits would be a hash somebody argues with. So: under
+this design, a comment or whitespace change to a handler buys a fresh host
+probe. Worth knowing before adopting it, and still cheaper than a row that
+stays green across a rewrite of the thing enforcing it, which would be recording
+a belief rather than a measurement.
 
 What moved it was a recorded host probe, and only that. The handler's twelve
 unit controls were green before the bound existed at all. The registration

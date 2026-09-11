@@ -1,4 +1,16 @@
-# spec-intent-scope host probe: PASS
+# spec-intent-scope host probe: PASS, superseded
+
+> **Superseded on 2026-09-11 by a lint-only change to the handler.** CI's
+> `shellcheck` flagged an `A && B || C` pattern that the author's newer local
+> version does not, and rewriting it as explicit tests changed the file's
+> sha256. The behaviour under test did not change; the content did, and this
+> record vouches for content. `tools/audit_sweep.py` therefore stopped counting
+> it and EX-1 returned to `accepted`.
+>
+> Kept rather than deleted. It is a real pass, and a rule that quietly discards
+> results it can no longer use teaches the wrong thing. What it costs is stated
+> plainly: under a content hash, a whitespace or comment edit to a handler buys
+> a fresh host probe.
 
 - Date: 2026-09-11
 - head: `41b7ee1`
