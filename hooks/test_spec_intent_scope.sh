@@ -115,6 +115,11 @@ check "a symlink inside the scope pointing out is denied" \
 check "a Read with no file_path is denied" \
   "" "{\"tool_name\":\"Read\",\"cwd\":\"$PROJ\",\"tool_input\":{}}" "0:deny"
 
+# A relative cwd would resolve against the handler's own process directory,
+# which is wherever the runtime was launched from, not the reviewer's location.
+check "a relative cwd fails closed" \
+  "" "{\"tool_name\":\"Read\",\"cwd\":\".\",\"tool_input\":{\"file_path\":\"$SPECDIR/SPEC.md\"}}" "2:hard"
+
 check "a payload with no cwd fails closed" \
   "" '{"tool_name":"Read","tool_input":{"file_path":"/etc/hostname"}}' "2:hard"
 
@@ -143,4 +148,4 @@ if [ "$fails" -ne 0 ]; then
   echo "spec-intent-scope controls: $fails failure(s)" >&2
   exit 1
 fi
-echo "spec-intent-scope controls: all green, 18 cases (host probes are still required; see hooks/README.md)"
+echo "spec-intent-scope controls: all green, 19 cases (host probes are still required; see hooks/README.md)"

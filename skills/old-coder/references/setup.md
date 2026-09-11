@@ -251,8 +251,19 @@ the directory.
 | Artifact | Tracked? | Written in |
 |---|---|---|
 | `SPEC.md`, `EVIDENCE.md`, `ROLLUP.md` | yes | the **worktree** — they are committed with the change and reach the human through the merge |
+| `scope` | no | the **worktree** — see below; this is the one ignored file that does not go to the durable root |
 | `logs/`, and anything else the repo ignores | no | the **durable root** (below) — it outlives the task |
 | the whole task directory, when the artifact root is gitignored | no | the **durable root** |
+
+**`scope` is the exception, and the reason is mechanical.** Every other ignored
+artifact is written where it will survive. `scope` is written where it will be
+*found*: a `PreToolUse` hook locates it by walking up from the agent's working
+directory, and under isolation that directory is the worktree. Send it to the
+durable root with the other ignored files and the walk-up finds the worktree's
+artifact root instead, sees no pointer, and denies every read. The bound then
+fails closed and silently, which is the failure this pointer exists to remove.
+It dies with the worktree, and that is correct: it names a directory that dies
+with the worktree too.
 
 Both errors are silent. A tracked file written outside the worktree becomes an
 uncommitted change in the human's working tree — the exact mutation isolation

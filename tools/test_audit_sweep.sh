@@ -128,6 +128,29 @@ probe stale probe-hook 000000000000000000000000000000000000000000000000000000000
 expect 1 "a probe naming a different handler hash does not lift" \
   "$WORK/enforced.md" "$WORK/stale"
 
+# A superseded record that merely MENTIONS the current hash. The graded hash is
+# something else, so it is not evidence about the current handler.
+agent mention probe-agent Read Read
+mkdir -p "$WORK/mention/hooks/probes"
+cur=$(sha256sum "$WORK/mention/hooks/probe-hook.sh" | cut -d" " -f1)
+{
+  echo "handler sha256: 0000000000000000000000000000000000000000000000000000000000000000"
+  echo "sha256 is now $cur"
+} > "$WORK/mention/hooks/probes/probe-hook-legacy.md"
+expect 1 "a record that mentions the current hash without grading it does not lift" \
+  "$WORK/enforced.md" "$WORK/mention"
+
+# Two declared hashes: it cannot be said which handler was graded.
+agent ambiguous probe-agent Read Read
+mkdir -p "$WORK/ambiguous/hooks/probes"
+cur=$(sha256sum "$WORK/ambiguous/hooks/probe-hook.sh" | cut -d" " -f1)
+{
+  echo "handler sha256: $cur"
+  echo "handler sha256: 1111111111111111111111111111111111111111111111111111111111111111"
+} > "$WORK/ambiguous/hooks/probes/probe-hook-x.md"
+expect 1 "a record declaring two different hashes does not lift" \
+  "$WORK/enforced.md" "$WORK/ambiguous"
+
 agent nohash probe-agent Read Read
 mkdir -p "$WORK/nohash/hooks/probes"
 echo "a probe record that names no hash at all" > "$WORK/nohash/hooks/probes/probe-hook-x.md"
@@ -152,4 +175,4 @@ if [ "$fails" -ne 0 ]; then
   echo "audit-sweep controls: $fails failure(s)" >&2
   exit 1
 fi
-echo "audit-sweep controls: all green (14 cases)"
+echo "audit-sweep controls: all green (16 cases)"

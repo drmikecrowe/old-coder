@@ -84,6 +84,15 @@ cwd=$(printf '%s' "$payload" | jq -r '.cwd // ""' 2>/dev/null) \
   || deny_hard "the payload carried no readable cwd"
 [ -n "$cwd" ] || deny_hard "the payload carried no cwd, so the artifact root cannot be found"
 
+# The cwd must be absolute. `readlink -f` resolves a relative path against THIS
+# process's working directory, which is wherever the agent runtime was launched
+# from, not the reviewer's location. A payload carrying "." would then find the
+# launch directory's artifact root and enforce some other task's scope.
+case "$cwd" in
+  /*) ;;
+  *) deny_hard "the payload's cwd '$cwd' is not absolute, so the artifact root cannot be located" ;;
+esac
+
 # Walk up for `.old-coder/`, the way git finds `.git`. Terminates at the root.
 artifact_root=""
 dir=$(readlink -f -- "$cwd") || deny_hard "could not resolve the payload cwd"

@@ -104,7 +104,17 @@ def row_fields(line: str) -> tuple[str, str] | None:
     return cells[1].strip(), cells[3].strip()
 
 
-SHA_IN_PROBE = re.compile(r"sha256[^0-9a-fA-F]{0,24}([0-9a-fA-F]{64})")
+# The hash must be DECLARED on its own line, in one fixed form. An earlier
+# version searched for "sha256" followed by any 64 hex characters within a
+# short window, which meant a superseded record that merely MENTIONED the
+# current hash counted as having graded it. "sha256 is now <current>" in a
+# record whose graded hash was something else lifted the row.
+#
+# A record that declares more than one distinct hash is ambiguous about what it
+# graded, so it contributes nothing rather than contributing all of them.
+SHA_DECLARED = re.compile(
+    r"^[ \t]*handler sha256:[ \t]*([0-9a-fA-F]{64})[ \t]*$", re.MULTILINE
+)
 
 
 def handler_sha256(path: Path) -> str:
@@ -118,10 +128,11 @@ def handler_sha256(path: Path) -> str:
 def recorded_probes(root: Path) -> dict[str, set[str]]:
     """Handler stem to the set of handler hashes its probe records name.
 
-    A probe file is `hooks/probes/<handler stem>-<anything>.md` and must state
-    the sha256 of the handler it was run against. A record that names no hash
-    contributes nothing: it cannot be matched to any version of the code, so
-    it cannot be evidence about one.
+    A probe file is `hooks/probes/<handler stem>-<anything>.md` and must declare
+    the handler it graded on a line reading `handler sha256: <64 hex>`. A record
+    that declares no hash contributes nothing: it cannot be matched to any
+    version of the code, so it cannot be evidence about one. A record declaring
+    two different hashes contributes nothing either, for the same reason.
     """
     probes: dict[str, set[str]] = {}
     for path in (root / "hooks" / "probes").glob("*.md"):
@@ -131,8 +142,11 @@ def recorded_probes(root: Path) -> dict[str, set[str]]:
             text = path.read_text(encoding="utf-8")
         except OSError:
             continue
-        hashes = {match.group(1).lower() for match in SHA_IN_PROBE.finditer(text)}
-        probes.setdefault(path.stem, set()).update(hashes)
+        declared = {match.group(1).lower() for match in SHA_DECLARED.finditer(text)}
+        if len(declared) > 1:
+            # Ambiguous: it cannot be said which handler this record graded.
+            declared = set()
+        probes.setdefault(path.stem, set()).update(declared)
     return probes
 
 

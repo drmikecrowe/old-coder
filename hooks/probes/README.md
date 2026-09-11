@@ -2,13 +2,18 @@
 
 One file per hook version, named `<hook>-<tree-hash>.md`. Each records the
 commands run, the output verbatim, the date, the tree hash, and **the sha256 of
-the handler it graded**, on a line reading `handler sha256: <64 hex>`.
+the handler it graded**, declared on a line of its own reading exactly
+`handler sha256: <64 hex>`.
 
-The hash is not bookkeeping. `tools/audit_sweep.py` reads it, and a record whose
-hash does not match the current handler does not count: the audit row it would
-support drops back and the gauntlet goes red. A record naming no hash counts for
-nothing at all, because it cannot be matched to any version of the code. Get it
-with `sha256sum hooks/<handler>.sh`.
+The form is strict on purpose. `tools/audit_sweep.py` reads that line, and a
+record whose declared hash does not match the current handler does not count:
+the audit row it would support drops back and the gauntlet goes red. Three
+things count for nothing at all, because none of them says what was graded: a
+record declaring no hash, a record declaring two different ones, and a hash that
+merely appears in the prose without being declared. An earlier version of the
+check searched for any hash near the word "sha256", so a superseded record
+saying "sha256 is now <current>" lifted the row it should have blocked. Get the
+value with `sha256sum hooks/<handler>.sh`.
 
 These are the only proof that a hook denies. `hooks-registered` and
 `hook-controls` are the CI half; they prove the wiring resolves and the handler

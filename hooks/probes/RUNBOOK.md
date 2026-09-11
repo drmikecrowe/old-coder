@@ -81,11 +81,12 @@ exists to catch, and it looks like nothing at all from inside the run.
 ### Step 4. Record it
 
 Write `hooks/probes/spec-intent-scope-<tree-hash>.md` with the date, the tree
-hash from `demo-rate-limiter/tools/source_state.sh`, **a line reading
-`handler sha256: <sha256sum hooks/spec-intent-scope.sh>`**, the exact prompts
+hash from `demo-rate-limiter/tools/source_state.sh`, **a line of its own reading exactly
+`handler sha256: <64 hex from sha256sum hooks/spec-intent-scope.sh>`**, the exact prompts
 used, and both transcripts verbatim.
 
-The hash is load-bearing. `tools/audit_sweep.py` will not let EX-1 read
-`enforced` unless a record names the handler's current sha256, so a record
-without one, or with a stale one, changes nothing. Then EX-1 may move, and not
+The hash is load-bearing and its form is strict. `tools/audit_sweep.py` will
+not let EX-1 read `enforced` unless a record *declares* the handler's current
+sha256 on its own line. A record with no hash, a stale one, two different ones,
+or the right value mentioned only in passing changes nothing. Then EX-1 may move, and not
 before.
