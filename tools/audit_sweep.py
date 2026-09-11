@@ -112,8 +112,13 @@ def row_fields(line: str) -> tuple[str, str] | None:
 #
 # A record that declares more than one distinct hash is ambiguous about what it
 # graded, so it contributes nothing rather than contributing all of them.
+# An optional list marker is allowed, because every other field in a probe
+# record's metadata block is a bullet and the hash belongs with them. It does
+# not loosen the attribution: the line must still consist of the key and one
+# hash and nothing else.
 SHA_DECLARED = re.compile(
-    r"^[ \t]*handler sha256:[ \t]*([0-9a-fA-F]{64})[ \t]*$", re.MULTILINE
+    r"^[ \t]*(?:[-*][ \t]+)?handler sha256:[ \t]*([0-9a-fA-F]{64})[ \t]*$",
+    re.MULTILINE,
 )
 
 

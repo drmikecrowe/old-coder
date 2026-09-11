@@ -151,6 +151,14 @@ cur=$(sha256sum "$WORK/ambiguous/hooks/probe-hook.sh" | cut -d" " -f1)
 expect 1 "a record declaring two different hashes does not lift" \
   "$WORK/enforced.md" "$WORK/ambiguous"
 
+# The metadata block uses bullets, so the declaration may be one.
+agent bullet probe-agent Read Read
+mkdir -p "$WORK/bullet/hooks/probes"
+cur=$(sha256sum "$WORK/bullet/hooks/probe-hook.sh" | cut -d" " -f1)
+printf -- '- handler sha256: %s\n' "$cur" > "$WORK/bullet/hooks/probes/probe-hook-x.md"
+expect 0 "a declaration written as a list item lifts" \
+  "$WORK/enforced.md" "$WORK/bullet"
+
 agent nohash probe-agent Read Read
 mkdir -p "$WORK/nohash/hooks/probes"
 echo "a probe record that names no hash at all" > "$WORK/nohash/hooks/probes/probe-hook-x.md"
@@ -175,4 +183,4 @@ if [ "$fails" -ne 0 ]; then
   echo "audit-sweep controls: $fails failure(s)" >&2
   exit 1
 fi
-echo "audit-sweep controls: all green (16 cases)"
+echo "audit-sweep controls: all green (17 cases)"

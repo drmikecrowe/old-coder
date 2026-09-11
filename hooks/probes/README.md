@@ -2,8 +2,8 @@
 
 One file per hook version, named `<hook>-<tree-hash>.md`. Each records the
 commands run, the output verbatim, the date, the tree hash, and **the sha256 of
-the handler it graded**, declared on a line of its own reading exactly
-`handler sha256: <64 hex>`.
+the handler it graded**, declared on a line of its own reading `handler sha256: <64 hex>`,
+optionally as a list item in the metadata block.
 
 The form is strict on purpose. `tools/audit_sweep.py` reads that line, and a
 record whose declared hash does not match the current handler does not count:

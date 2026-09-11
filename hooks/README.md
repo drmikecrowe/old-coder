@@ -65,11 +65,11 @@ rebind them, for exactly that reason.
 ### `spec-intent-scope.sh`
 
 Bounds `old-coder-spec-intent`'s `Read` to the directory its SPEC lives in.
-A recorded probe moved EX-1 to `enforced` in `docs/loop-alignment.md` once,
-and the row is back at `accepted` because the handler has since been rewritten
-and that record graded different code. The reviewer's brief says "do not go
-looking for the codebase"; where the hook is installed and a current probe
-exists, that sentence is a bound, and everywhere else it is an instruction.
+A recorded probe is what moves EX-1 to `enforced` in `docs/loop-alignment.md`,
+and `probes/spec-intent-scope-0f6d9e8aa98315ec.md` is the one standing now. The
+reviewer's brief says "do not go looking for the codebase"; where the hook is
+installed and a current probe exists, that sentence is a bound, and everywhere
+else it is an instruction.
 
 `tools/audit_sweep.py` keeps that honest mechanically: the row cannot read
 `enforced` unless `probes/` holds a record naming the handler's current

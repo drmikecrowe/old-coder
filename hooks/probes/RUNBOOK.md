@@ -81,8 +81,9 @@ exists to catch, and it looks like nothing at all from inside the run.
 ### Step 4. Record it
 
 Write `hooks/probes/spec-intent-scope-<tree-hash>.md` with the date, the tree
-hash from `demo-rate-limiter/tools/source_state.sh`, **a line of its own reading exactly
-`handler sha256: <64 hex from sha256sum hooks/spec-intent-scope.sh>`**, the exact prompts
+hash from `demo-rate-limiter/tools/source_state.sh`, **a line of its own reading
+`handler sha256: <64 hex from sha256sum hooks/spec-intent-scope.sh>`**,
+optionally as a list item, the exact prompts
 used, and both transcripts verbatim.
 
 The hash is load-bearing and its form is strict. `tools/audit_sweep.py` will
