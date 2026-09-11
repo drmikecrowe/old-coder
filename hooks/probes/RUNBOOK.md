@@ -20,8 +20,9 @@ A probe whose negative control fails for want of setup measures the setup, not
 the mechanism, and must not be recorded as a result about the hook. Check all
 three first:
 
+Run from the root of your checkout:
+
 ```sh
-cd /home/mcrowe/Programming/AI/old-coder
 python3 tools/hooks_registered.py
 ```
 
@@ -36,8 +37,9 @@ The handler reads `<artifact root>/scope`, so the probe writes one. No
 environment variable is involved, and nothing needs to be exported before the
 session starts.
 
+From the root of your checkout:
+
 ```sh
-cd /home/mcrowe/Programming/AI/old-coder
 mkdir -p .old-coder
 echo "$PWD/hooks/probes/fixture" > .old-coder/scope
 ./claude-host

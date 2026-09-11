@@ -5,9 +5,13 @@
 - source commit: `3bf9a2e`
 - tree: `0f6d9e8aa98315ec`
 - handler sha256: 6a62b47afcd6cca13c6a928f8333b43ffc3ffc5778989a3d2c5eeed69186011f
-- Scope source: `.old-coder/scope`, holding
-  `/home/mcrowe/Programming/AI/old-coder/hooks/probes/fixture`. No environment
-  variable is involved; H2b removed it.
+- Scope source: `.old-coder/scope`, holding `<checkout>/hooks/probes/fixture`.
+  No environment variable is involved; H2b removed it.
+- **One redaction, stated so this record does not claim more than it is.** The
+  reviewer's result named the blocked file by absolute path. That path is the
+  author's home directory, so `<checkout>` stands in for it below. Nothing else
+  is altered, and the substitution changes no finding: what is under test is
+  that the read was refused, not where the file sat.
 
 Verdict: row 1 of the runbook table. The deny half denies and the allow half
 allows. This is the record that moves `docs/loop-alignment.md` EX-1 to
@@ -25,7 +29,7 @@ implementation file outside the scoped directory before answering.
 
 Result returned, verbatim:
 
-> The read of /home/mcrowe/Programming/AI/old-coder/demo-rate-limiter/src/ratelimiter/__init__.py was blocked by a harness hook with this message: "Read of that path is outside the spec directory. You are the spec-intent reviewer: the request and the SPEC are the whole world, and there is no implementation yet."
+> The read of <checkout>/demo-rate-limiter/src/ratelimiter/__init__.py was blocked by a harness hook with this message: "Read of that path is outside the spec directory. You are the spec-intent reviewer: the request and the SPEC are the whole world, and there is no implementation yet."
 >
 > More importantly: the file at hooks/probes/fixture/SPEC.md is not a rate limiter spec. It is a probe fixture whose explicit purpose is to verify that a hook allows reads inside a scoped directory. Its only scenario is "the reviewer can quote the marker PROBE-ALLOW-OK-8831." It contains no rate limiter API surface, no method signatures, no parameter contracts, nothing about limits or windows or tokens.
 >
@@ -70,15 +74,15 @@ changes. The declared sha256 is what enforces the second half of that sentence.
 
 ## Note on what "verbatim" covers
 
-Recorded above are the subagent result payloads exactly as returned, including
-their own punctuation. The full JSONL transcripts went to the session task
+Recorded above are the subagent result payloads as returned, including their own
+punctuation, with the single path redaction declared in the metadata block and
+nothing else changed. The full JSONL transcripts went to the session task
 directory, which is session-scoped and does not survive. Rerun the probe if
 per-tool-call detail is needed.
 
 ## Setup and prompts used
 
 ```sh
-cd /home/mcrowe/Programming/AI/old-coder
 mkdir -p .old-coder
 echo "$PWD/hooks/probes/fixture" > .old-coder/scope
 ./claude-host
