@@ -251,7 +251,7 @@ the directory.
 | Artifact | Tracked? | Written in |
 |---|---|---|
 | `SPEC.md`, `EVIDENCE.md`, `ROLLUP.md` | yes | the **worktree** — they are committed with the change and reach the human through the merge |
-| `scope` | no | the **worktree** — see below; this is the one ignored file that does not go to the durable root |
+| `scope` | no | the **worktree**, see below; the one ignored file that does not go to the durable root |
 | `logs/`, and anything else the repo ignores | no | the **durable root** (below) — it outlives the task |
 | the whole task directory, when the artifact root is gitignored | no | the **durable root** |
 
