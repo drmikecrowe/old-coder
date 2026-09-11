@@ -27,7 +27,6 @@ hand, so without that check the drift would be invisible.
 | Id | Rule, in one line | End state | Where it goes |
 |---|---|---|---|
 | IN-4 | a plan missing validation statements is rejected before execution | accepted | a human approver shown a plan with no validation statements is a better rejector than a parser |
-| EX-1 | scope is absent capability, not instruction | accepted | `old-coder-spec-intent` holds `tools: Read`, the host's floor, and `Read` opens any file. This fork ships a hook that bounds it, and no recorded host probe stands against the current address, so the row does not move. See "One limit a hook can close, on terms" below |
 | EX-5 | irreversible actions are missing capabilities, not policy | delegated | the runtime repo, VE-1. True of the workflow, false of the adversary, whose `Bash` reaches `git push`. Same capability as VE-1, same id |
 | EX-7 | tools are narrow and verb-specific | delegated | the runtime repo, VE-1. Three of the adversary's four tools are verb-specific; `Bash` is a shell |
 | EX-9 | authorization enforced at the tool boundary, per-tool credentials | n-a | no tool in this skill holds credentials |
@@ -43,22 +42,33 @@ hand, so without that check the drift would be invisible.
 | DR-3 | evaluate weekly | n-a | no production traffic; the failure this catches does not accrue here |
 | DR-4 | instructions and skills are behavior: versioned, reviewed, tested | accepted | `CONTRIBUTING.md` requires the fixture; nothing rejects a PR that ignores it |
 
-## One limit a hook can close, on terms
+## The one limit a hook closed, and what it cost
 
-EX-1 is `accepted` in the table above, and this fork ships the mechanism that
-would move it. The row has not moved, and the reason is the useful part.
+EX-1 used to sit in the table above. It is `enforced` now, on this host, and
+the qualifier is not a hedge: **enforced on Claude Code, an instruction
+everywhere else.** The status cell stays one word because a closed vocabulary
+that grows parentheses stops being closed; the scoping lives in the audit's
+evidence column.
 
-The handler's unit controls are green, twelve of them. The registration check
-is green. The frontmatter names the hook. That combination has already, once,
-coexisted with the bound being entirely absent, because the one step none of
-those cover is whether the runtime invokes the handler. A green pipeline is
-consistent with a hook nothing calls, and the gap does not announce itself
-from inside a run.
+What moved it was a recorded host probe, and only that. The handler's twelve
+unit controls were green before the bound existed at all. The registration
+check was green. The frontmatter named the hook. That combination coexisted,
+for a whole afternoon, with a reviewer that read whatever it liked, because the
+one step none of those cover is whether the runtime invokes the handler. A
+green pipeline is consistent with a hook nothing calls, and the gap does not
+announce itself from inside a run.
 
-So the rule here is not a preference. **A recorded host probe moves this row,
-and nothing else does.** `tools/audit_sweep.py` enforces it rather than asking
-for it: the row cannot read `enforced` while `hooks/probes/` holds no record
-for the handler.
+So the rule is mechanical rather than aspirational. `tools/audit_sweep.py`
+refuses to let this row read `enforced` while `hooks/probes/` holds no record
+for the handler. Delete the probe file and the gauntlet goes red on the next
+run.
+
+**What it cost, stated because the row does not say it.** The bound is proven,
+not yet wired. The handler takes its scope from `OLD_CODER_SPEC_DIR`, and
+nothing in the skill sets that when it spawns the reviewer, so an ordinary run
+leaves it unset and the handler then denies every read including the SPEC. What
+is enforced today is the capability. Joining it to the workflow that creates
+the artifact directory is still open.
 
 The mechanism is `hooks/spec-intent-scope.sh` in this repository. A
 `PreToolUse` hook declared in a subagent's own frontmatter is registered only

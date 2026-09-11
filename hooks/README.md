@@ -65,10 +65,15 @@ rebind them, for exactly that reason.
 ### `spec-intent-scope.sh`
 
 Bounds `old-coder-spec-intent`'s `Read` to the directory its SPEC lives in.
-This is the mechanism that would move EX-1, and it has not moved it: the row
-reads `accepted` in `docs/loop-alignment.md` and stays there until the probes
-below are recorded. The reviewer's brief says "do not go looking for the
-codebase", and until a probe exists that is still an instruction.
+This is what moved EX-1 to `enforced` in `docs/loop-alignment.md`, and what
+moved it was the recorded probe at
+`probes/spec-intent-scope-f50753965ccd5c78.md`, not the controls below. The
+reviewer's brief says "do not go looking for the codebase"; on this host that
+sentence is now a bound, and on any host without the hook it is still an
+instruction.
+
+`tools/audit_sweep.py` keeps that honest mechanically: delete the probe record
+and the row can no longer read `enforced`, so the gauntlet goes red.
 
 Deny by default, allow by resolved path. Every path component is resolved
 before the prefix test, the final one included, because a symlink inside the

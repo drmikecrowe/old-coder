@@ -279,7 +279,7 @@ ceiling exists to prevent, now in the ceiling itself.
 | Object | State |
 |---|---|
 | H1 amend the freeze | landed 2026-09-10 at `8e9c2d4`, repaired at `0f5d8df` after one adversarial round; three findings upheld |
-| H2 spec reviewer read scope | **awaiting a host probe.** Mechanism landed at `6930f38`, hardened at `4559a7c`. The handler is written in `hooks/` and installed beside the agents under `CLAUDE_CONFIG_DIR`, because the address has to follow the agent rather than the project; `README.md` carries that step and `tools/hooks_registered.py` reports whether it was done. CI half green. No probe is recorded, and the sweep will not lift EX-1 without one. Open: nothing sets `OLD_CODER_SPEC_DIR` when the skill spawns the reviewer |
+| H2 spec reviewer read scope | **landed 2026-09-11.** Mechanism at `6930f38`, hardened at `4559a7c` after one adversarial round, install pattern corrected at `86bfb66`. Host probe passed at tree `f50753965ccd5c78` (`hooks/probes/spec-intent-scope-f50753965ccd5c78.md`): the reviewer obeyed an instruction to read a source file and the call was refused, and a read inside the spec directory succeeded. EX-1 is `enforced`, single-valued, scoping in the evidence column. Open, and recorded rather than closed: nothing sets `OLD_CODER_SPEC_DIR` when the skill spawns the reviewer, so the bound is proven but not wired into the workflow |
 | H3 adversary shell grammar | not started, blocked on step zero |
 | H4 budget counted | not started, blocked on step zero |
 | H5 runner and scribe roles | not started, blocked on step zero |
