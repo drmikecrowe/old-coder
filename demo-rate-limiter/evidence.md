@@ -56,21 +56,21 @@ The writeup below, in brief:
   Earlier revisions (2026-07-25, 2026-07-27) were autonomous and are still
   unapproved; treat them as the weaker part of the spec.
 - Independent verification: **not performed against the final source state
-  `86bfb66`.** Six earlier rounds were performed; the last verified state
+  `3bf9a2e`.** Six earlier rounds were performed; the last verified state
   `d0b506c` returned `failed`, and the fixes made since — one of them
   behavioural — are disclosed below as unverified. This report is finalized as
   a **declared downgrade**, not on the strength of a passing verdict. A
   verdict attaches to the state a verifier actually saw, and no verifier has
   seen this one.
-- Source state: source commit `86bfb66`; sha256 tree hash
-  `f50753965ccd5c78` — reproduce both with `./tools/source_state.sh` from any
+- Source state: source commit `3bf9a2e`; sha256 tree hash
+  `0f6d9e8aa98315ec` — reproduce both with `./tools/source_state.sh` from any
   directory, or read them from `gauntlet-stamp.txt`, which the entry point
   writes on every exit path. When a binding is produced the tree hash is the required content
   identity; the source commit is provenance and is supplied only where
   complete history is available, so a shallow checkout reports
   `(unavailable: shallow history)` and a no-Git archive reports `(no git)`,
   both alongside this same tree hash. No error path emits a binding at all.
-  The script separately reports current HEAD; commits after `86bfb66` that
+  The script separately reports current HEAD; commits after `3bf9a2e` that
   touch only this report or other out-of-scope paths preserve the source
   commit and tree hash. The manifest includes `.github/workflows`, which
   decides whether the gauntlet runs in CI at all.
@@ -98,7 +98,7 @@ The writeup below, in brief:
   crash (passed through).
 
 All numbers are from one final fresh run of the entry point, executed
-2026-09-10 at source commit `86bfb66` after the last code edit; the stamp
+2026-09-11 at source commit `3bf9a2e` after the last code edit; the stamp
 from that run reads `result: green` over the binding above.
 
 The branch carrying that state was merged to fork `main` as `8e2b2c2` on
@@ -177,13 +177,13 @@ Status legend: pass / fail / unverified / n-a.
 | Supply chain | `pip-audit -r requirements-dev.txt` | no known vulnerabilities; runtime dependencies: **none** (stdlib only; `threading` is stdlib) |
 | Secret scan | must-not scan in `tools/gauntlet.sh` over src, tests, tools, examples, spec.md, pyproject.toml, requirements-dev.txt and `../.github` | clean, no matches |
 | Audit sweep | `../tools/audit_sweep.py` (REVISION 10; grades `docs/loop-alignment.md`, outside the source manifest. REVISION 12 widened it: a `PreToolUse` hook matching a defeating tool lifts the overclaim, and nothing weaker does) | pass: no audit row credits a capability bound its agent cannot hold |
-| Audit-sweep controls | `sh ../tools/test_audit_sweep.sh` (REVISION 12; fixture agent trees, so the lift is graded against agents that do and do not declare a matching hook) | 12/12 cases ok. Three arms come from the adversarial round that defeated the first version of the lift with a wildcard matcher and a no-op handler |
+| Audit-sweep controls | `sh ../tools/test_audit_sweep.sh` (REVISION 12; fixture agent trees, so the lift is graded against agents that do and do not declare a matching hook) | 18/18 cases ok. Three arms come from the adversarial round that defeated the first version of the lift with a wildcard matcher and a no-op handler |
 | Ceiling ids | `../tools/ceiling_ids.py` (REVISION 10; grades the audit against `skills/old-coder/references/ceiling.md`) | pass: same rule ids in both directions, same end state for each |
 | Contract ids | `../tools/contract_ids.py` (REVISION 11; grades `spec.md`'s Verification contract against the `run_layer` calls in `tools/gauntlet.sh`) | pass: 17 layers named and run, no disagreement in either direction |
-| Hooks registered | `../tools/hooks_registered.py` (REVISION 12; every frontmatter hook names a handler present and executable in `hooks/`) | pass: 1 handler across 2 agents. Grades the repository's copy, not the local deployment, so it is green on a host that declined the opt-in tier. **This is the CI half.** It does not prove Claude Code calls the handler. A host probe recorded 2026-09-11 at tree `f50753965ccd5c78` does, and EX-1 moved to `enforced` on that record, not on this layer |
+| Hooks registered | `../tools/hooks_registered.py` (REVISION 12; every frontmatter hook names a handler present and executable in `hooks/`) | pass: 1 handler across 2 agents. Grades the repository's copy, not the local deployment, so it is green on a host that declined the opt-in tier. **This is the CI half.** It does not prove Claude Code calls the handler. A recorded host probe does. REVISION 13 rewrote the handler, so the 2026-09-11 record was removed and EX-1 returned to `accepted`; the sweep refuses to lift it without a record naming the current handler's sha256 |
 | Hooks-registered controls | `sh ../tools/test_hooks_registered.sh` (REVISION 12) | 10/10 cases ok, including both directions of the install-state note, and the bare-environment case an earlier version failed by reddening on every host that had not installed |
-| Hook controls | `sh ../hooks/test_spec_intent_scope.sh` (REVISION 12) | 12/12 cases ok. Two defects were found here rather than by review: a symlink inside the scope was allowed, and an empty payload failed open. Green here says nothing about whether the handler is invoked: this grades its decisions only, and it was green throughout a period when the handler was never called |
-| Source binding | `tools/source_state.sh` (and captured again into `gauntlet-stamp.txt` at exit) | source commit `86bfb66`; tree `f50753965ccd5c78`; current HEAD is reported separately |
+| Hook controls | `sh ../hooks/test_spec_intent_scope.sh` (REVISION 12) | 18/18 cases ok. Two defects were found here rather than by review: a symlink inside the scope was allowed, and an empty payload failed open. Green here says nothing about whether the handler is invoked: this grades its decisions only, and it was green throughout a period when the handler was never called |
+| Source binding | `tools/source_state.sh` (and captured again into `gauntlet-stamp.txt` at exit) | source commit `3bf9a2e`; tree `0f6d9e8aa98315ec`; current HEAD is reported separately |
 | Evidence binding | `tools/evidence_binding.py` (last gauntlet layer; REVISION 9) | pass: this report's cited tree hash equals the derived one, and its review binding is `unavailable`, which the layer holds below a bare `PASSED` |
 | License check | — | n-a: zero runtime dependencies, nothing redistributed beyond this repo's own MIT code |
 | Suite health | pytest-randomly (order shuffled every run) | 65 passed in randomized order, 10/10 consecutive runs (rerun at `8ecf38b`; REVISION 12 added no test and changed no runtime code) |
