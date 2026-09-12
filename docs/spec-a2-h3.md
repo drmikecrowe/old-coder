@@ -5,9 +5,10 @@ Track A2 object H3. H1, H2 and H2b landed; their SPECs are at
 
 House rule: no em dashes.
 
-> **AWAITING APPROVAL.** The `Decide` block below carries the four rulings this
-> object needs before RED opens. Everything outside it is settled and is
-> recorded so it is not re-argued.
+> **AWAITING APPROVAL.** The `Decide` block below carried four rulings and all
+> four are in, recorded under each one. RED is open. The banner flips to LANDED
+> with the landing commit. Everything outside `Decide` was settled before
+> drafting and is recorded so it is not re-argued.
 
 ## Orientation
 
@@ -384,6 +385,9 @@ of syntax. Three of your four negative controls survive as written.
 *Ruling needed: approve the substitution, or hold the criterion and take the
 13-of-57 grammar.*
 
+**RULED: allow.** The grammar admits `;`, `&&` and `|`, each segment checked
+separately. The chain-class negative control is `git diff && rm -rf /tmp/x`.
+
 **2. `python3` is denied entirely, and so is the sandbox reproduction.**
 This costs the reviewer two things it has demonstrably used. Six multiline
 `python3 -c` invocations parsed `evidence.md` tables, checked `gauntlet.sh`
@@ -396,6 +400,40 @@ arbitrary code, and a grammar admitting it admits everything.
 *Ruling needed: accept the loss as specified, or name a carve-out and accept
 that it is a hole in the bound.*
 
+**RULED: deny, no carve-out.** The ruling was taken against the eight calls
+read one by one, not against the principle, so the cost is recorded as measured
+rather than as feared.
+
+| Call | What it did | In the grammar |
+|---|---|---|
+| 1 | three regex patterns over `evidence.md`, every match | `rg -n`, and `rg -U` for the one multi-line pattern |
+| 2 | list and count `run_layer` names in `gauntlet.sh` | `rg -n '^run_layer'` |
+| 3 | **run `tools/contract_ids.py`** | **nothing reaches it** |
+| 4 | find lines mentioning the gauntlet in `evidence.md` | `rg -n` |
+| 5 | count layer calls, count table rows, compare | two or three `rg`/`sed -n` calls in place of one |
+| 6 | count pass/fail/unverified rows | one `rg -c` per status |
+| 7 | find a table's header line | `rg -n` |
+| 8 | search a saved diff for `sha256` and `probe` lines | `rg -n`, a direct translation |
+
+Seven of eight were Python used as a richer grep, and the grammar reaches all
+seven, at a cost of roughly one extra call where the reviewer was counting two
+things to compare them. Against a 10-call budget that is a squeeze, not a wall.
+
+**Call 3 is the real loss and it does not survive.** The reviewer can no longer
+re-run a repo check to test whether a row the author reported green is green. A
+carve-out for `python3 <path>` was considered and refused: the only rule that
+admits call 3 is "Python may run a file from the repository", and the
+repository is the thing under review. EX-8 already holds that repo content is
+untrusted input and that a file directing the reviewer is a finding in its own
+right. A grammar refusing `-c` while executing `tools/anything.py` out of the
+tree under review has a hole shaped exactly like the threat the audit already
+names.
+
+The mitigation is not in this object. When the reviewer cannot verify a
+claimed-green row it reports it unproven rather than passing it, which is
+already how VE-5 handles absent evidence. Writing that into the brief is a
+separate change.
+
 **3. `2>/dev/null` and `2>&1` are the only redirects in the grammar.**
 Your negative-control list names a redirect (`>`). 16 of 57 commands use a
 stderr redirect. I am proposing the two literal spellings above be permitted,
@@ -404,6 +442,9 @@ because `/dev/null` is a fixed sink and `2>&1` is a descriptor dup, and that
 grammar therefore admits the `>` character in exactly two byte sequences and
 nowhere else.
 *Ruling needed: approve, or deny all redirects and lose those 16.*
+
+**RULED: approved.** Those two spellings only. Every other use of `>` or `<`
+denies.
 
 **4. What `enforced` will mean on VE-1, EX-5 and EX-7.**
 After this lands, `old-coder-adversary` cannot write through `Bash` on this
@@ -416,6 +457,14 @@ only, read reach unbounded and deliberately out of scope.
 *Ruling needed: approve that wording as the end state, or say the rows stay
 `delegated` until read reach is bounded too.*
 
+**RULED: agreed.** The three rows move to `enforced` and each evidence column
+states the three limits: write capability only, Claude Code only, read reach
+unbounded on purpose.
+
 ## Revisions
 
-None yet.
+**Approved 2026-09-12.** All four rulings answered: 1 allow, 2 deny with no
+carve-out, 3 approved, 4 agreed. The grammar in this file is unchanged by them,
+because each ruling confirmed what the SPEC proposed. Decide 2 gained the
+per-call table above, which was produced to answer the ruling and is kept as the
+record of what the bound costs.
