@@ -9,6 +9,13 @@
 # commands must pass, or the grammar denies legitimate reads mid-review, which
 # is the failure step zero exists to prevent.
 #
+# The `why` names the OPERATIVE rule, the one that fires first, not merely a
+# rule the command also breaks. Four rows were mislabelled as shell-variable
+# denials when the multiline rule refuses them before the variables are
+# reached; an adversarial round's coverage note asked whether the labels were
+# honest, and they were not. A denial for an unintended reason is a control
+# agreeing with the code by accident.
+#
 # row\texpect\twhy
 1	allow	in grammar
 2	allow	in grammar
@@ -58,11 +65,11 @@
 46	allow	in grammar
 47	allow	in grammar
 48	deny	rtk, a wrapper that is not in the grammar
-49	deny	shell variables, and rm -rf, mkdir, cp, chmod, env, sh
-50	deny	shell variable assignment and expansion
+49	deny	multiline; also shell variables, rm -rf, mkdir, cp, chmod, env, sh
+50	deny	multiline; also shell variable assignment and expansion
 51	allow	in grammar
-52	deny	shell variable assignment and expansion
-53	deny	shell variable assignment and expansion
+52	deny	multiline; also shell variable assignment and expansion
+53	deny	multiline; also shell variable assignment and expansion
 54	allow	in grammar
 55	deny	python3 -c, a multiline program
 56	allow	in grammar

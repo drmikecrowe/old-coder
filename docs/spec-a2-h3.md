@@ -521,7 +521,37 @@ here rather than left to two modules disagreeing about one string. `handler_path
 now honours an explicit suffix and probes only when the command names none, with
 a control for the mismatch case.
 
-Counts after the round: `bash-grammar-controls` 118, `audit-sweep-controls` 24.
+**The coverage section produced more than the findings did, and that is worth
+recording.** The round spent its whole budget and listed what it had not
+reached. Two of those unreached checks were run afterwards and both found real
+defects that the findings section did not.
+
+**Defect A, from "read the SPEC grammar against the handler's allowlists".**
+The handler was **wider than this SPEC**. `FIND_PREDICATES` carried
+`-mindepth`, `-ipath`, `-prune` and `-print`; `PLAIN_READERS` carried `md5sum`,
+`basename`, `dirname`, `pwd` and `date`. None appears in the table above, none
+appears in the harvest, and none was covered by a control, so the widening was
+neither approved nor measured nor tested. Every one is harmless, which is the
+reasoning that produced them and the reasoning this object rejected when it
+refused `find -print0` on the round's own finding 2. The handler is narrowed to
+the approved table, with four controls pinning the edge. Had it gone the other
+way, this SPEC would have been rewritten after approval to match code nobody
+ruled on.
+
+**Defect B, from "check whether rows 49 and 52 to 53 deny for the right
+reason".** They did not. `expected.tsv` labelled four rows as shell-variable
+denials; the operative rule is the multiline check, which fires first. The
+denial was over-determined, so no case failed and nothing caught it. A control
+that agrees with the code for a reason neither of them states is a control
+agreeing by accident. The labels now name the rule that actually fires.
+
+**Harness tax, recorded because it changes what the round cost.** Two of the
+round's ten calls were consumed by `rtk` intercepting `git` and the worktree
+guard refusing the result. The reviewer recovered with `/usr/bin/git`. The
+budget bought eight calls of review, not ten, and the loss was environmental
+rather than anything about this change.
+
+Counts after the round: `bash-grammar-controls` 122, `audit-sweep-controls` 24.
 
 **Approved 2026-09-12.** All four rulings answered: 1 allow, 2 deny with no
 carve-out, 3 approved, 4 agreed. The grammar in this file is unchanged by them,

@@ -189,6 +189,15 @@ case_cmd "subshell" deny '(git diff)'
 case_cmd "git -c reaches a command" deny 'git -c core.pager=touch\ x log'
 case_cmd "git --exec-path" deny 'git --exec-path=/tmp diff'
 case_cmd "rg --pre" deny 'rg --pre /tmp/x -n foo src/'
+
+# The grammar is exactly the SPEC's table, and these pin its edge. Each of
+# these is harmless, and each is outside what was approved. Found by comparing
+# the handler against docs/spec-a2-h3.md after a round's coverage note asked
+# whether they matched; they did not, and the handler was the wider of the two.
+case_cmd "md5sum is not in the approved table" deny 'md5sum /tmp/x'
+case_cmd "basename is not in the approved table" deny 'basename /tmp/x'
+case_cmd "find -print is not in the approved table" deny 'find . -name x -print'
+case_cmd "find -print0 is not in the approved table" deny 'find . -name x -print0'
 case_cmd "tail -f never ends" deny 'tail -f /tmp/x.log'
 # From H3's adversarial round: -f was refused by exact match and -F was not.
 # These three pin the class rather than the one spelling it found.

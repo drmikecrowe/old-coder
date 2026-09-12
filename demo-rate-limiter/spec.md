@@ -309,7 +309,7 @@ can tell a layer that failed from a layer that was never wired up.
 | `hooks-registered` | a frontmatter hook whose handler was renamed, deleted, or left non-executable, which fails open silently | 0 unusable hooks; this is the CI half and is not the proof that the host calls them |
 | `hooks-registered-controls` | a registration check that reddens because a host declined an opt-in tier, or that misses a deleted handler | 9 cases pass, including a bare environment and a command interpolating a variable the runtime does not substitute |
 | `hook-controls` | a hook handler that allows what it claims to deny | 12 cases pass, symlink escape and empty payload included |
-| `bash-grammar-controls` | a reviewer that can rewrite what it reviews, and a grammar that denies the reads it was measured against | 118 cases pass, one per excluded class and the whole 57-row harvest; the suite is then run against a permissive stub and must fail |
+| `bash-grammar-controls` | a reviewer that can rewrite what it reviews, and a grammar that denies the reads it was measured against | 122 cases pass, one per excluded class and the whole 57-row harvest; the suite is then run against a permissive stub and must fail |
 | `source-state` | a report bound to a state nobody can return to | a binding is produced, or a named reason why it is not |
 | `evidence-binding` | a report whose numbers came from a different tree | the report's tree hash equals the derived one, and a stale review round does not sit under a bare `PASSED` |
 

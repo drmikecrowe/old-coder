@@ -20,8 +20,8 @@ whose effect it cannot determine. "Does this write" is undecidable in general.
 THE GRAMMAR IS MEASURED, NOT IMAGINED.
 `hooks/harvest/` holds every Bash command this reviewer ran across eight
 recorded sessions, 57 of them, and `hooks/harvest/expected.tsv` says which the
-grammar must admit. 44 pass. The 13 denials are 7 `python3`, 4 commands using
-shell variables, 1 wrapper, and no accidents. An allowlist written from
+grammar must admit. 44 pass. The 13 denials are 7 `python3`, 4 multiline
+commands built out of shell variables, 1 wrapper, and no accidents. An allowlist written from
 imagination denies legitimate reads mid-review, which is the right failure and
 a disruptive one to meet in production. docs/spec-a2-h3.md argues the shape
 from those rows; the object's original sketch, git only with no metacharacter,
@@ -115,16 +115,20 @@ SED_SCRIPT = re.compile(r"^\d+(?:,\d+)?p(?:;\d+(?:,\d+)?p)*$")
 
 # find executes with -exec, -execdir and -ok, and writes with -delete,
 # -fprintf, -fprint and -fls. An allowlist of predicates is the only safe shape.
+# Exactly the list docs/spec-a2-h3.md carries, and no wider. An earlier draft
+# added -mindepth, -ipath, -prune and -print because they are harmless, which is
+# the reasoning that turns an allowlist into a list of things somebody thought
+# of. The SPEC is what was approved; widening it is a decision, not an edit.
 FIND_PREDICATES = frozenset({
-    "-name", "-iname", "-type", "-maxdepth", "-mindepth", "-path", "-ipath",
-    "-o", "-a", "-not", "-prune", "-print",
+    "-name", "-iname", "-type", "-maxdepth", "-path", "-o", "-a", "-not",
 })
 
 # Commands whose every flag reads. No allowlist of arguments, because none of
 # their flags reach a file for writing or a program for running.
+# Exactly the list docs/spec-a2-h3.md carries. See FIND_PREDICATES above for
+# why md5sum, basename, dirname, pwd and date came back out.
 PLAIN_READERS = frozenset({
-    "cat", "head", "ls", "wc", "file", "sha256sum", "md5sum", "stat", "echo",
-    "basename", "dirname", "true", "pwd", "date",
+    "cat", "head", "ls", "wc", "file", "sha256sum", "stat", "echo", "true",
 })
 
 
