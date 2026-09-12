@@ -152,7 +152,7 @@ them.
 | `git`, `/usr/bin/git` | after optional `-C <path>` and `--no-pager`, the subcommand must be one of `diff show log status blame cat-file ls-files ls-tree rev-parse describe shortlog`. `-c`, `--exec-path` and `--output*` are denied wherever they appear: each reaches a command |
 | `rg`, `grep` | any argument, except `--pre*` and `-f`/`--file`, which run or read a program |
 | `sed` | `-n` only, and every script argument must match `^\d+(,\d+)?p(;\d+(,\d+)?p)*$`. A general sed script writes with `w` and `s///w` |
-| `find` | predicates limited to `-name -iname -type -maxdepth -path -o -a -not`. `-exec`, `-ok`, `-delete`, `-fprintf`, `-fls` all execute or write |
+| `find` | predicates limited to `-name -iname -type -maxdepth -path -o -a -not -print -print0`. `-exec`, `-ok`, `-delete`, `-fprintf`, `-fls` all execute or write |
 | `tail` | any argument except `-f`/`--follow`, which never terminates |
 | `cat head ls wc file sha256sum stat echo true` | any argument |
 | `cd` | exactly one argument |
@@ -551,7 +551,23 @@ guard refusing the result. The reviewer recovered with `/usr/bin/git`. The
 budget bought eight calls of review, not ten, and the loss was environmental
 rather than anything about this change.
 
-Counts after the round: `bash-grammar-controls` 122, `audit-sweep-controls` 24.
+**Amendment, 2026-09-12, ruled after the round.** `-print` and `-print0` join
+the `find` table. Both change the output separator and reach nothing. They were
+refused when the round raised them, because the rule at that moment was that the
+grammar covers observed use and neither is in the harvest; they are in now
+because the human ruled on them, which is the only thing that moves the table.
+`-prune` and `-mindepth` stayed out, with controls proving the amendment widened
+the table by exactly two entries rather than opening it.
+
+**Registration, 2026-09-12.** `agents/old-coder-adversary.md` gains the
+frontmatter `hooks:` block and nothing else, after the adversarial round, which
+therefore graded this object with the reviewer unbounded. `hooks-registered`
+reports the handler present and executable in `hooks/` and NOT installed on this
+host, which is a note rather than a failure, because the tier is opt-in and the
+install is a documented step.
+
+Counts after the round and the amendment: `bash-grammar-controls` 124,
+`audit-sweep-controls` 24.
 
 **Approved 2026-09-12.** All four rulings answered: 1 allow, 2 deny with no
 carve-out, 3 approved, 4 agreed. The grammar in this file is unchanged by them,

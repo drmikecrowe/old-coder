@@ -196,8 +196,14 @@ case_cmd "rg --pre" deny 'rg --pre /tmp/x -n foo src/'
 # whether they matched; they did not, and the handler was the wider of the two.
 case_cmd "md5sum is not in the approved table" deny 'md5sum /tmp/x'
 case_cmd "basename is not in the approved table" deny 'basename /tmp/x'
-case_cmd "find -print is not in the approved table" deny 'find . -name x -print'
-case_cmd "find -print0 is not in the approved table" deny 'find . -name x -print0'
+# -print and -print0 were added to the table by an explicit amendment after the
+# round raised them. They change the output separator and reach nothing.
+case_cmd "find -print is in the table by amendment" allow 'find . -name x -print'
+case_cmd "find -print0 is in the table by amendment" allow 'find . -name x -print0'
+# The predicates that stayed out are still out, so the amendment widened the
+# table by exactly two entries rather than opening it.
+case_cmd "find -prune stayed out" deny 'find . -name x -prune'
+case_cmd "find -mindepth stayed out" deny 'find . -mindepth 2 -name x'
 case_cmd "tail -f never ends" deny 'tail -f /tmp/x.log'
 # From H3's adversarial round: -f was refused by exact match and -F was not.
 # These three pin the class rather than the one spelling it found.

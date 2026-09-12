@@ -116,11 +116,15 @@ SED_SCRIPT = re.compile(r"^\d+(?:,\d+)?p(?:;\d+(?:,\d+)?p)*$")
 # find executes with -exec, -execdir and -ok, and writes with -delete,
 # -fprintf, -fprint and -fls. An allowlist of predicates is the only safe shape.
 # Exactly the list docs/spec-a2-h3.md carries, and no wider. An earlier draft
-# added -mindepth, -ipath, -prune and -print because they are harmless, which is
-# the reasoning that turns an allowlist into a list of things somebody thought
-# of. The SPEC is what was approved; widening it is a decision, not an edit.
+# added -mindepth, -ipath, -prune, -print and -print0 because they are harmless,
+# which is the reasoning that turns an allowlist into a list of things somebody
+# thought of; they were removed and the two output predicates were then added
+# back by an explicit SPEC amendment. That is the difference this comment is
+# here to keep: the table moves when somebody rules on it, not when the code
+# finds a case convenient.
 FIND_PREDICATES = frozenset({
     "-name", "-iname", "-type", "-maxdepth", "-path", "-o", "-a", "-not",
+    "-print", "-print0",
 })
 
 # Commands whose every flag reads. No allowlist of arguments, because none of
