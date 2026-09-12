@@ -1,0 +1,69 @@
+# Expected decision for every command in harvest.jsonl, by 1-based row.
+#
+# Authored from the grammar in docs/spec-a2-h3.md, not read back out of the
+# handler, so the handler is graded against the SPEC rather than against
+# itself. The thirteen denials are enumerated with the class each one falls
+# in; a reader can check every one against the row it names.
+#
+# This file is the positive control. Forty-four of the reviewer's real
+# commands must pass, or the grammar denies legitimate reads mid-review, which
+# is the failure step zero exists to prevent.
+#
+# row\texpect\twhy
+1	allow	in grammar
+2	allow	in grammar
+3	allow	in grammar
+4	allow	in grammar
+5	allow	in grammar
+6	allow	in grammar
+7	allow	in grammar
+8	allow	in grammar
+9	allow	in grammar
+10	allow	in grammar
+11	allow	in grammar
+12	allow	in grammar
+13	allow	in grammar
+14	allow	in grammar
+15	allow	in grammar
+16	allow	in grammar
+17	allow	in grammar
+18	allow	in grammar
+19	allow	in grammar
+20	allow	in grammar
+21	allow	in grammar
+22	allow	in grammar
+23	allow	in grammar
+24	allow	in grammar
+25	allow	in grammar
+26	allow	in grammar
+27	allow	in grammar
+28	allow	in grammar
+29	allow	in grammar
+30	allow	in grammar
+31	allow	in grammar
+32	deny	python3 -c, a multiline program
+33	allow	in grammar
+34	deny	python3 -c, a multiline program
+35	deny	python3 running a file out of the tree under review
+36	allow	in grammar
+37	deny	python3 -c, a multiline program
+38	deny	python3 -c, a multiline program
+39	deny	python3 -c, a multiline program
+40	deny	python3 -c, a multiline program
+41	allow	in grammar
+42	allow	in grammar
+43	allow	in grammar
+44	allow	in grammar
+45	allow	in grammar
+46	allow	in grammar
+47	allow	in grammar
+48	deny	rtk, a wrapper that is not in the grammar
+49	deny	shell variables, and rm -rf, mkdir, cp, chmod, env, sh
+50	deny	shell variable assignment and expansion
+51	allow	in grammar
+52	deny	shell variable assignment and expansion
+53	deny	shell variable assignment and expansion
+54	allow	in grammar
+55	deny	python3 -c, a multiline program
+56	allow	in grammar
+57	allow	in grammar
