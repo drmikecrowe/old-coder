@@ -485,6 +485,44 @@ unbounded on purpose.
 
 ## Revisions
 
+**Adversarial round 1, 2026-09-12.** Spawned fresh, bound to `4c34bde...19a2a36`,
+tree `f4543ac8af211553`, run **before the hook was registered** in
+`agents/old-coder-adversary.md`, so the reviewer grading this object held the
+same unbounded `Bash` every previous round held. Budget 10 calls, all spent.
+
+Two findings, no escape from the grammar.
+
+**Finding 1, upheld and fixed.** `tail -F` was allowed. The grammar refuses
+`tail -f` on the ground that it never terminates, and `-F` is GNU's
+`--follow=name --retry`, which hangs exactly as long. Reproduced before fixing:
+the handler exited 0 with no output on `tail -F /var/log/syslog`. The fix closes
+the class rather than the spelling, because short options cluster and `-fn10`
+follows too: any short-option argument containing `f` or `F`, and any long
+option starting with `--follow` or `--retry`, now denies. Three controls added.
+
+**Finding 2, rejected with evidence.** `find -print0` and `find --` are denied,
+and the round called them false denials. They are denials, and they are correct
+under this SPEC's rule. Neither appears anywhere in the 57-row harvest, so
+neither is observed use. The round's own example, `find ... -print0 | xargs -0`,
+is denied a second time at `xargs`, which is not in the grammar and is not
+proposed for it, so admitting `-print0` would not make that pipeline work. The
+grammar covers what the reviewer was measured doing; widening it for a plausible
+command nobody ran is how an allowlist decays into a list of things somebody
+thought of. Recorded as rejected rather than silently left.
+
+**One observation, checked and closed.** The round noted that
+`tools/audit_sweep.py` resolved a handler by stem, so a frontmatter naming
+`adversary-bash-grammar.sh` when only `.py` exists would credit the lift for a
+file the runtime cannot run. It labelled this an observation rather than a
+finding, and it was right that another layer catches it:
+`tools/hooks_registered.py` resolves by full basename and goes red. But the
+mismatch was introduced by this object's own suffix probing, so it is closed
+here rather than left to two modules disagreeing about one string. `handler_path`
+now honours an explicit suffix and probes only when the command names none, with
+a control for the mismatch case.
+
+Counts after the round: `bash-grammar-controls` 118, `audit-sweep-controls` 24.
+
 **Approved 2026-09-12.** All four rulings answered: 1 allow, 2 deny with no
 carve-out, 3 approved, 4 agreed. The grammar in this file is unchanged by them,
 because each ruling confirmed what the SPEC proposed. Decide 2 gained the

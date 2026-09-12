@@ -194,10 +194,22 @@ class Probe:
     allowlist: bool
 
 
-def handler_path(root: Path, stem: str) -> Path | None:
-    """The handler file for `stem`, or None when no candidate exists."""
+def handler_path(root: Path, command: str) -> Path | None:
+    """The handler file a hook command names, or None when none exists.
+
+    An explicit suffix is honoured rather than probed around.
+    `tools/hooks_registered.py` resolves the same command by full basename, so
+    a frontmatter naming `x.sh` when only `x.py` exists must not resolve here
+    either. Probing suffixes in that case would have this module credit a lift
+    for a file the runtime will never run, and the two checks would disagree
+    about the same string.
+    """
+    named = Path(command.split()[0]).name
+    if Path(named).suffix:
+        candidate = root / "hooks" / named
+        return candidate if candidate.is_file() else None
     for suffix in HANDLER_SUFFIXES:
-        candidate = root / "hooks" / f"{stem}{suffix}"
+        candidate = root / "hooks" / f"{named}{suffix}"
         if candidate.is_file():
             return candidate
     return None
@@ -248,7 +260,7 @@ def lifted(agent: Agent, tool: str, probes: dict[str, Probe], root: Path) -> boo
         # have looked at that grammar for the lift to be available at all.
         if tool in SHELL and stem not in ALLOWLIST_SHELL_HANDLERS:
             continue
-        path = handler_path(root, stem)
+        path = handler_path(root, hook.command)
         if path is None:
             continue
         current = handler_sha256(path)

@@ -190,6 +190,11 @@ case_cmd "git -c reaches a command" deny 'git -c core.pager=touch\ x log'
 case_cmd "git --exec-path" deny 'git --exec-path=/tmp diff'
 case_cmd "rg --pre" deny 'rg --pre /tmp/x -n foo src/'
 case_cmd "tail -f never ends" deny 'tail -f /tmp/x.log'
+# From H3's adversarial round: -f was refused by exact match and -F was not.
+# These three pin the class rather than the one spelling it found.
+case_cmd "tail -F never ends either" deny 'tail -F /tmp/x.log'
+case_cmd "tail --follow=name never ends" deny 'tail --follow=name /tmp/x.log'
+case_cmd "a clustered follow flag never ends" deny 'tail -fn10 /tmp/x.log'
 
 # ------------------------------------------------------------ malformed input
 

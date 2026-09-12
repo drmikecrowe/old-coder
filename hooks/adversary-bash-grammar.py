@@ -235,9 +235,17 @@ def check_segment(words: list[str]) -> str | None:
         return None
 
     if head == "tail":
+        # Every spelling of follow, not just `-f`. An adversarial round found
+        # `tail -F` allowed here: it is GNU's `--follow=name --retry` and hangs
+        # exactly as long. Short options also cluster, so `-fn10` follows too.
+        # Checking the letter rather than the argument closes the class instead
+        # of the instance.
         for argument in args:
-            if argument == "-f" or argument.startswith("--follow"):
-                return "`tail -f` never terminates"
+            if argument.startswith("--follow") or argument.startswith("--retry"):
+                return "`tail --follow` never terminates"
+            if argument.startswith("-") and not argument.startswith("--"):
+                if "f" in argument or "F" in argument:
+                    return f"`tail {argument}` follows the file and never terminates"
         return None
 
     if head in PLAIN_READERS:

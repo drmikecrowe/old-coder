@@ -209,12 +209,28 @@ expect 1 "the grammar declaration does not lift an unlisted handler" \
 grammar_agent lift-python Bash
 mv "$WORK/lift-python/hooks/adversary-bash-grammar.sh" \
   "$WORK/lift-python/hooks/adversary-bash-grammar.py"
+sed -i 's/adversary-bash-grammar\.sh/adversary-bash-grammar.py/' \
+  "$WORK/lift-python/skills/old-coder/agents/probe-agent.md"
 mkdir -p "$WORK/lift-python/hooks/probes"
 printf 'handler sha256: %s\ngrammar: allowlist\n' \
   "$(sha256sum "$WORK/lift-python/hooks/adversary-bash-grammar.py" | cut -d" " -f1)" \
   > "$WORK/lift-python/hooks/probes/adversary-bash-grammar-deadbeef.md"
 expect 0 "a Python handler is found and lifts" \
   "$WORK/shellwrite" "$WORK/lift-python"
+
+# From H3's adversarial round. The frontmatter names one extension and only the
+# other exists. tools/hooks_registered.py resolves by full basename and would go
+# red; this module must not disagree with it and credit a lift for a file the
+# runtime will never run.
+grammar_agent lift-mismatch Bash
+mv "$WORK/lift-mismatch/hooks/adversary-bash-grammar.sh" \
+  "$WORK/lift-mismatch/hooks/adversary-bash-grammar.py"
+mkdir -p "$WORK/lift-mismatch/hooks/probes"
+printf 'handler sha256: %s\ngrammar: allowlist\n' \
+  "$(sha256sum "$WORK/lift-mismatch/hooks/adversary-bash-grammar.py" | cut -d" " -f1)" \
+  > "$WORK/lift-mismatch/hooks/probes/adversary-bash-grammar-deadbeef.md"
+expect 1 "a frontmatter naming .sh does not lift when only .py exists" \
+  "$WORK/shellwrite" "$WORK/lift-mismatch"
 
 agent unprobed probe-agent Read Read
 expect 1 "an exact hook with no recorded probe does not lift" \
