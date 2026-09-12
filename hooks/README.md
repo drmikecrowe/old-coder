@@ -62,9 +62,15 @@ rebind them, for exactly that reason.
 
 ## What the tier needs present
 
-`jq`, for parsing the hook payload, and `readlink -f`, for resolving paths.
-Both are checked at the top of the handler and both exit 2 when absent, so a
-missing dependency denies rather than opens. That is the right failure and a
+`jq`, for parsing the hook payload, and `readlink -f`, for resolving paths, both
+used by `spec-intent-scope.sh`. `python3` for `adversary-bash-grammar.py`, which
+is Python rather than shell because its core is quote-aware tokenization:
+`rg -n "a|b" src/` must not read as a pipe and `echo "$(x)"` must, and `shlex`
+with `punctuation_chars=True` is exactly that lexer. Hand-writing it in POSIX sh
+would put a second thing that can be wrong inside a fail-closed handler.
+
+Both shell dependencies are checked at the top of the handler that uses them and
+both exit 2 when absent, so a missing dependency denies rather than opens. That is the right failure and a
 confusing one to meet cold: the reviewer reports it could read nothing, which
 looks like a scope problem rather than a missing binary. `ubuntu-latest` and
 ordinary Linux and macOS installs have both; declare them anyway, because a
@@ -195,3 +201,68 @@ negative control.
 
 Recorded probes live in `hooks/probes/`, one file per hook version, each
 naming the tree hash it was run against.
+
+### `adversary-bash-grammar.py`
+
+Bounds `old-coder-adversary`'s `Bash` to an allowlist grammar over reads. It
+closes VE-1, EX-5 and EX-7, which are one gap seen from three rules: the
+reviewer declares a shell, and a shell is a general write path.
+
+**It is an allowlist, and that is the whole argument.** `ceiling.md` says
+bounding a shell by deciding whether an arbitrary string writes is undecidable,
+and that a blocklist over shell syntax is not a bound. Both remain true. This
+handler does neither. It matches a string against a small number of written-down
+shapes and refuses everything else, the strings whose effect it cannot determine
+included.
+
+**The grammar was measured before it was written.** `hooks/harvest/` holds every
+`Bash` command this reviewer ran across eight recorded sessions, 57 of them, and
+`hooks/harvest/expected.tsv` says which the grammar must admit. An allowlist
+guessed rather than measured denies a legitimate read mid-review. The object's
+own plan proposed git only, which would have admitted 8 of the 57; the shipped
+grammar admits 44. Change the grammar and re-run the controls: the harvest is
+the positive control, so tightening it until it denies real work turns the layer
+red.
+
+What it allows: `git` read subcommands, `rg`, `grep`, `sed -n` with a line-range
+print, `find` with an allowlist of predicates, `cd`, and the plain readers
+(`cat`, `head`, `tail`, `ls`, `wc`, `file`, `sha256sum`, `stat`, `echo`). It
+composes them with `;`, `&&`, `||` and `|`, checking each segment on its own,
+and permits `2>/dev/null` and `2>&1` as literal spellings. Everything else
+denies: `python3`, `sh`, `$(`, backticks, `>`, `<`, `&`, subshells, `sed -i`,
+`find -exec`, `git -c`, and any command not on the list.
+
+**What it does not bound: read reach.** The reviewer may still read any file the
+host lets it read. VE-1, EX-5 and EX-7 are about write capability. Read scoping
+is EX-1's shape and a different object, and a reader who sees three rows go
+green should know which claim was made.
+
+The sweep's side of this is narrower than for `Read`. `tools/audit_sweep.py`
+cannot tell an allowlist from a blocklist by reading a handler, so it names this
+one handler in its own source and requires the probe record to declare
+`grammar: allowlist` beside the hash. Two human assertions bound to one version
+of the code. They stop the accident, not the contributor who means to mislead.
+
+#### Running the controls
+
+```sh
+sh hooks/test_adversary_bash_grammar.sh           # 110 cases
+sh hooks/test_adversary_bash_grammar.sh --stub    # and they can fail
+```
+
+The second is not optional. Most of the suite passes against a handler that
+exits 0 and says nothing, so `--stub` is what separates a bound from a green
+layer measuring nothing.
+
+#### The host probes
+
+Same shape as the other handler's, and the same rule: rerun both on every change
+to `adversary-bash-grammar.py`, comment changes included, and record the output
+verbatim with the date, the tree hash and the handler's sha256.
+
+**Negative control.** Spawn the reviewer and ask it to run a write, such as
+`sed -i`. Expect a refusal quoting the denial reason.
+
+**Positive control.** Ask it to run a harvested read, such as
+`git diff main...HEAD --stat`. Expect it to succeed and quote the output.
+Without this half a deny-all handler passes the negative control perfectly.

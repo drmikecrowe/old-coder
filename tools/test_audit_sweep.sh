@@ -17,8 +17,12 @@ PYTHON=${PYTHON:-python3}
 WORK=$(mktemp -d) || exit 1
 trap 'rm -rf "$WORK"' EXIT
 
+# Counted rather than written down. A hard-coded total goes stale the first
+# time someone adds a case, and a control suite that misreports its own size
+# is the shape of defect this file exists to catch.
 fails=0
-pass() { echo "  ok   $1"; }
+passes=0
+pass() { echo "  ok   $1"; passes=$((passes + 1)); }
 fail() { echo "  FAIL $1" >&2; fails=$((fails + 1)); }
 
 # probe <dir> <handler-stem> [hash-override]: record a host probe naming the
@@ -114,8 +118,103 @@ expect 1 "a wildcard matcher does not lift anything" \
 agent shell-hook probe-agent "Read, Bash" "Read|Bash"
 probe shell-hook probe-hook
 audit shellrow enforced "cannot reach the codebase"
-expect 1 "a hook never lifts a shell tool, whatever it matches" \
+expect 1 "an unlisted handler never lifts a shell tool, whatever it matches" \
   "$WORK/shellrow" "$WORK/shell-hook"
+
+# ---------------------------------------------------------- the shell lift
+#
+# A2 object H3 changed the shell rule from "never" to "only by a handler this
+# module names". Four conditions, all required. These cases are one per
+# condition, because a lift that cannot be watched refusing is a lift that
+# writes `enforced` next to any agent whose frontmatter mentions a shell.
+#
+# The stem is the real one on purpose. ALLOWLIST_SHELL_HANDLERS is matched by
+# name, so a fixture using a made-up stem would prove the constant is consulted
+# and nothing about what happens when it matches.
+
+# grammar_agent <dir> <matcher>: an agent declaring Bash, with a hook whose
+# handler carries the stem the sweep names as an allowlist grammar.
+grammar_agent() {
+  mkdir -p "$WORK/$1/skills/old-coder/agents" "$WORK/$1/hooks"
+  printf '#!/bin/sh\nexit 0\n' > "$WORK/$1/hooks/adversary-bash-grammar.sh"
+  chmod +x "$WORK/$1/hooks/adversary-bash-grammar.sh"
+  {
+    echo "---"
+    echo "name: probe-agent"
+    echo "tools: Read, Bash"
+    echo "hooks:"
+    echo "  PreToolUse:"
+    echo "    - matcher: $2"
+    echo "      hooks:"
+    echo "        - type: command"
+    echo "          command: adversary-bash-grammar.sh"
+    echo "---"
+    echo "body"
+  } > "$WORK/$1/skills/old-coder/agents/probe-agent.md"
+}
+
+# grammar_probe <dir> <with-grammar-line> [hash-override]
+grammar_probe() {
+  mkdir -p "$WORK/$1/hooks/probes"
+  if [ -n "${3:-}" ]; then
+    sha=$3
+  else
+    sha=$(sha256sum "$WORK/$1/hooks/adversary-bash-grammar.sh" | cut -d" " -f1)
+  fi
+  record="$WORK/$1/hooks/probes/adversary-bash-grammar-deadbeef.md"
+  printf 'handler sha256: %s\n' "$sha" > "$record"
+  if [ "$2" = "yes" ]; then
+    printf 'grammar: allowlist\n' >> "$record"
+  fi
+}
+
+# The audit row asserts a read-only bound, which Bash defeats, so the row can
+# only read `enforced` if the shell is genuinely lifted.
+audit shellwrite enforced "holds no write capability"
+
+grammar_agent lift-ok Bash
+grammar_probe lift-ok yes
+expect 0 "all four conditions hold: the shell is lifted" \
+  "$WORK/shellwrite" "$WORK/lift-ok"
+
+grammar_agent lift-nogrammar Bash
+grammar_probe lift-nogrammar no
+expect 1 "a record without the grammar declaration does not lift a shell" \
+  "$WORK/shellwrite" "$WORK/lift-nogrammar"
+
+grammar_agent lift-stale Bash
+grammar_probe lift-stale yes \
+  0000000000000000000000000000000000000000000000000000000000000000
+expect 1 "a stale record does not lift a shell" \
+  "$WORK/shellwrite" "$WORK/lift-stale"
+
+grammar_agent lift-wildcard ".*"
+grammar_probe lift-wildcard yes
+expect 1 "a wildcard matcher does not lift a shell even for a named handler" \
+  "$WORK/shellwrite" "$WORK/lift-wildcard"
+
+# The grammar line alone is not a lift: the handler still has to be one this
+# module names. Same record, unlisted stem.
+agent lift-unlisted probe-agent "Read, Bash" Bash
+mkdir -p "$WORK/lift-unlisted/hooks/probes"
+printf 'handler sha256: %s\ngrammar: allowlist\n' \
+  "$(sha256sum "$WORK/lift-unlisted/hooks/probe-hook.sh" | cut -d" " -f1)" \
+  > "$WORK/lift-unlisted/hooks/probes/probe-hook-deadbeef.md"
+expect 1 "the grammar declaration does not lift an unlisted handler" \
+  "$WORK/shellwrite" "$WORK/lift-unlisted"
+
+# A Python handler is resolved too. The grammar handler is Python, so a lookup
+# that only tried .sh would refuse the real one and this suite would be green
+# against a sweep that cannot see the thing it is meant to credit.
+grammar_agent lift-python Bash
+mv "$WORK/lift-python/hooks/adversary-bash-grammar.sh" \
+  "$WORK/lift-python/hooks/adversary-bash-grammar.py"
+mkdir -p "$WORK/lift-python/hooks/probes"
+printf 'handler sha256: %s\ngrammar: allowlist\n' \
+  "$(sha256sum "$WORK/lift-python/hooks/adversary-bash-grammar.py" | cut -d" " -f1)" \
+  > "$WORK/lift-python/hooks/probes/adversary-bash-grammar-deadbeef.md"
+expect 0 "a Python handler is found and lifts" \
+  "$WORK/shellwrite" "$WORK/lift-python"
 
 agent unprobed probe-agent Read Read
 expect 1 "an exact hook with no recorded probe does not lift" \
@@ -183,4 +282,4 @@ if [ "$fails" -ne 0 ]; then
   echo "audit-sweep controls: $fails failure(s)" >&2
   exit 1
 fi
-echo "audit-sweep controls: all green (17 cases)"
+echo "audit-sweep controls: all green ($passes cases)"

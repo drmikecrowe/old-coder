@@ -134,6 +134,8 @@ case_cmd "stderr to /dev/null" allow 'git log --oneline 2>/dev/null'
 case_cmd "stderr merged" allow 'ls -la /tmp 2>&1'
 case_cmd "leading cd" allow 'cd /tmp; ls'
 case_cmd "find with allowed predicates" allow 'find . -name "*.py" -o -name "*.sh"'
+case_cmd "trailing separator is punctuation" allow 'ls /tmp ;'
+case_cmd "trailing && is punctuation too" allow 'git diff --stat &&'
 case_cmd "tail plain" allow 'tail -n +26 /tmp/x.log'
 case_cmd "sha256sum" allow 'sha256sum hooks/adversary-bash-grammar.py'
 
@@ -159,11 +161,19 @@ case_cmd "input redirect" deny 'cat < /etc/passwd'
 
 # ----------------------------------------------------- excluded: substitution
 
-case_cmd "dollar substitution" deny 'echo $(git push)'
-case_cmd "backtick substitution" deny 'echo `git push`'
-case_cmd "variable expansion" deny 'ls "$HOME"'
-case_cmd "variable assignment" deny 'R=/tmp; ls $R'
-case_cmd "substitution inside quotes" deny 'echo "$(rm -rf /tmp/x)"'
+# SC2016 is disabled for this function, and the single quotes are the point.
+# These cases must reach the handler as literal `$` and backtick text, exactly
+# as the reviewer would have typed them. Expanding them here would test this
+# script's shell instead of the grammar.
+# shellcheck disable=SC2016
+substitution_cases() {
+  case_cmd "dollar substitution" deny 'echo $(git push)'
+  case_cmd "backtick substitution" deny 'echo `git push`'
+  case_cmd "variable expansion" deny 'ls "$HOME"'
+  case_cmd "variable assignment" deny 'R=/tmp; ls $R'
+  case_cmd "substitution inside quotes" deny 'echo "$(rm -rf /tmp/x)"'
+}
+substitution_cases
 
 # ------------------------------------------------- excluded: reaching a shell
 
@@ -183,8 +193,11 @@ case_cmd "tail -f never ends" deny 'tail -f /tmp/x.log'
 
 # ------------------------------------------------------------ malformed input
 
+case_cmd "a leading separator still denies" deny '; ls /tmp'
+case_cmd "a gap between two commands still denies" deny 'ls /tmp ;; wc -l'
 case_cmd "unbalanced quote" deny 'rg -n "unterminated src/'
 case_cmd "empty command" deny ''
+case_cmd "only a separator" deny ';'
 case_cmd "multiline command" deny 'git diff
 rm -rf /tmp/x'
 

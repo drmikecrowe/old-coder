@@ -356,6 +356,28 @@ expected shape; I never write a result. The record declares
 `handler sha256: <64 hex>` on its own line, and any edit to the handler,
 including a comment, invalidates it.
 
+**Two limits found while building it, recorded rather than left for the round.**
+
+1. **Code reached through git's own configuration.** `git diff` honours
+   `diff.external` and the textconv filters `.gitattributes` names, both read
+   from the repository being examined. A repository that configures either runs
+   that program when the reviewer diffs it, and the command string says only
+   `git diff`. The grammar cannot see it, because the code is not in the
+   command. This matters here specifically: the reviewer exists to read
+   repositories somebody else wrote. Refusing `-c` and `--exec-path` closes the
+   spelling where the command carries the configuration, not the spelling where
+   the repository does. Closing it properly means forcing `-c diff.external=`
+   and friends onto every invocation, which is a handler that rewrites tool
+   calls, and clause 1 of the tier's test puts rewriting outside `hooks/`. So it
+   is a stated limit, and it is no worse than the situation before the hook.
+
+2. **Python is not linted by the gauntlet.** `ruff` and `mypy` run over the demo
+   directory, so neither reaches `hooks/*.py` nor `tools/*.py`. The shell half
+   does reach `../hooks/*.sh`. This object does not extend them: doing so drags
+   pre-existing violations in `tools/` into an unrelated change. Named here
+   because the handler ships unlinted, held only by its 115 behavioural cases,
+   and a reader should know which instruments graded it.
+
 **The conflict of interest, out loud.** This object bounds the reviewer that
 reviews it. The adversarial round is spawned fresh, bound to the commit range
 with the tree hash recorded, and runs **before the hook is registered in the

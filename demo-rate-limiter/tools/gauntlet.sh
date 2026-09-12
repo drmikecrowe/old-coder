@@ -96,6 +96,17 @@ run_layer hooks-registered "$PY/python" ../tools/hooks_registered.py
 run_layer hooks-registered-controls env PYTHON="$(pwd)/$PY/python" sh ../tools/test_hooks_registered.sh
 run_layer hook-controls sh ../hooks/test_spec_intent_scope.sh
 
+# Two invocations, and the second is the layer's whole worth. The suite's cases
+# all pass against a handler that allows everything, except the ones that do
+# not, and `--stub` is what proves the difference. A grammar suite that stayed
+# green against a permissive handler would report a bound while measuring
+# nothing.
+layer_bash_grammar_controls() {
+  sh ../hooks/test_adversary_bash_grammar.sh || return $?
+  sh ../hooks/test_adversary_bash_grammar.sh --stub || return $?
+}
+run_layer bash-grammar-controls layer_bash_grammar_controls
+
 run_layer source-state tools/source_state.sh
 
 # Last, and after source-state on purpose: it grades evidence.md against the
