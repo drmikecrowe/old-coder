@@ -84,6 +84,47 @@ def handler_path(root: Path, command: str) -> Path:
     return root / "hooks" / Path(command.split()[0]).name
 
 
+def installed_agent_note(root: Path, agent_path: Path, name: str) -> str | None:
+    """Report when the host would load a different copy of this agent file.
+
+    The handler's install is checked above. This checks the other half, and
+    the two are not the same question. A handler resolves by a host-absolute
+    address, so it is the same file from any directory. The agent file is
+    whatever `<config>/agents/` points at, and a `hooks:` block is read from
+    *that* copy when the subagent spawns.
+
+    So a checkout whose agent file carries a hook, and a `<config>/agents/`
+    symlink aimed at a different checkout of the same repository, produce a
+    fully green run here and an unbounded subagent at runtime. That is not
+    hypothetical: it voided this tier's first `adversary-bash-grammar` host
+    probe, and it is the normal state of affairs while an object is built in
+    a worktree, which `references/setup.md` tells you to do whenever parallel
+    agents are running.
+
+    A note rather than a failure, matching the install check directly above.
+    Unlike "not installed", a mismatch is never a reader's choice, so there is
+    a case for making it fail; that case has not been ruled on and this does
+    not assume it.
+    """
+    config = expand("${CLAUDE_CONFIG_DIR:-$HOME/.claude}", root)
+    if "$" in config:
+        return None
+    installed = Path(config) / "agents" / agent_path.name
+    if not installed.exists():
+        return None
+    if installed.resolve() == agent_path.resolve():
+        return None
+    return (
+        f"{agent_path.name}: {name} declares a hook, but the agent file the "
+        f"host loads is a DIFFERENT COPY. {installed} resolves to "
+        f"{installed.resolve()}, not {agent_path.resolve()}. The hook is "
+        f"graded here and will not fire there unless that copy carries the "
+        f"same hooks: block. Any host probe run in this state proves nothing. "
+        f"Repoint it with:"
+        f"\n    ln -sfn {agent_path.resolve()} {installed}"
+    )
+
+
 def check(root: Path) -> tuple[list[str], list[str]]:
     """Return (failures, notes) for every frontmatter hook."""
     failures: list[str] = []
@@ -91,6 +132,13 @@ def check(root: Path) -> tuple[list[str], list[str]]:
     agents = read_agents(root, AGENT_GLOB)
     if not agents:
         raise SystemExit(f"FAIL: no agent frontmatter under {root / AGENT_GLOB}")
+
+    for name, agent in sorted(agents.items()):
+        if not agent.pre_tool_use:
+            continue
+        note = installed_agent_note(root, agent.path, name)
+        if note is not None:
+            notes.append(note)
 
     for name, agent in sorted(agents.items()):
         for hook in agent.pre_tool_use:

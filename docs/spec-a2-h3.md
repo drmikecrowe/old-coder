@@ -526,6 +526,13 @@ so the record can tell the two apart.
 limit that the negative control cannot separate a handler denial from a model
 refusal.*
 
+**RULED: yes, change the class.** `hooks/probes/RUNBOOK.md` step 1 now asks the
+reviewer to save working notes with a redirect, and step 2 requires the
+transcript to carry the handler's own denial text, which opens `This Bash call
+is outside the reviewer's read grammar:`. The outcome table gained a fourth row:
+a reviewer that declines without that string is **void, not a pass**, and
+nothing is recorded. That row is the one this probe hit the first time.
+
 **6. The agent-install trap: a check in `tools/hooks_registered.py`, or a step
 in the RUNBOOK.**
 The probe's other cause. `~/.claude/agents/old-coder-adversary.md` symlinks to
@@ -557,6 +564,30 @@ new layer, so `contract-ids` stays at 22.
 trap cannot then recur and it costs two controls. The RUNBOOK alternative widens
 nothing past the approved Touches list and makes the guard a human remembering a
 step, which is the thing that just failed.*
+
+**RULED: code.** `tools/hooks_registered.py` gained `installed_agent_note`,
+which compares the realpath of `<config>/agents/<basename>` against the agent
+file being graded and reports a mismatch with the `ln -sfn` that repoints it.
+`hooks-registered-controls` went from 10 cases to 12: an agent installed from
+this tree prints nothing, and one installed from another tree prints the note
+with its repoint command. The second case fails against a stubbed
+`installed_agent_note`, so the pair is non-vacuous in the same shape as the
+existing installed and uninstalled pair. `contract-ids` stays at 22, since no
+layer was added.
+
+Run against this worktree it immediately reports the live mismatch for both
+`old-coder-adversary` and `old-coder-spec-intent`, which is the state that
+voided the probe.
+
+**Implemented as a note, not a failure, and that is a deliberate narrowing.**
+Decide 6 proposed a note and that is what was ruled on. There is a real argument
+for a failure, because unlike "not installed", which is a reader's choice the
+tier deliberately permits, a mismatch is never intentional: it always means the
+host would load code other than the code being graded. CI never installs agents,
+so failing would not redden this repository. It is not done here because it was
+not ruled on, and the revision log below already carries one defect from a
+handler that grew past what was approved. Raised as a follow-up rather than
+taken.
 
 ## Revisions
 
