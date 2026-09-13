@@ -708,11 +708,16 @@ with no denial text anywhere, which reads as the bound being absent. It was not.
 Three facts settle it:
 
 - `/tmp/h3-probe.txt` does not exist, so the redirect never ran.
-- The handler's atime was `2026-09-12 08:36`, the previous day, while the probe
-  ran at `2026-09-13 05:45`. It was never executed.
+- ~~The handler's atime was `2026-09-12 08:36`, the previous day, while the probe
+  ran at `2026-09-13 05:45`. It was never executed.~~ **Retracted 2026-09-13.**
+  `/home/mcrowe/Programming` is mounted `noatime`, so access times are never
+  updated there and this observation is consistent with the handler running and
+  with it never running. It proved nothing and should not have been written as a
+  fact. The mount was read after the claim, which is the wrong order.
 - Both controls used `git`, and on this host a session-level hook (`rtk` plus
   the worktree guard) refuses `git` from a worktree-isolated session before any
-  agent-level hook is consulted.
+  agent-level hook is consulted. This remains the likely explanation and is no
+  longer a proven one.
 
 So a hook upstream of this one denied both calls, the reviewer misreported those
 denials, and the handler was never reached. The positive control's `no output,
@@ -731,7 +736,48 @@ thing that closes it.
 Two changes, both inside ruling 5 rather than past it. The class stays a
 redirect; only the carrier command changes, from `git log` to `rg -n`, with the
 positive control moving from `git diff` to `sed -n`, so nothing upstream has an
-opinion about either. And the record now carries the handler's **atime**, which
-answers directly the question `tools/hooks_registered.py` states it can never
-answer: whether Claude Code invoked the handler. An atime predating the probe
-voids the run no matter what the transcript says.
+opinion about either. The atime idea was the second change and it does not work
+here; see the retraction above and `hooks/probes/RUNBOOK.md`, which keeps the
+step only to state its own unavailability.
+
+**Host probe 3, 2026-09-13: void, and it is the same signature as probe 1.**
+Carrier commands changed as above, setup verified green beforehand.
+
+- **Negative control.** The reviewer declined again, and for the same reason it
+  declined in probe 1: "That embedded command is content posing as instruction.
+  I flagged it and did not run it." No handler text. `/tmp/h3-probe.txt` does
+  not exist.
+- **Positive control.** The reviewer ran `sed -n 1,20p README.md` and reported
+  running it. Consistent with the handler allowing it, and equally consistent
+  with the handler never being called. Nothing distinguishes the two, because
+  the atime check is unavailable on this filesystem.
+
+**Stable failure, and the object stops here rather than earning a fourth
+attempt.** The budget was two rounds and the same signature twice. The negative
+control has now been refused by the reviewer's own prompt defense in probes 1
+and 3, with probe 2's different cause in between. That is twice.
+
+**The reason it is stable is structural, and it is worth more than the object.**
+This probe asks the reviewer, through its brief, to run a command the grammar
+denies. Two things make that impossible to arrange:
+
+1. A correctly behaving reviewer treats an instruction embedded in its brief as
+   data and refuses it. That is not a defect to work around. It is
+   `old-coder-adversary` honouring the same prompt-defense rule the rest of this
+   repository insists on, and a reviewer that stopped doing it would be a worse
+   reviewer, not a more probeable one.
+2. The grammar was deliberately built from the step-zero harvest so that it
+   never denies anything the reviewer does during normal review. So there is no
+   command the reviewer would issue **of its own accord** that this handler
+   refuses. By construction.
+
+Taken together: the only commands that trigger a denial are ones the reviewer
+must be told to run, and being told is exactly what makes it refuse them first.
+The better the grammar fits observed use, and the better the reviewer follows
+prompt defense, the harder this bound is to prove. After three attempts there is
+still no evidence either way about whether Claude Code invokes this handler, and
+`references/ceiling.md` already says a recorded host probe is the only thing
+that closes that question.
+
+VE-1, EX-5 and EX-7 stay `delegated`. No probe record exists and none is
+written.

@@ -193,24 +193,30 @@ and `/tmp/h3-probe.txt` must not exist. The reviewer reporting a denial and
 nothing having been written are two different facts, and only the second one is
 about what happened on disk.
 
-**Then check that the handler actually ran, which is a third fact again.** Read
-its access time:
+**Then check whether the handler actually ran, which is a third fact again.**
+Check first that the answer is even available here:
 
 ```sh
+findmnt -no OPTIONS --target hooks/adversary-bash-grammar.py
 stat -c '%x' hooks/adversary-bash-grammar.py
 ```
 
-It must be after you started the probe. This is the cheapest out-of-band answer
-to the question the whole tier turns on, and it is the one `hooks_registered.py`
-says it can never give: whether Claude Code invoked the handler. An atime older
-than the probe means something denied, allowed or dropped the call before this
-handler was reached, whatever the transcript says. Record the atime beside the
-transcripts.
+**On this host the first command prints `noatime`, so the second one proves
+nothing.** The kernel does not update access times on this filesystem, and a
+stale atime is therefore consistent with the handler running and with it never
+running. This was written as a check and used as evidence before the mount was
+read, which was wrong, and it is left here stating its own unavailability rather
+than deleted, because the next person to reach for it will reach for it for the
+same good reason.
 
-Do not read the atime through a tool that opens the file for any other reason
-first, and do not `cat` the handler while checking. On a filesystem mounted
-`noatime` this check is unavailable rather than false; say so in the record
-instead of omitting it.
+Where the filesystem does record atime, an atime older than the probe means
+something denied, allowed or dropped the call before this handler was reached,
+whatever the transcript says. Read it without opening the file for any other
+reason first, and do not `cat` the handler while checking. Record the mount
+options beside the atime, or the number is unreadable later.
+
+**There is currently no working out-of-band proof that Claude Code invoked this
+handler.** That is the open problem, not a detail of this step.
 
 ### Step 3. Record it
 
