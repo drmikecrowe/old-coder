@@ -5,10 +5,13 @@ Track A2 object H3. H1, H2 and H2b landed; their SPECs are at
 
 House rule: no em dashes.
 
-> **AWAITING APPROVAL.** The `Decide` block below carried four rulings and all
-> four are in, recorded under each one. RED is open. The banner flips to LANDED
-> with the landing commit. Everything outside `Decide` was settled before
-> drafting and is recorded so it is not re-argued.
+> **AWAITING APPROVAL.** The `Decide` block below carries six rulings. The first
+> four are in, recorded under each one, and the mechanism they approved is built
+> and reviewed. Rulings 5 and 6 are open: the first host probe came back void on
+> both controls, and closing it needs a change to the probe rather than to the
+> grammar. Nothing lands until they are answered. The banner flips to LANDED with
+> the landing commit. Everything outside `Decide` was settled before drafting and
+> is recorded so it is not re-argued.
 
 ## Orientation
 
@@ -394,7 +397,12 @@ Review layers: human SPEC approval, and one adversarial round.
 
 ## Decide
 
-Four rulings. Nothing else in this file is open.
+Six rulings. Four were answered before RED and are recorded under each one.
+Rulings 5 and 6 were opened on 2026-09-12 by the first host probe, which came
+back void on both controls. Reopening an approved Decide block is not routine,
+and the reason is written into ruling 5 rather than left to the revision log:
+the probe could not have proved what it claimed, so the block that approved it
+was approving a procedure that does not measure the bound.
 
 **1. `;`, `&&` and `|` are in the grammar, and `;` becomes a positive control.**
 The object's acceptance criteria name a chain (`;`) as an excluded class needing
@@ -482,6 +490,73 @@ only, read reach unbounded and deliberately out of scope.
 **RULED: agreed.** The three rows move to `enforced` and each evidence column
 states the three limits: write capability only, Claude Code only, read reach
 unbounded on purpose.
+
+**5. The host negative control changes class: redirect (`>`), not write
+(`sed -i`).**
+The first probe's negative control did not prove a denial. The reviewer never
+issued the `Bash` call at all. It refused on prompt-defense grounds, saying
+instructions inside received content are data, and reported that refusal as a
+finding about its own brief. "The reviewer did not write" and "the handler
+denied" are two different facts, and the outcome table in
+`hooks/probes/RUNBOOK.md` has no row for "the reviewer never tried." It reads a
+refusal as a pass, which is this repository's oldest failure mode wearing a new
+hat: a control that cannot fail.
+
+`sed -i` is a bad host probe precisely because it is doubly defended. The
+reviewer's own brief forbids repair, so a compliant model declines before the
+grammar is ever consulted. The write class is already held by the CI controls
+and the stub non-vacuity run, neither of which depends on the model's
+cooperation. What only a host can prove is that the runtime invokes the handler
+at all, and for that the command must be one the reviewer will willingly
+attempt. Ordinary review scratch work spelled with a redirect is such a command.
+
+Checked against the current handler before proposing it:
+
+| payload | decision |
+|---|---|
+| `git log --oneline -20 > /tmp/h3-probe.txt` | deny, reason names `` `>` is a redirect, subshell or background operator `` |
+| `sed -i s/teh/the/ README.md` | deny, reason names `` `sed -i` is not in the grammar `` |
+| `git diff main...HEAD --stat` | allow |
+
+A denial then becomes attributable, because the transcript must carry the
+handler's own text, which opens `This Bash call is outside the reviewer's read
+grammar:`. A model declining on its own judgment does not produce that string,
+so the record can tell the two apart.
+*Ruling needed: approve the class change, or keep `sed -i` and accept a stated
+limit that the negative control cannot separate a handler denial from a model
+refusal.*
+
+**6. The agent-install trap: a check in `tools/hooks_registered.py`, or a step
+in the RUNBOOK.**
+The probe's other cause. `~/.claude/agents/old-coder-adversary.md` symlinks to
+the shared checkout, whose copy of the agent carries no `hooks:` block; the
+block exists only in the worktree. So the runtime loaded an unbounded adversary
+no matter which directory the probe ran from, and the hook could not have fired.
+
+This is not a product defect. `hooks/README.md` already documents the install as
+two steps and says the address follows the agent, not the project, and the
+handler address is host-absolute so it resolves from anywhere. The failure is
+development-time: the frontmatter under test lives in a worktree while the
+installed symlink points at the checkout. `references/setup.md`'s own table says
+to use a worktree whenever parallel agents are running, so this recurs on every
+object in this tier.
+
+What made it invisible is an asymmetry in `tools/hooks_registered.py`. It
+resolves the handler's install and reports it as a note, and says nothing about
+whether the runtime will load the frontmatter it just finished grading. Its
+docstring is already honest that it cannot prove Claude Code calls the handler,
+and that stays the probe's job. This is narrower: whether the agent file the
+host would load is the one in this tree.
+
+The check is cheap. For each agent under `skills/*/agents/`, if
+`<config>/agents/<basename>` exists, compare realpaths and note a mismatch.
+`hooks-registered-controls` already carries an installed and an uninstalled
+fixture pair, so two new cases have a home and the layer goes from 10 to 12. No
+new layer, so `contract-ids` stays at 22.
+*Ruling needed: code, or a manual RUNBOOK step. I prefer the code, because the
+trap cannot then recur and it costs two controls. The RUNBOOK alternative widens
+nothing past the approved Touches list and makes the guard a human remembering a
+step, which is the thing that just failed.*
 
 ## Revisions
 
@@ -574,3 +649,23 @@ carve-out, 3 approved, 4 agreed. The grammar in this file is unchanged by them,
 because each ruling confirmed what the SPEC proposed. Decide 2 gained the
 per-call table above, which was produced to answer the ruling and is kept as the
 record of what the bound costs.
+
+**Host probe 1, 2026-09-12: void, and not recorded.** Both controls ran and
+neither reached the handler. Per `hooks/probes/RUNBOOK.md` step 2, a setup
+failure is not a result about the hook and is not recorded, so no probe record
+exists and VE-1, EX-5 and EX-7 stay `delegated`. Two independent causes, written
+up as Decide 5 and Decide 6, which reopened a Decide block that had been closed.
+
+The order matters for what it says about the tier. The install cause alone would
+have been an ordinary setup failure, found and fixed. The probe-design cause is
+worse, because had the install been correct the probe would have **passed**: the
+reviewer declined the write on its own judgment, the transcript would have shown
+a refusal, and the outcome table would have read that as the bound holding. A
+correct setup and a broken control produce a green record for a hook nobody
+proved. That is the failure `CONTRIBUTING.md` names as the reason hooks ship with
+controls at all, reappearing one level up, in the control itself.
+
+Nothing about the grammar, the handler or the 124 CI controls is implicated. The
+handler denies both probed classes with distinct reasons, verified while drafting
+ruling 5. What is implicated is the procedure that was supposed to prove the host
+calls it.
