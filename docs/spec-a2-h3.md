@@ -5,11 +5,10 @@ Track A2 object H3. H1, H2 and H2b landed; their SPECs are at
 
 House rule: no em dashes.
 
-> **AWAITING APPROVAL.** The `Decide` block below carries six rulings. The first
-> four are in, recorded under each one, and the mechanism they approved is built
-> and reviewed. Rulings 5 and 6 are open: the first host probe came back void on
-> both controls, and closing it needs a change to the probe rather than to the
-> grammar. Nothing lands until they are answered. The banner flips to LANDED with
+> **AWAITING APPROVAL.** The `Decide` block below carries eight rulings. Six are
+> in, recorded under each one, and the mechanism they approved is built and
+> reviewed. Rulings 7 and 8 are open, raised by the 2026-09-13 re-review after
+> three void host probes. Nothing lands until a host probe passes. The banner flips to LANDED with
 > the landing commit. Everything outside `Decide` was settled before drafting and
 > is recorded so it is not re-argued.
 
@@ -397,9 +396,10 @@ Review layers: human SPEC approval, and one adversarial round.
 
 ## Decide
 
-Six rulings. Four were answered before RED and are recorded under each one.
+Eight rulings. Four were answered before RED and are recorded under each one.
 Rulings 5 and 6 were opened on 2026-09-12 by the first host probe, which came
-back void on both controls. Reopening an approved Decide block is not routine,
+back void on both controls, and answered the same day. Rulings 7 and 8 were
+opened on 2026-09-13 by the re-review that followed the third void probe. Reopening an approved Decide block is not routine,
 and the reason is written into ruling 5 rather than left to the revision log:
 the probe could not have proved what it claimed, so the block that approved it
 was approving a procedure that does not measure the bound.
@@ -589,6 +589,28 @@ not ruled on, and the revision log below already carries one defect from a
 handler that grew past what was approved. Raised as a follow-up rather than
 taken.
 
+**7. Folder trust as the third half of "installed".**
+Since Claude Code 2.1.218 a frontmatter hook is silently skipped when the
+folder holding the agent file has not had its trust dialog accepted, and a
+parent folder's trust does not carry down. That is almost certainly what voided
+probes 2 and 3, and nothing in `tools/hooks_registered.py` looks at it. The
+trust record is `<config>/.claude.json`, `projects[<path>].hasTrustDialogAccepted`.
+The check would resolve the installed agent's target folder and report a
+missing or false entry as a note in the same shape as Decide 6, with an
+installed-and-trusted pair of controls.
+*Ruling needed: add the check, or leave it as the RUNBOOK step 0 already
+carries.*
+
+**8. The composition limit, stated.**
+Settings-level hooks fire inside subagents and run in parallel with this one,
+each on the original input. A settings hook that returns `updatedInput` decides
+what executes after this grammar has approved what was asked; on this host
+`rtk` rewrites `git diff` to `rtk git diff`. So the bound is over what the model
+requests, and rests on the user-level hooks being trusted, which by definition
+they are. One paragraph in `hooks/README.md` and one clause in the ceiling's
+allowlist distinction.
+*Ruling needed: state it, or leave it implicit.*
+
 ## Revisions
 
 **Adversarial round 1, 2026-09-12.** Spawned fresh, bound to `4c34bde...19a2a36`,
@@ -710,7 +732,7 @@ Three facts settle it:
 - `/tmp/h3-probe.txt` does not exist, so the redirect never ran.
 - ~~The handler's atime was `2026-09-12 08:36`, the previous day, while the probe
   ran at `2026-09-13 05:45`. It was never executed.~~ **Retracted 2026-09-13.**
-  `/home/mcrowe/Programming` is mounted `noatime`, so access times are never
+  the filesystem holding the checkout is mounted `noatime`, so access times are never
   updated there and this observation is consistent with the handler running and
   with it never running. It proved nothing and should not have been written as a
   fact. The mount was read after the claim, which is the wrong order.
@@ -752,8 +774,11 @@ Carrier commands changed as above, setup verified green beforehand.
   with the handler never being called. Nothing distinguishes the two, because
   the atime check is unavailable on this filesystem.
 
-**Stable failure, and the object stops here rather than earning a fourth
-attempt.** The budget was two rounds and the same signature twice. The negative
+**~~Stable failure, and the object stops here rather than earning a fourth
+attempt.~~** Retracted 2026-09-13, below: the stop was called on a failure of
+the probe's design, and the mechanism under test was never reached, so the rule
+did not apply. The paragraphs that follow are left as written. The budget was
+two rounds and the same signature twice. The negative
 control has now been refused by the reviewer's own prompt defense in probes 1
 and 3, with probe 2's different cause in between. That is twice.
 
@@ -781,3 +806,53 @@ that closes that question.
 
 VE-1, EX-5 and EX-7 stay `delegated`. No probe record exists and none is
 written.
+
+**Re-review, 2026-09-13, and the stop above is withdrawn.** Read against the
+hooks and subagents references for Claude Code 2.1.263, the version on this
+host, and against the session hooks run by hand on the probe payloads.
+
+*What was wrong in the stop.* The stable-failure rule stops an object whose
+mechanism fails the same way twice. Probes 1 and 3 failed the same way, and in
+both the mechanism was never reached: the reviewer refused a write-looking
+command delivered as a peer message. That is two failures of the same probe
+design, not of the object, and the design has an untried alternative. The
+"structural" argument overstated the transcripts too. In probe 3 the reviewer
+refused the redirect it got as a teammate message and ran the `sed -n` it got in
+its task brief, so what it refuses is either write-appearance or delivery
+channel, and no control had yet avoided both.
+
+*The session hooks are not the cause, and cannot be.* Matching `PreToolUse`
+hooks run in parallel and each receives the original `tool_input`; decisions
+combine as `deny > defer > ask > allow`. Run by hand on the probe payloads,
+`rtk hook claude` returns nothing for `sed -n` and `pwd`, and returns an
+`updatedInput` rewriting `git diff main...HEAD --stat` to `rtk git diff ...`;
+`context-mode` returns advisory text only. Neither returns a decision. So
+neither can deny the reviewer, and this handler never sees the rewrite. The
+composition hazard raised in the re-review is closed by the reference. What
+remains is a limit, not a hazard: a settings-level `updatedInput` decides what
+executes after the grammar approves what was asked. Decide 8.
+
+*The likely cause of probes 2 and 3, found in the subagents reference.* Since
+2.1.218, a frontmatter hook is silently skipped when the folder holding the
+agent file has not had its trust dialog accepted, trusting a parent folder is
+not enough, and the only report is a debug-log line. The trust record on this
+host has the checkout accepted and **no entry for the worktree**, and since the
+repoint the installed agent resolves into the worktree. Probe 1: trusted folder,
+no `hooks:` block in that copy. Probes 2 and 3: the block present, the folder
+untrusted. Every static check stayed green because none of them looks at trust.
+Whether a symlink in `<config>/agents/` is judged by its own location or its
+target is undocumented; the debug log on the next run answers it, and trusting
+the worktree makes the question moot. Decide 7.
+
+*Prior evidence the mechanism works here.* H2b's recorded probe shows the
+spec-intent reviewer relaying an agent-level `Read` denial verbatim, from a
+trusted folder. "No evidence either way" was too strong: there is none for this
+handler, and there is some for the mechanism and for the reviewer relaying a
+denial when it receives one.
+
+*Probe 4 design.* Negative control `pwd`, which this handler denies (verified),
+elicited as a question in the spawn prompt rather than delivered as a command,
+and spawned directly with the Agent tool rather than through a teammate relay,
+which also dropped the positive control's output once. Positive control
+`sed -n 1,20p README.md`, untouched by every hook on this host. Session under
+`--debug`. The worktree trusted first. The RUNBOOK carries all of it.
