@@ -303,12 +303,13 @@ can tell a layer that failed from a layer that was never wired up.
 | `mutation` | tests that assert nothing | every mutant in the committed table is killed |
 | `real-execution` | a suite that passes against a fake clock only | `examples/demo.py` runs against the real clock and exits 0 |
 | `audit-sweep` | an audit row crediting a bound its agent's tools cannot hold | 0 unsupported claims |
-| `audit-sweep-controls` | a sweep whose hooks-tier lift credits any agent that mentions hooks | 12 cases pass, including a wildcard matcher, a shell tool, and an exact hook with no recorded probe |
+| `audit-sweep-controls` | a sweep whose hooks-tier lift credits any agent that mentions hooks | 24 cases pass, including a wildcard matcher, an exact hook with no recorded probe, and one per condition of the shell lift |
 | `ceiling-ids` | a published ceiling that has drifted from the audit | 0 disagreements in either direction |
 | `contract-ids` | this contract drifting from the harness it describes | 0 disagreements in either direction |
 | `hooks-registered` | a frontmatter hook whose handler was renamed, deleted, or left non-executable, which fails open silently | 0 unusable hooks; this is the CI half and is not the proof that the host calls them |
 | `hooks-registered-controls` | a registration check that reddens because a host declined an opt-in tier, or that misses a deleted handler | 9 cases pass, including a bare environment and a command interpolating a variable the runtime does not substitute |
 | `hook-controls` | a hook handler that allows what it claims to deny | 12 cases pass, symlink escape and empty payload included |
+| `bash-grammar-controls` | a reviewer that can rewrite what it reviews, and a grammar that denies the reads it was measured against | 124 cases pass, one per excluded class and the whole 57-row harvest; the suite is then run against a permissive stub and must fail |
 | `source-state` | a report bound to a state nobody can return to | a binding is produced, or a named reason why it is not |
 | `evidence-binding` | a report whose numbers came from a different tree | the report's tree hash equals the derived one, and a stale review round does not sit under a bare `PASSED` |
 

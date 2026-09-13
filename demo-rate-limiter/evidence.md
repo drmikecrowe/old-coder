@@ -56,21 +56,21 @@ The writeup below, in brief:
   Earlier revisions (2026-07-25, 2026-07-27) were autonomous and are still
   unapproved; treat them as the weaker part of the spec.
 - Independent verification: **not performed against the final source state
-  `3bf9a2e`.** Six earlier rounds were performed; the last verified state
+  `ec89de1`.** Six earlier rounds were performed; the last verified state
   `d0b506c` returned `failed`, and the fixes made since — one of them
   behavioural — are disclosed below as unverified. This report is finalized as
   a **declared downgrade**, not on the strength of a passing verdict. A
   verdict attaches to the state a verifier actually saw, and no verifier has
   seen this one.
-- Source state: source commit `3bf9a2e`; sha256 tree hash
-  `0f6d9e8aa98315ec` — reproduce both with `./tools/source_state.sh` from any
+- Source state: source commit `ec89de1`; sha256 tree hash
+  `ffda7020f2c961fc` — reproduce both with `./tools/source_state.sh` from any
   directory, or read them from `gauntlet-stamp.txt`, which the entry point
   writes on every exit path. When a binding is produced the tree hash is the required content
   identity; the source commit is provenance and is supplied only where
   complete history is available, so a shallow checkout reports
   `(unavailable: shallow history)` and a no-Git archive reports `(no git)`,
   both alongside this same tree hash. No error path emits a binding at all.
-  The script separately reports current HEAD; commits after `3bf9a2e` that
+  The script separately reports current HEAD; commits after `ec89de1` that
   touch only this report or other out-of-scope paths preserve the source
   commit and tree hash. The manifest includes `.github/workflows`, which
   decides whether the gauntlet runs in CI at all.
@@ -80,19 +80,24 @@ The writeup below, in brief:
   SHAs, so none of them can be checked against the current state. The
   `evidence-binding` layer therefore holds this report below a bare `PASSED`
   mechanically, which is the verdict it already declared for its own reasons.
-- Toolchain: pinned in `requirements-dev.txt`. Two Pythons, both run against
-  this state: locally on 3.14.7, and on 3.12.14 in CI via
-  `.github/workflows/gauntlet.yml`. **The CI run derived this report's exact
-  binding**, tree `0f6d9e8aa98315ec`, and reported all 21 layers green:
-  <https://github.com/drmikecrowe/old-coder/actions/runs/34606856991>. Its HEAD
-  was `ad2b4a0`.
+- Toolchain: pinned in `requirements-dev.txt`. Locally on 3.14.7 at the current
+  binding, and on 3.12.14 in CI via `.github/workflows/gauntlet.yml`. **CI
+  verified an earlier binding**, tree `0f6d9e8aa98315ec` at HEAD `ad2b4a0`, and
+  reported all 21 layers green:
+  <https://github.com/drmikecrowe/old-coder/actions/runs/34606856991>. The
+  hooks-tier tooling landed since (A2 object H3, in `demo-rate-limiter/tools`)
+  moved the tree to `ffda7020f2c961fc`. The local gauntlet is green at that
+  tree on 3.14.7; **no CI run has verified it yet.** This report is bound to the
+  current tree and its verification for that tree is local-only, which the
+  declared downgrade above already accounts for.
 
-  That run is credited only because it was checked, on this repository, against
-  this tree. The run before it went red, and the failure was real rather than
-  environmental: CI's `shellcheck` flags a pattern the author's 0.11.0 does not,
-  so `shell-lint` was passing locally on code CI refused. The local gate was the
-  weaker of the two. Nothing here was proven on one machine and assumed on the
-  other.
+  That earlier CI run is credited only because it was checked, on this
+  repository, against that tree. The run before it went red, and the failure was
+  real rather than environmental: CI's `shellcheck` flags a pattern the author's
+  0.11.0 does not, so `shell-lint` was passing locally on code CI refused. The
+  local gate was the weaker of the two. For that binding, nothing was proven on
+  one machine and assumed on the other; the current binding is the stated
+  exception, green on 3.14.7 alone until CI reruns.
 
 - Entry point: `./tools/gauntlet.sh` reruns every layer below and writes
   `gauntlet-stamp.txt`: the result, the layer sets, a UTC timestamp, and the
@@ -100,9 +105,10 @@ The writeup below, in brief:
   distinguishing a layer verdict (2) from an orchestration failure (3) and a
   crash (passed through).
 
-All numbers are from one final fresh run of the entry point, executed
-2026-09-11 at source commit `3bf9a2e` after the last code edit; the stamp
-from that run reads `result: green` over the binding above.
+All numbers are from a fresh run of the entry point, executed 2026-09-13 at
+source commit `ec89de1` (tree `ffda7020f2c961fc`) after the hooks-tier tooling
+landed; the stamp from that run reads `result: green` over the binding above,
+on 3.14.7. The 2026-09-11 run at `3bf9a2e` was the last one CI also verified.
 
 The branch carrying that state was merged to fork `main` as `8e2b2c2` on
 2026-09-09. The entry point was rerun at that HEAD: every layer green, and the

@@ -107,8 +107,31 @@ case "$out" in
   *) fail "an installed handler is reported as installed (got: $out)" ;;
 esac
 
+# The agent file the host loads is the other half of the install, and it is
+# the half that voided this tier's first adversary-bash-grammar host probe.
+# The handler is addressed absolutely and is therefore the same file from
+# anywhere; the agent file is whatever <config>/agents/ points at, and the
+# hooks: block is read from that copy. Point it at a different checkout and
+# every check here is green while the subagent spawns unbounded.
+mkdir -p "$WORK/cfg/agents"
+ln -sfn "$WORK/good/skills/old-coder/agents/probe.md" "$WORK/cfg/agents/probe.md"
+out=$(env CLAUDE_CONFIG_DIR="$WORK/cfg" "$PYTHON" "$CHECK" "$WORK/good" 2>&1)
+case "$out" in
+  *"DIFFERENT COPY"*) fail "an agent installed from this tree is not reported as a mismatch (got: $out)" ;;
+  *) pass "an agent installed from this tree is not reported as a mismatch" ;;
+esac
+
+# The half that must fire, or the case above is a note that never prints.
+fixture other '${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/probe-hook.sh'
+ln -sfn "$WORK/other/skills/old-coder/agents/probe.md" "$WORK/cfg/agents/probe.md"
+out=$(env CLAUDE_CONFIG_DIR="$WORK/cfg" "$PYTHON" "$CHECK" "$WORK/good" 2>&1)
+case "$out" in
+  *"DIFFERENT COPY"*"ln -sfn"*) pass "an agent installed from another tree is reported with the repoint command" ;;
+  *) fail "an agent installed from another tree is reported with the repoint command (got: $out)" ;;
+esac
+
 if [ "$fails" -ne 0 ]; then
   echo "hooks-registered controls: $fails failure(s)" >&2
   exit 1
 fi
-echo "hooks-registered controls: all green (10 cases)"
+echo "hooks-registered controls: all green (12 cases)"
