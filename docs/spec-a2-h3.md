@@ -611,6 +611,41 @@ they are. One paragraph in `hooks/README.md` and one clause in the ceiling's
 allowlist distinction.
 *Ruling needed: state it, or leave it implicit.*
 
+## Root cause, 2026-09-13: in-process teammates run with no hook registry
+
+Host probe 4 ran with the worktree trusted and `--debug` on. It is void, and the
+debug log gives the reason every probe was void, which is not any of the three
+earlier guesses.
+
+The Agent tool spawns `old-coder-adversary` as an **in-process teammate**
+(`spawnInProcessTeammate`, `inProcessRunner` in the log), not as a separate
+process. The in-process runner logs `Hooks: Found 0 total hooks in registry`.
+The negative-control subagent made three `Bash` calls; **none fired any
+`PreToolUse` hook**, not the frontmatter grammar and not even the session-level
+`rtk` and `context-mode` hooks that fire for the main session's `Bash` calls.
+`adversary-bash-grammar` appears nowhere in 8190 lines of log.
+
+So on this runtime the frontmatter `PreToolUse` hook is never invoked for the
+adversary's tool calls. The bound is real, and its 124 CI controls prove the
+handler denies what it should, but the runtime that spawns this reviewer does
+not consult it. The earlier probe failures (peer-message refusal, folder trust)
+were real but secondary: even with all of them fixed, an in-process teammate
+carries no hooks.
+
+Trust and the peer-message class no longer explain anything on their own. The
+mechanism is inapplicable as spawned, not merely mis-set-up.
+
+**This is a stable failure for want of runtime scope, and the loop's own rule
+sends it to the runtime repo.** VE-1, EX-5 and EX-7 stay `delegated`, now with a
+proven reason rather than a probe that would not run: a frontmatter hook cannot
+bound an agent the host spawns in-process. Whether the runtime repo closes it by
+spawning the adversary out-of-process, by a session-level hook matched to the
+subagent, or by another route is that repo's object. The hook, its controls, and
+this record stay landed here as the portable artifact.
+
+Decide 7 and 8 are moot for this host and left for the runtime repo, since a
+trust check on a hook that never fires proves nothing here.
+
 ## Revisions
 
 **Adversarial round 1, 2026-09-12.** Spawned fresh, bound to `4c34bde...19a2a36`,
