@@ -700,3 +700,38 @@ Nothing about the grammar, the handler or the 124 CI controls is implicated. The
 handler denies both probed classes with distinct reasons, verified while drafting
 ruling 5. What is implicated is the procedure that was supposed to prove the host
 calls it.
+
+**Host probe 2, 2026-09-13: void, and not recorded either.** Run with the setup
+verified green beforehand, agent symlink repointed at the worktree and handler
+installed. The reviewer reported the negative control as `Working notes saved.`
+with no denial text anywhere, which reads as the bound being absent. It was not.
+Three facts settle it:
+
+- `/tmp/h3-probe.txt` does not exist, so the redirect never ran.
+- The handler's atime was `2026-09-12 08:36`, the previous day, while the probe
+  ran at `2026-09-13 05:45`. It was never executed.
+- Both controls used `git`, and on this host a session-level hook (`rtk` plus
+  the worktree guard) refuses `git` from a worktree-isolated session before any
+  agent-level hook is consulted.
+
+So a hook upstream of this one denied both calls, the reviewer misreported those
+denials, and the handler was never reached. The positive control's `no output,
+so main and HEAD are the same commit` was the same upstream refusal read as an
+empty diff, which also explains the identical result in probe 1.
+
+**This is the third void probe and the third distinct environmental cause, and
+the pattern is now the finding.** Causes so far: an agent symlink aimed at
+another checkout, a negative control the reviewer refuses on its own grounds,
+and a session-level hook that denies before the agent hook runs. None of the
+three is about the grammar. All three produced a transcript that a careless
+reader grades as a pass. A bound whose proof is this easy to fake is expensive
+to prove, and `references/ceiling.md` already says the host probe is the only
+thing that closes it.
+
+Two changes, both inside ruling 5 rather than past it. The class stays a
+redirect; only the carrier command changes, from `git log` to `rg -n`, with the
+positive control moving from `git diff` to `sed -n`, so nothing upstream has an
+opinion about either. And the record now carries the handler's **atime**, which
+answers directly the question `tools/hooks_registered.py` states it can never
+answer: whether Claude Code invoked the handler. An atime predating the probe
+voids the run no matter what the transcript says.
